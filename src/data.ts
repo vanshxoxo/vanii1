@@ -1,0 +1,375 @@
+import type { Product, AgeInfo, CategoryInfo } from './types';
+
+export const products: Product[] = [
+  {
+    id: 'p01',
+    slug: 'sunday-cloud-romper',
+    name: 'Sunday Cloud Romper',
+    price: 1290,
+    originalPrice: 1590,
+    category: 'Rompers',
+    ages: ['Newborn', 'Baby'],
+    sizes: ['0-3M', '3-6M', '6-12M', '12-18M'],
+    colors: [
+      { name: 'Butter', hex: '#FFDA65' },
+      { name: 'Pistachio', hex: '#B7D99A' },
+      { name: 'Sky', hex: '#8DC9E8' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/29562273/pexels-photo-29562273.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/32234111/pexels-photo-32234111.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/32233627/pexels-photo-32233627.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A buttery-soft romper built for slow Sunday mornings and little stretches. Easy snap closure for quick changes and a relaxed fit that gives room to wiggle.',
+    fabric: '100% organic-feel cotton jersey',
+    care: 'Machine wash cold, gentle cycle. Tumble dry low.',
+    isNew: true,
+    isBestseller: true,
+    tags: ['soft', 'everyday', 'snap-closure'],
+  },
+  {
+    id: 'p02',
+    slug: 'little-daydream-coord',
+    name: 'Little Daydream Co-ord',
+    price: 1890,
+    category: 'Co-ord Sets',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Lilac', hex: '#B9A9E8' },
+      { name: 'Peach', hex: '#F48B72' },
+      { name: 'Cream', hex: '#FFF8EC' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/13627298/pexels-photo-13627298.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/15967300/pexels-photo-15967300.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A two-piece co-ord set that pairs a breathable top with relaxed bottoms. Designed for little explorers who like to move freely and dream big.',
+    fabric: 'Cotton-linen blend',
+    care: 'Machine wash cold with like colors. Iron on low.',
+    isNew: true,
+    tags: ['twopiece', 'everyday'],
+  },
+  {
+    id: 'p03',
+    slug: 'peachy-days-tee',
+    name: 'Peachy Days Tee',
+    price: 790,
+    category: 'Tees & Tops',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Peach', hex: '#F48B72' },
+      { name: 'Butter', hex: '#FFDA65' },
+      { name: 'Sky', hex: '#8DC9E8' },
+      { name: 'Ink', hex: '#25231F' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/15967300/pexels-photo-15967300.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A cheerful everyday tee with a relaxed fit and a soft hand feel. Goes with everything from shorts to skirts to comfy bottoms.',
+    fabric: '100% cotton single jersey',
+    care: 'Machine wash cold. Tumble dry low.',
+    isBestseller: true,
+    tags: ['everyday', 'soft'],
+  },
+  {
+    id: 'p04',
+    slug: 'tiny-explorer-set',
+    name: 'Tiny Explorer Set',
+    price: 2190,
+    originalPrice: 2490,
+    category: 'Co-ord Sets',
+    ages: ['Baby', 'Toddler'],
+    sizes: ['6-12M', '12-18M', '1-2Y', '2-3Y'],
+    colors: [
+      { name: 'Pistachio', hex: '#B7D99A' },
+      { name: 'Sky', hex: '#8DC9E8' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/13627298/pexels-photo-13627298.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/33581402/pexels-photo-33581402.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'An adventure-ready set with a roomy top and stretchy bottoms. Built for crawling, climbing, and all the discoveries in between.',
+    fabric: 'Cotton-elastane blend',
+    care: 'Machine wash cold. Do not bleach.',
+    isNew: true,
+    tags: ['twopiece', 'adventure'],
+  },
+  {
+    id: 'p05',
+    slug: 'daisy-picnic-dress',
+    name: 'Daisy Picnic Dress',
+    price: 1490,
+    category: 'Dresses',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Butter', hex: '#FFDA65' },
+      { name: 'Lilac', hex: '#B9A9E8' },
+      { name: 'Peach', hex: '#F48B72' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/30111516/pexels-photo-30111516.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/18279333/pexels-photo-18279333.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A twirl-worthy dress with a gentle A-line cut and a sweet gathered hem. Made for picnics, parties, and everything sunny.',
+    fabric: 'Cotton voile',
+    care: 'Hand wash or gentle cycle. Line dry in shade.',
+    isBestseller: true,
+    tags: ['dressy', 'everyday'],
+  },
+  {
+    id: 'p06',
+    slug: 'cloud-nine-sleep-set',
+    name: 'Cloud Nine Sleep Set',
+    price: 1190,
+    category: 'Sleepwear',
+    ages: ['Newborn', 'Baby'],
+    sizes: ['0-3M', '3-6M', '6-12M'],
+    colors: [
+      { name: 'Sky', hex: '#8DC9E8' },
+      { name: 'Lilac', hex: '#B9A9E8' },
+      { name: 'Cream', hex: '#FFF8EC' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/33253247/pexels-photo-33253247.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/31380756/pexels-photo-31380756.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A cozy two-piece sleep set in whisper-soft cotton. Gentle elastic waist and a breathable top for restful, happy nights.',
+    fabric: '100% cotton interlock',
+    care: 'Machine wash cold. Tumble dry low.',
+    isNew: true,
+    tags: ['sleep', 'soft'],
+  },
+  {
+    id: 'p07',
+    slug: 'sunny-stretch-romper',
+    name: 'Sunny Stretch Romper',
+    price: 1090,
+    category: 'Rompers',
+    ages: ['Baby'],
+    sizes: ['3-6M', '6-12M', '12-18M'],
+    colors: [
+      { name: 'Butter', hex: '#FFDA65' },
+      { name: 'Peach', hex: '#F48B72' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/37529058/pexels-photo-37529058.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/29562273/pexels-photo-29562273.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A stretchy, easy-wear romper with a playful cut and adjustable straps. Designed for little movers who like to kick and reach.',
+    fabric: 'Cotton-elastane jersey',
+    care: 'Machine wash cold. Reshape and dry flat.',
+    tags: ['everyday', 'stretchy'],
+  },
+  {
+    id: 'p08',
+    slug: 'wildflower-tee',
+    name: 'Wildflower Tee',
+    price: 690,
+    originalPrice: 890,
+    category: 'Tees & Tops',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Pistachio', hex: '#B7D99A' },
+      { name: 'Lilac', hex: '#B9A9E8' },
+      { name: 'Cream', hex: '#FFF8EC' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/38543840/pexels-photo-38543840.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A lightweight tee with a relaxed silhouette and a soft, lived-in feel from day one. Perfect for layering or wearing on its own.',
+    fabric: 'Cotton slub jersey',
+    care: 'Machine wash cold. Tumble dry low.',
+    tags: ['everyday', 'layering'],
+  },
+  {
+    id: 'p09',
+    slug: 'happy-trail-bottoms',
+    name: 'Happy Trail Bottoms',
+    price: 990,
+    category: 'Bottoms',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Ink', hex: '#25231F' },
+      { name: 'Peach', hex: '#F48B72' },
+      { name: 'Sky', hex: '#8DC9E8' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/13627298/pexels-photo-13627298.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/33581402/pexels-photo-33581402.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'Comfy pull-on bottoms with a soft elastic waist and a relaxed leg. Easy to pair with tees, shirts, or cozy layers.',
+    fabric: 'Cotton fleece',
+    care: 'Machine wash cold inside out. Tumble dry low.',
+    isBestseller: true,
+    tags: ['everyday', 'comfy'],
+  },
+  {
+    id: 'p10',
+    slug: 'buttercup-pinafore',
+    name: 'Buttercup Pinafore',
+    price: 1690,
+    category: 'Dresses',
+    ages: ['Little Kids'],
+    sizes: ['2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Butter', hex: '#FFDA65' },
+      { name: 'Pistachio', hex: '#B7D99A' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/18279333/pexels-photo-18279333.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/30111516/pexels-photo-30111516.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A structured pinafore with a sweet scooped neckline and a roomy fit for layering over tees and blouses. A wardrobe staple for little personalities.',
+    fabric: 'Cotton twill',
+    care: 'Machine wash cold. Iron on medium.',
+    isNew: true,
+    tags: ['dressy', 'layering'],
+  },
+  {
+    id: 'p11',
+    slug: 'moonbeam-pj-set',
+    name: 'Moonbeam PJ Set',
+    price: 990,
+    originalPrice: 1290,
+    category: 'Sleepwear',
+    ages: ['Toddler', 'Little Kids'],
+    sizes: ['1-2Y', '2-3Y', '3-4Y'],
+    colors: [
+      { name: 'Lilac', hex: '#B9A9E8' },
+      { name: 'Sky', hex: '#8DC9E8' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/7787255/pexels-photo-7787255.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/33253247/pexels-photo-33253247.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A dreamy two-piece pajama set with a soft-button top and relaxed bottoms. Designed for cozy, restful sleep and lazy weekend mornings.',
+    fabric: 'Cotton-modal blend',
+    care: 'Machine wash cold. Tumble dry low.',
+    tags: ['sleep', 'soft'],
+  },
+  {
+    id: 'p12',
+    slug: 'pebble-play-romper',
+    name: 'Pebble Play Romper',
+    price: 1390,
+    category: 'Rompers',
+    ages: ['Baby', 'Toddler'],
+    sizes: ['6-12M', '12-18M', '1-2Y'],
+    colors: [
+      { name: 'Pistachio', hex: '#B7D99A' },
+      { name: 'Peach', hex: '#F48B72' },
+      { name: 'Sky', hex: '#8DC9E8' },
+    ],
+    images: [
+      'https://images.pexels.com/photos/28490495/pexels-photo-28490495.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+      'https://images.pexels.com/photos/37529058/pexels-photo-37529058.jpeg?auto=compress&cs=tinysrgb&h=900&w=600',
+    ],
+    description: 'A durable, play-ready romper with reinforced knees and a relaxed fit. Perfect for little adventurers on the move.',
+    fabric: 'Cotton canvas with elastane',
+    care: 'Machine wash cold. Tumble dry low.',
+    isBestseller: true,
+    tags: ['adventure', 'durable'],
+  },
+];
+
+export const ageGroups: AgeInfo[] = [
+  {
+    id: 'Newborn',
+    label: 'Newborn',
+    range: '0–3M',
+    image: 'https://images.pexels.com/photos/16949145/pexels-photo-16949145.jpeg?auto=compress&cs=tinysrgb&h=500&w=400',
+    description: 'Soft first layers for the newest arrivals.',
+  },
+  {
+    id: 'Baby',
+    label: 'Baby',
+    range: '3–12M',
+    image: 'https://images.pexels.com/photos/16949262/pexels-photo-16949262.jpeg?auto=compress&cs=tinysrgb&h=500&w=400',
+    description: 'Comfy pieces for wiggles and giggles.',
+  },
+  {
+    id: 'Toddler',
+    label: 'Toddler',
+    range: '1–2Y',
+    image: 'https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=500&w=400',
+    description: 'Move-friendly fits for first steps.',
+  },
+  {
+    id: 'Little Kids',
+    label: 'Little Kids',
+    range: '2–4Y',
+    image: 'https://images.pexels.com/photos/13627298/pexels-photo-13627298.jpeg?auto=compress&cs=tinysrgb&h=500&w=400',
+    description: 'Expressive outfits for big personalities.',
+  },
+];
+
+export const categories: CategoryInfo[] = [
+  {
+    id: 'Rompers',
+    name: 'Rompers',
+    image: 'https://images.pexels.com/photos/29562273/pexels-photo-29562273.jpeg?auto=compress&cs=tinysrgb&h=700&w=500',
+    span: 'tall',
+  },
+  {
+    id: 'Co-ord Sets',
+    name: 'Co-ord Sets',
+    image: 'https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=500&w=600',
+    span: 'wide',
+  },
+  {
+    id: 'Tees & Tops',
+    name: 'Tees & Tops',
+    image: 'https://images.pexels.com/photos/15967300/pexels-photo-15967300.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+    span: 'normal',
+  },
+  {
+    id: 'Dresses',
+    name: 'Dresses',
+    image: 'https://images.pexels.com/photos/30111516/pexels-photo-30111516.jpeg?auto=compress&cs=tinysrgb&h=700&w=500',
+    span: 'tall',
+  },
+  {
+    id: 'Bottoms',
+    name: 'Bottoms',
+    image: 'https://images.pexels.com/photos/33581402/pexels-photo-33581402.jpeg?auto=compress&cs=tinysrgb&h=500&w=600',
+    span: 'wide',
+  },
+  {
+    id: 'Sleepwear',
+    name: 'Sleepwear',
+    image: 'https://images.pexels.com/photos/33253247/pexels-photo-33253247.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+    span: 'normal',
+  },
+];
+
+export const editorialImages: string[] = [
+  'https://images.pexels.com/photos/19465616/pexels-photo-19465616.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+  'https://images.pexels.com/photos/4982526/pexels-photo-4982526.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+  'https://images.pexels.com/photos/1652116/pexels-photo-1652116.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+  'https://images.pexels.com/photos/2138190/pexels-photo-2138190.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+  'https://images.pexels.com/photos/9342977/pexels-photo-9342977.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+  'https://images.pexels.com/photos/11344264/pexels-photo-11344264.jpeg?auto=compress&cs=tinysrgb&h=500&w=500',
+];
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.slug === slug);
+}
+
+export function getRelatedProducts(product: Product, count = 4): Product[] {
+  return products
+    .filter((p) => p.id !== product.id && p.category === product.category)
+    .concat(products.filter((p) => p.id !== product.id && p.category !== product.category))
+    .slice(0, count);
+}
+
+export function formatINR(amount: number): string {
+  return '₹' + amount.toLocaleString('en-IN');
+}
