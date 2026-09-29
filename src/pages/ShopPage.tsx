@@ -6,7 +6,6 @@ import type { Product, AgeGroup, Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
-import Reveal from '../components/Reveal';
 import { useStore } from '../store';
 
 const ALL_AGES: AgeGroup[] = ['Newborn', 'Baby', 'Toddler', 'Little Kids'];

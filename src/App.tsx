@@ -35,6 +35,15 @@ function HandleHashScroll() {
   return null;
 }
 
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <div key={pathname} className="animate-fade-in">
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -44,6 +53,7 @@ export default function App() {
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">
+            <PageTransition>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />
@@ -59,6 +69,7 @@ export default function App() {
               <Route path="/terms" element={<PlaceholderPage title="Terms & Conditions" breadcrumb="Terms & Conditions" description="Our terms of service covering purchases, usage, and policies. Full terms coming soon." />} />
               <Route path="*" element={<HomePage />} />
             </Routes>
+            </PageTransition>
           </main>
           <Footer />
         </div>
