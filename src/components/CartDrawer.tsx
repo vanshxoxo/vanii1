@@ -1,6 +1,6 @@
 import { X, ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore } from '../useStore';
 import { formatINR } from '../data';
 import { useEffect } from 'react';
 import Button from './Button';
@@ -132,7 +132,7 @@ export default function CartDrawer() {
                 <span className="text-base font-semibold text-ink">{formatINR(cartTotal)}</span>
               </div>
               <p className="text-xs text-ink-light">
-                Shipping and taxes calculated at checkout. This is a demo store — no payment will be processed.
+                Shipping and payment totals are confirmed securely at checkout.
               </p>
               <Link to="/checkout" onClick={closeCart} className="block">
                 <Button variant="primary" size="lg" className="w-full group">

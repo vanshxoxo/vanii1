@@ -1,6 +1,6 @@
 import { X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useStore } from '../useStore';
 import { useEffect } from 'react';
 
 export default function MobileNav() {
@@ -20,11 +20,11 @@ export default function MobileNav() {
   if (!isMobileNavOpen) return null;
 
   const navLinks = [
-    { label: 'New In', href: '/shop?filter=new' },
-    { label: 'Clothing', href: '/shop' },
-    { label: 'Shop by Age', href: '/#shop-by-age' },
+    { label: 'Latest', href: '/shop?filter=new' },
+    { label: 'Shop', href: '/shop' },
+    { label: 'By Age', href: '/#shop-by-age' },
     { label: 'Collections', href: '/shop' },
-    { label: 'Our Story', href: '/#brand-story' },
+    { label: 'Our World', href: '/#brand-story' },
   ];
 
   const ageLinks = [

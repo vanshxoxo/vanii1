@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import { useStore } from '../store';
-import { products } from '../data';
+import { useStore } from '../useStore';
+import { useCatalog } from '../lib/catalog';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 
 export default function WishlistPage() {
+  const { products } = useCatalog();
   const { wishlist } = useStore();
   const wishlistedProducts = products.filter((p) => wishlist.includes(p.id));
 

@@ -1,12 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, Menu } from 'lucide-react';
-import { useStore } from '../store';
+import { useStore } from '../useStore';
 import { useEffect, useState } from 'react';
+import { useCmsSection } from '../lib/cms';
 
 export default function Header() {
   const { cartCount, wishlist, openCart, openSearch, openMobileNav, cartPulse } = useStore();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const announcement = useCmsSection('announcement');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -15,11 +17,11 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'New In', href: '/shop?filter=new' },
-    { label: 'Clothing', href: '/shop' },
-    { label: 'Shop by Age', href: '/#shop-by-age' },
+    { label: 'Latest', href: '/shop?filter=new' },
+    { label: 'Shop', href: '/shop' },
+    { label: 'By Age', href: '/#shop-by-age' },
     { label: 'Collections', href: '/shop' },
-    { label: 'Our Story', href: '/#brand-story' },
+    { label: 'Our World', href: '/#brand-story' },
   ];
 
   const isActive = (href: string) => {
@@ -30,10 +32,14 @@ export default function Header() {
   return (
     <>
       {/* Announcement bar — slim, dark, centered */}
-      <div className="bg-charcoal text-ivory py-2">
-        <p className="text-center text-[11px] tracking-[0.12em] uppercase font-light px-4">
-          Little outfits for life's biggest little adventures
-        </p>
+      <div role="region" aria-label="Announcement" className="announcement-bar bg-charcoal text-ivory">
+        <div className="announcement-track" aria-hidden="true">
+          {[0, 1].map((copy) => (
+            <span key={copy} className="announcement-message">
+              {announcement?.heading || "LITTLE OUTFITS FOR LIFE'S BIGGEST LITTLE ADVENTURES"}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Main header */}
@@ -49,7 +55,7 @@ export default function Header() {
               <button
                 onClick={openMobileNav}
                 aria-label="Open menu"
-                className="lg:hidden p-1.5 -ml-1.5 text-charcoal hover:text-clay transition-colors"
+                className="lg:hidden min-h-11 min-w-11 -ml-2 inline-flex items-center justify-center text-charcoal hover:text-clay transition-colors"
               >
                 <Menu size={22} />
               </button>
@@ -61,12 +67,12 @@ export default function Header() {
             </div>
 
             {/* Center: desktop nav — one line, never wraps */}
-            <nav className="hidden lg:flex items-center gap-7">
+            <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
                   to={link.href}
-                  className={`text-[13px] font-medium tracking-wide whitespace-nowrap transition-colors hover:text-clay relative group ${
+                  className={`text-[13px] font-medium tracking-wide whitespace-nowrap transition-colors hover:text-clay relative group focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 ${
                     isActive(link.href) ? 'text-clay' : 'text-charcoal'
                   }`}
                 >
@@ -87,21 +93,21 @@ export default function Header() {
               <button
                 onClick={openSearch}
                 aria-label="Search"
-                className="p-2 text-charcoal hover:text-clay transition-colors"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-charcoal hover:text-clay transition-colors"
               >
                 <Search size={19} />
               </button>
               <Link
                 to="/account"
                 aria-label="Account"
-                className="p-2 text-charcoal hover:text-clay transition-colors hidden sm:block"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-charcoal hover:text-clay transition-colors hidden sm:flex"
               >
                 <User size={19} />
               </Link>
               <Link
                 to="/wishlist"
                 aria-label="Wishlist"
-                className="p-2 text-charcoal hover:text-clay transition-colors relative hidden sm:block"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-charcoal hover:text-clay transition-colors relative hidden sm:flex"
               >
                 <Heart size={19} />
                 {wishlist.length > 0 && (
@@ -113,7 +119,7 @@ export default function Header() {
               <button
                 onClick={openCart}
                 aria-label="Shopping bag"
-                className="p-2 text-charcoal hover:text-clay transition-colors relative"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-charcoal hover:text-clay transition-colors relative"
               >
                 <ShoppingBag size={19} />
                 {cartCount > 0 && (

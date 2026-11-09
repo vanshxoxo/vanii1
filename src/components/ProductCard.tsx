@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '../types';
 import { formatINR } from '../data';
-import { useStore } from '../store';
+import { useStore } from '../useStore';
 import { Heart } from 'lucide-react';
 
 interface ProductCardProps {
@@ -21,6 +21,8 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           <div className="aspect-[3/4] overflow-hidden">
             <img
               src={product.images[0]}
+              srcSet={product.imageSrcSets?.[0] || undefined}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               alt={product.name}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -30,6 +32,8 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
             <div className="aspect-[3/4] overflow-hidden absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
               <img
                 src={product.images[1]}
+                srcSet={product.imageSrcSets?.[1] || undefined}
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 alt={`${product.name} alternate view`}
                 loading="lazy"
                 className="h-full w-full object-cover"
@@ -52,7 +56,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 ${
             wished
               ? 'bg-clay text-white'
-              : 'bg-ivory/80 text-charcoal opacity-0 group-hover:opacity-100 hover:bg-ivory'
+              : 'bg-ivory/90 text-charcoal opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-ivory focus-visible:opacity-100'
           }`}
         >
           <Heart size={15} fill={wished ? 'currentColor' : 'none'} />
@@ -62,7 +66,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
         {onQuickAdd && (
           <button
             onClick={() => onQuickAdd(product)}
-            className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-charcoal/95 py-3 text-xs font-medium text-ivory opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-charcoal"
+            className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-charcoal/95 py-3 text-xs font-medium text-ivory opacity-100 translate-y-0 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus-visible:opacity-100 hover:bg-charcoal"
           >
             Quick Add
           </button>

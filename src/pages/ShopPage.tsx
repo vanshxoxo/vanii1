@@ -1,25 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, Check, ChevronDown, Package } from 'lucide-react';
-import { products } from '../data';
+import { useCatalog } from '../lib/catalog';
 import type { Product, AgeGroup, Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
-import { useStore } from '../store';
-
-const ALL_AGES: AgeGroup[] = ['Newborn', 'Baby', 'Toddler', 'Little Kids'];
-const ALL_CATEGORIES: Category[] = ['Rompers', 'Co-ord Sets', 'Tees & Tops', 'Dresses', 'Bottoms', 'Sleepwear'];
-const ALL_SIZES = ['0-3M', '3-6M', '6-12M', '12-18M', '1-2Y', '2-3Y', '3-4Y'];
-const ALL_COLORS = [
-  { name: 'Butter', hex: '#FFDA65' },
-  { name: 'Peach', hex: '#F48B72' },
-  { name: 'Sky', hex: '#8DC9E8' },
-  { name: 'Pistachio', hex: '#B7D99A' },
-  { name: 'Lilac', hex: '#B9A9E8' },
-  { name: 'Cream', hex: '#FFF8EC' },
-  { name: 'Ink', hex: '#25231F' },
-];
+import { useStore } from '../useStore';
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest';
 
@@ -29,6 +16,11 @@ export default function ShopPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<SortOption>('featured');
+  const { products, ages, categories } = useCatalog();
+  const allSizes = [...new Set(products.flatMap((product) => product.sizes))];
+  const allColors = [...new Map(products.flatMap((product) => product.colors.map((color) => [color.name, color] as const))).values()];
+  const allAges: AgeGroup[] = ages.map((age) => age.id);
+  const allCategories: Category[] = categories.map((category) => category.id);
 
   // Read initial filters from URL
   const [selectedAges, setSelectedAges] = useState<Set<string>>(new Set());
@@ -83,7 +75,7 @@ export default function ShopPage() {
     }
     result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
     if (inStockOnly) {
-      // All mock products are "in stock" — ready for future backend integration
+      result = result.filter((product) => product.inStock === true);
     }
 
     switch (sort) {
@@ -102,22 +94,25 @@ export default function ShopPage() {
     }
 
     return result;
-  }, [selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort]);
+  }, [products, selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort]);
 
   const activeFilterCount =
     selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size +
     (priceRange[0] > 0 || priceRange[1] < 3000 ? 1 : 0) + (inStockOnly ? 1 : 0);
 
   const handleQuickAdd = (product: Product) => {
+    const availableVariant = product.variants?.find((variant) => variant.available);
+    if (product.variants?.length && !availableVariant) return;
     addToCart({
       productId: product.id,
       slug: product.slug,
       name: product.name,
-      price: product.price,
+      price: availableVariant?.price ?? product.price,
       image: product.images[0],
-      color: product.colors[0].name,
-      size: product.sizes[0],
+      color: availableVariant?.colour ?? product.colors[0].name,
+      size: availableVariant?.size ?? product.sizes[0],
       quantity: 1,
+      variantId: availableVariant?.id,
     });
   };
 
@@ -132,7 +127,7 @@ export default function ShopPage() {
     <div className="flex flex-col gap-6">
       {/* Age */}
       <FilterSection title="Age">
-        {ALL_AGES.map((age) => (
+        {allAges.map((age) => (
           <FilterCheckbox
             key={age}
             label={age}
@@ -144,7 +139,7 @@ export default function ShopPage() {
 
       {/* Category */}
       <FilterSection title="Category">
-        {ALL_CATEGORIES.map((cat) => (
+        {allCategories.map((cat) => (
           <FilterCheckbox
             key={cat}
             label={cat}
@@ -157,7 +152,7 @@ export default function ShopPage() {
       {/* Size */}
       <FilterSection title="Size">
         <div className="flex flex-wrap gap-2">
-          {ALL_SIZES.map((size) => (
+          {allSizes.map((size) => (
             <button
               key={size}
               onClick={() => toggleSet(selectedSizes, size, setSelectedSizes)}
@@ -176,7 +171,7 @@ export default function ShopPage() {
       {/* Color */}
       <FilterSection title="Color">
         <div className="flex flex-wrap gap-2.5">
-          {ALL_COLORS.map((color) => (
+          {allColors.map((color) => (
             <button
               key={color.name}
               onClick={() => toggleSet(selectedColors, color.name, setSelectedColors)}

@@ -1,0 +1,23 @@
+project_id = "little-loom"
+
+[api]
+enabled = true
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "https://vanii1.vercel.app"
+additional_redirect_urls = ["http://localhost:5173/**", "https://vanii1.vercel.app/**", "https://*.vercel.app/**"]
+enable_signup = true
+
+[storage]
+enabled = true
+file_size_limit = "25MiB"
+
+[functions.razorpay-webhook]
+verify_jwt = false

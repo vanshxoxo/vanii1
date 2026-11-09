@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useCmsSection } from '../lib/cms';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [error, setError] = useState('');
+  const newsletter = useCmsSection('newsletter');
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       setError('Please enter your email address.');
@@ -18,6 +21,10 @@ export default function Footer() {
       return;
     }
     setError('');
+    if (supabase) {
+      const { error: subscribeError } = await supabase.from('newsletter_subscribers').upsert({ email: email.trim().toLowerCase(), status: 'pending', consented_at: new Date().toISOString() }, { onConflict: 'email', ignoreDuplicates: true });
+      if (subscribeError) { setError('We could not save your signup. Please try again.'); return; }
+    }
     setSubscribed(true);
     setEmail('');
   };
@@ -61,10 +68,10 @@ export default function Footer() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="max-w-sm">
               <h3 className="font-serif text-xl lg:text-2xl font-light leading-tight">
-                Little notes, big little joy.
+                {newsletter?.heading || 'Little notes, big little joy.'}
               </h3>
               <p className="mt-1.5 text-[13px] text-ivory/50 leading-relaxed">
-                Join our list for early access to new arrivals and stories from the Little Loom world.
+                {newsletter?.body || 'Join our list for early access to new arrivals and stories from the Little Loom world.'}
               </p>
             </div>
             <form onSubmit={handleSubscribe} className="w-full lg:w-auto lg:min-w-[360px]">
@@ -87,7 +94,7 @@ export default function Footer() {
               {error && <p className="mt-2 text-xs text-clay">{error}</p>}
               {subscribed && (
                 <p className="mt-2 text-xs text-ivory/60">
-                  You're on the list! Welcome to the Little Loom family. (Demo confirmation)
+                  {supabase ? 'Thanks — your signup request has been received.' : "You're on the list! Welcome to the Little Loom family. (Demo confirmation)"}
                 </p>
               )}
             </form>

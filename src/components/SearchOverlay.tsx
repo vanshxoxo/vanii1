@@ -1,10 +1,12 @@
 import { X, Search as SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
-import { products, formatINR } from '../data';
+import { useStore } from '../useStore';
+import { formatINR } from '../data';
+import { useCatalog } from '../lib/catalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function SearchOverlay() {
+  const { products } = useCatalog();
   const { isSearchOpen, closeSearch } = useStore();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +43,7 @@ export default function SearchOverlay() {
           p.tags?.some((t) => t.toLowerCase().includes(q))
       )
       .slice(0, 6);
-  }, [query]);
+  }, [query, products]);
 
   if (!isSearchOpen) return null;
 

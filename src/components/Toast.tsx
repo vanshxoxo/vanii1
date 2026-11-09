@@ -1,4 +1,4 @@
-import { useStore } from '../store';
+import { useStore } from '../useStore';
 import { Check, Heart, X } from 'lucide-react';
 
 export default function ToastContainer() {

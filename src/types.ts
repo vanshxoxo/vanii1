@@ -1,12 +1,6 @@
-export type AgeGroup = 'Newborn' | 'Baby' | 'Toddler' | 'Little Kids';
+export type AgeGroup = string;
 
-export type Category =
-  | 'Rompers'
-  | 'Co-ord Sets'
-  | 'Tees & Tops'
-  | 'Dresses'
-  | 'Bottoms'
-  | 'Sleepwear';
+export type Category = string;
 
 export interface ColorOption {
   name: string;
@@ -24,12 +18,24 @@ export interface Product {
   sizes: string[];
   colors: ColorOption[];
   images: string[];
+  imageSrcSets?: string[];
   description: string;
   fabric: string;
   care: string;
   isNew?: boolean;
   isBestseller?: boolean;
   tags?: string[];
+  variants?: ProductVariant[];
+  inStock?: boolean;
+}
+
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  size: string;
+  colour: string;
+  price?: number;
+  available?: boolean;
 }
 
 export interface CartItem {
@@ -41,6 +47,7 @@ export interface CartItem {
   color: string;
   size: string;
   quantity: number;
+  variantId?: string;
 }
 
 export interface AgeInfo {

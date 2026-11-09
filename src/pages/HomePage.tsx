@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
-import { ArrowRight, ArrowLeft, Heart, Sparkles } from 'lucide-react';
-import { products, ageGroups, categories, editorialImages, formatINR } from '../data';
-import { useStore } from '../store';
+import { ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { useCatalog } from '../lib/catalog';
+import { useCmsSection } from '../lib/cms';
+import { useStore } from '../useStore';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import { SectionHeading } from '../components/ui';
@@ -11,6 +12,9 @@ import type { Product } from '../types';
 
 export default function HomePage() {
   const { addToCart } = useStore();
+  const { products, ages: ageGroups, categories, hero } = useCatalog();
+  const campaign = useCmsSection('featured-campaign');
+  const brandStory = useCmsSection('brand-story');
   const railRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -20,17 +24,23 @@ export default function HomePage() {
 
   const newArrivals = products.filter((p) => p.isNew).slice(0, 6);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
+  const heroLines = hero?.heading ? hero.heading.split('\n') : ['Small humans.', 'Big outfits.'];
+  const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/shop?filter=new';
+  const campaignHref = campaign?.cta_href?.startsWith('/') ? campaign.cta_href : '/shop';
 
   const handleQuickAdd = (product: Product) => {
+    const availableVariant = product.variants?.find((variant) => variant.available);
+    if (product.variants?.length && !availableVariant) return;
     addToCart({
       productId: product.id,
       slug: product.slug,
       name: product.name,
-      price: product.price,
+      price: availableVariant?.price ?? product.price,
       image: product.images[0],
-      color: product.colors[0].name,
-      size: product.sizes[0],
+      color: availableVariant?.colour ?? product.colors[0].name,
+      size: availableVariant?.size ?? product.sizes[0],
       quantity: 1,
+      variantId: availableVariant?.id,
     });
   };
 
@@ -44,58 +54,46 @@ export default function HomePage() {
     <div>
       {/* A. HERO */}
       <section className="relative overflow-hidden">
-        {/* Decorative floating shapes */}
-        <div className="absolute top-20 right-10 w-32 h-32 rounded-full bg-butter/30 blur-3xl pointer-events-none animate-float-slow" />
-        <div className="absolute bottom-10 left-10 w-40 h-40 rounded-full bg-peach/20 blur-3xl pointer-events-none animate-float" />
-
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 lg:pt-10 relative">
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-center">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-14 items-center">
             {/* Text column */}
-            <div className="order-2 lg:order-1 flex flex-col gap-6 lg:pr-8">
+            <div className="order-2 lg:order-1 flex flex-col gap-5 lg:py-8">
               <span
                 className="text-xs font-semibold uppercase tracking-[0.25em] text-peach flex items-center gap-2"
                 style={{
                   opacity: mounted ? 1 : 0,
-                  transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-                  transition: 'all 0.5s ease-out',
+                  transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+                  transition: 'opacity 0.55s ease-out, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
                 <Sparkles size={14} />
                 New Season · Autumn 2026
               </span>
-              <h1
-                className="font-serif text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-light leading-[0.95] text-ink text-balance"
-                style={{
-                  opacity: mounted ? 1 : 0,
-                  transform: mounted ? 'translateY(0)' : 'translateY(30px)',
-                  transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s',
-                }}
-              >
-                Small humans.
-                <br />
-                <span className="italic">Big outfits.</span>
+              <h1 className="hero-headline font-serif font-light leading-[1.02] text-ink text-balance">
+                <span className={`hero-line ${mounted ? 'is-visible' : ''}`}>{heroLines[0]}</span>
+                {heroLines[1] && <span className={`hero-line italic ${mounted ? 'is-visible' : ''}`}>{heroLines[1]}</span>}
               </h1>
               <p
                 className="text-base lg:text-lg text-ink-soft leading-relaxed max-w-md"
                 style={{
                   opacity: mounted ? 1 : 0,
                   transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-                  transition: 'all 0.6s ease-out 0.25s',
+                  transition: 'opacity 0.6s ease-out 0.35s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s',
                 }}
               >
-                Everyday favorites for tiny adventures. Comfortable, expressive clothing made for little moments that feel big.
+                {hero?.body || 'Everyday favorites for tiny adventures. Comfortable, expressive clothing made for little moments that feel big.'}
               </p>
               <div
                 className="flex flex-col sm:flex-row gap-3 mt-2"
                 style={{
                   opacity: mounted ? 1 : 0,
                   transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-                  transition: 'all 0.6s ease-out 0.4s',
+                  transition: 'opacity 0.6s ease-out 0.45s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s',
                 }}
               >
-                <Link to="/shop?filter=new">
+                <Link to={heroHref}>
                   <Button variant="primary" size="lg" className="group">
-                    Shop New Arrivals
+                    {hero?.ctaLabel || 'Shop New Arrivals'}
                     <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
@@ -112,28 +110,17 @@ export default function HomePage() {
               className="order-1 lg:order-2 relative"
               style={{
                 opacity: mounted ? 1 : 0,
-                transform: mounted ? 'scale(1)' : 'scale(0.95)',
-                transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s',
+                transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+                transition: 'opacity 0.8s ease-out 0.12s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.12s',
               }}
             >
-              <div className="aspect-[4/5] lg:aspect-[5/6] overflow-hidden rounded-2xl lg:rounded-3xl relative">
-                <img
-                  src="https://images.pexels.com/photos/16949145/pexels-photo-16949145.jpeg?auto=compress&cs=tinysrgb&h=1000&w=800"
-                  alt="Children wearing Little Loom outfits"
-                  className="h-full w-full object-cover"
-                />
+              <div className="hero-image aspect-[4/5] lg:aspect-[5/5.5] overflow-hidden rounded-xl lg:rounded-2xl relative">
+                <picture className="block h-full w-full">
+                {hero?.mobileImage && <source media="(max-width: 639px)" srcSet={hero.mobileImage} />}
+                {hero?.image && <img src={hero.image} alt={hero.heading || 'Little Loom collection'} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />}
+                </picture>
               </div>
-              {/* Floating price badge */}
-              <div className="absolute bottom-4 left-4 lg:bottom-6 lg:left-6 bg-cream/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg animate-float">
-                <p className="text-xs text-ink-light">Starting at</p>
-                <p className="text-lg font-serif font-medium text-ink">{formatINR(690)}</p>
-              </div>
-              {/* Floating "New" badge */}
-              <div className="absolute top-4 right-4 lg:top-6 lg:right-6 bg-butter rounded-full h-16 w-16 lg:h-20 lg:w-20 flex items-center justify-center shadow-lg animate-float-slow rotate-12">
-                <span className="font-serif text-xs lg:text-sm font-medium text-ink text-center leading-tight">
-                  New<br />Drop
-                </span>
-              </div>
+              <span className="absolute bottom-4 left-4 lg:bottom-6 lg:left-6 bg-ivory/95 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-charcoal">Autumn 2026</span>
             </div>
           </div>
         </div>
@@ -241,17 +228,17 @@ export default function HomePage() {
                 <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
                 <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white/10" />
                 <span className="text-xs font-semibold uppercase tracking-[0.25em] text-cream/70 mb-4 relative">
-                  The Everyday Edit
+                  {campaign?.heading || 'The Everyday Edit'}
                 </span>
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light leading-[1.05] text-cream text-balance relative">
-                  Made for messy mornings &amp; magic afternoons.
+                  {campaign?.heading || 'Made for messy mornings & magic afternoons.'}
                 </h2>
                 <p className="mt-5 text-sm lg:text-base text-cream/80 leading-relaxed max-w-md relative">
-                  Pieces that keep up with every little moment — from breakfast spills to bedtime stories.
+                  {campaign?.body || 'Pieces that keep up with every little moment — from breakfast spills to bedtime stories.'}
                 </p>
-                <Link to="/shop" className="mt-7 relative">
-                  <Button variant="secondary" size="lg" className="group">
-                    Meet the Everyday Edit
+                <Link to={campaignHref} className="mt-7 relative">
+                  <Button variant="primary" size="lg" className="group">
+                    {campaign?.cta_label || 'Meet the Everyday Edit'}
                     <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
@@ -259,11 +246,7 @@ export default function HomePage() {
             </Reveal>
             <Reveal y={40} delay={150} className="order-1 lg:order-2">
               <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden min-h-[300px] lg:min-h-[500px] group">
-                <img
-                  src="https://images.pexels.com/photos/4982526/pexels-photo-4982526.jpeg?auto=compress&cs=tinysrgb&h=800&w=700"
-                  alt="Children playing outdoors in Little Loom clothing"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                {campaign?.desktopImage && <img src={campaign.desktopImage} alt={campaign.heading || 'Little Loom campaign'} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
             </Reveal>
@@ -299,11 +282,7 @@ export default function HomePage() {
                     to={`/shop?category=${encodeURIComponent(cat.id)}`}
                     className={`group relative overflow-hidden rounded-xl lg:rounded-2xl block h-full`}
                   >
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
+                    {cat.image && <img src={cat.image} alt={cat.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent transition-opacity duration-300 group-hover:from-ink/70" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-5 transform transition-transform duration-300 group-hover:-translate-y-1">
                       <h3 className="font-serif text-lg lg:text-2xl font-medium text-cream">{cat.name}</h3>
@@ -346,11 +325,7 @@ export default function HomePage() {
             <Reveal y={40} className="lg:col-span-5">
               <div className="relative">
                 <div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl">
-                  <img
-                    src="https://images.pexels.com/photos/1652116/pexels-photo-1652116.jpeg?auto=compress&cs=tinysrgb&h=800&w=600"
-                    alt="Children enjoying the outdoors"
-                    className="h-full w-full object-cover"
-                  />
+                  {brandStory?.desktopImage && <img src={brandStory.desktopImage} alt={brandStory.heading || 'Little Loom brand story'} className="h-full w-full object-cover" />}
                 </div>
                 <div className="absolute -top-4 -right-4 lg:-top-6 lg:-right-6 bg-butter rounded-2xl px-5 py-4 shadow-md rotate-3 animate-float">
                   <p className="font-serif text-2xl lg:text-3xl font-medium text-ink">est. 2026</p>
@@ -360,12 +335,13 @@ export default function HomePage() {
             <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7">
               <div className="flex flex-col gap-5">
                 <span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">
-                  Our Story
+                  {brandStory?.content?.eyebrow as string || 'Our Story'}
                 </span>
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-light leading-[1.1] text-ink text-balance">
-                  A little more <span className="italic">wonder</span> in every day.
+                  {brandStory?.heading || 'A little more wonder in every day.'}
                 </h2>
                 <div className="space-y-4 text-sm lg:text-base text-ink-soft leading-relaxed">
+                  {brandStory?.body ? <p>{brandStory.body}</p> : <>
                   <p>
                     Little Loom began with a simple idea: children's clothing should be as expressive and
                     full of life as the little humans who wear it. We design pieces that feel good, move
@@ -375,7 +351,7 @@ export default function HomePage() {
                     From the first morning stretch to the last bedtime story, our outfits are made to keep
                     up with the messy, magical, wonderfully ordinary days of growing up. Comfortable fabrics,
                     thoughtful details, and colors that feel like play.
-                  </p>
+                  </p></>}
                 </div>
                 <Link to="/shop" className="mt-2">
                   <Button variant="outline" size="lg" className="group">
@@ -389,39 +365,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* H. INSTAGRAM / COMMUNITY */}
-      <section className="py-16 lg:py-24 bg-cream">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Community"
-              title={<>Little Loom, <span className="italic">out in the wild</span></>}
-              description="Tag us to be featured. This is a placeholder grid — no real handles or testimonials."
-              align="center"
-            />
-          </Reveal>
-          <div className="mt-8 lg:mt-12 grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
-            {editorialImages.map((img, i) => (
-              <Reveal key={i} delay={i * 60}>
-                <div className="group relative overflow-hidden rounded-lg aspect-square">
-                  <img
-                    src={img}
-                    alt={`Community photo ${i + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/20 transition-colors duration-300 flex items-center justify-center">
-                    <Heart
-                      size={20}
-                      className="text-white opacity-0 group-hover:opacity-100 transition-all duration-300 scale-50 group-hover:scale-100"
-                      fill="currentColor"
-                    />
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

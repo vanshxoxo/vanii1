@@ -13,8 +13,9 @@ import {
   X,
   ArrowRight,
 } from 'lucide-react';
-import { getProductBySlug, getRelatedProducts, formatINR } from '../data';
-import { useStore } from '../store';
+import { formatINR } from '../data';
+import { useCatalog } from '../lib/catalog';
+import { useStore } from '../useStore';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 import ProductCard from '../components/ProductCard';
@@ -24,7 +25,8 @@ import type { Product } from '../types';
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const product = slug ? getProductBySlug(slug) : undefined;
+  const { products, loading: catalogLoading } = useCatalog();
+  const product = products.find((item) => item.slug === slug);
 
   const { addToCart, toggleWishlist, isWishlisted } = useStore();
 
@@ -51,6 +53,9 @@ export default function ProductPage() {
     setPincodeStatus('idle');
   }, [slug]);
 
+  if (!product && catalogLoading) {
+    return <div className="mx-auto max-w-7xl px-4 py-24 text-center text-sm text-ink-soft">Loading product…</div>;
+  }
   if (!product) {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
@@ -64,8 +69,12 @@ export default function ProductPage() {
   }
 
   const wished = isWishlisted(product.id);
-  const related = getRelatedProducts(product, 4);
+  const related = products.filter((item) => item.id !== product.id && item.category === product.category).concat(products.filter((item) => item.id !== product.id && item.category !== product.category)).slice(0, 4);
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const chosenColor = selectedColor || product.colors[0]?.name;
+  const chosenSize = selectedSize || product.sizes[0];
+  const selectedVariant = product.variants?.find((variant) => variant.colour === chosenColor && variant.size === chosenSize);
+  const displayPrice = selectedVariant?.price ?? product.price;
 
   const handleAddToCart = () => {
     const newErrors: { color?: string; size?: string } = {};
@@ -74,6 +83,9 @@ export default function ProductPage() {
     }
     if (product.sizes.length > 1 && !selectedSize) {
       newErrors.size = 'Please select a size';
+    }
+    if (product.variants?.length && (!selectedVariant || !selectedVariant.available)) {
+      newErrors.size = 'This size and colour combination is currently unavailable';
     }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -84,11 +96,12 @@ export default function ProductPage() {
       productId: product.id,
       slug: product.slug,
       name: product.name,
-      price: product.price,
+      price: displayPrice,
       image: product.images[0],
-      color: selectedColor || product.colors[0].name,
-      size: selectedSize || product.sizes[0],
+      color: chosenColor,
+      size: chosenSize,
       quantity,
+      variantId: selectedVariant?.id,
     });
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2000);
@@ -148,6 +161,8 @@ export default function ProductPage() {
                   <img
                     key={i}
                     src={img}
+                    srcSet={product.imageSrcSets?.[i] || undefined}
+                    sizes="(max-width: 1024px) 100vw, 60vw"
                     alt={product.name}
                     className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
                       activeImage === i ? 'opacity-100' : 'opacity-0'
@@ -173,7 +188,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <div className="mt-3 flex items-center gap-3">
-                <span className="text-2xl font-medium text-ink">{formatINR(product.price)}</span>
+                <span className="text-2xl font-medium text-ink">{formatINR(displayPrice)}</span>
                 {hasDiscount && (
                   <>
                     <span className="text-base text-ink-light line-through">
@@ -196,10 +211,15 @@ export default function ProductPage() {
               </div>
               <div className="flex flex-wrap gap-2.5">
                 {product.colors.map((color) => (
+                  (() => {
+                    const disabled = Boolean(product.variants?.length) && !product.variants?.some((variant) => variant.colour === color.name && variant.available);
+                    return (
                   <button
                     key={color.name}
+                    disabled={disabled}
                     onClick={() => {
                       setSelectedColor(color.name);
+                      if (selectedSize && product.variants?.length && !product.variants.some((variant) => variant.colour === color.name && variant.size === selectedSize && variant.available)) setSelectedSize(null);
                       setErrors((prev) => ({ ...prev, color: undefined }));
                     }}
                     aria-label={color.name}
@@ -207,10 +227,12 @@ export default function ProductPage() {
                       selectedColor === color.name
                         ? 'border-ink ring-2 ring-ink/15 scale-110'
                         : 'border-ink/10 hover:border-ink/30 hover:scale-105'
-                    }`}
+                    } ${disabled ? 'cursor-not-allowed opacity-30' : ''}`}
                     style={{ backgroundColor: color.hex }}
                     title={color.name}
                   />
+                    );
+                  })()
                 ))}
               </div>
               {errors.color && <p className="mt-1.5 text-xs text-peach animate-slide-down">{errors.color}</p>}
@@ -232,8 +254,12 @@ export default function ProductPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
+                  (() => {
+                    const disabled = Boolean(product.variants?.length) && !product.variants?.some((variant) => variant.size === size && (!chosenColor || variant.colour === chosenColor) && variant.available);
+                    return (
                   <button
                     key={size}
+                    disabled={disabled}
                     onClick={() => {
                       setSelectedSize(size);
                       setErrors((prev) => ({ ...prev, size: undefined }));
@@ -242,10 +268,12 @@ export default function ProductPage() {
                       selectedSize === size
                         ? 'border-ink bg-ink text-cream scale-105'
                         : 'border-ink/15 text-ink-soft hover:border-ink/40 hover:scale-105'
-                    }`}
+                    } ${disabled ? 'cursor-not-allowed opacity-30 line-through' : ''}`}
                   >
                     {size}
                   </button>
+                    );
+                  })()
                 ))}
               </div>
               {errors.size && <p className="mt-1.5 text-xs text-peach animate-slide-down">{errors.size}</p>}
@@ -281,6 +309,7 @@ export default function ProductPage() {
                 size="lg"
                 className="flex-1 group"
                 onClick={handleAddToCart}
+                disabled={Boolean(product.variants?.length) && !product.inStock}
               >
                 <ShoppingBag size={18} className={addedFeedback ? 'animate-wiggle' : ''} />
                 {addedFeedback ? 'Added to Bag!' : 'Add to Bag'}
@@ -384,7 +413,6 @@ export default function ProductPage() {
                     Easy 7-day returns. Items must be unworn with original tags.
                   </p>
                   <p className="text-xs text-ink-light mt-2">
-                    This is a demo store — shipping and return policies are illustrative.
                   </p>
                 </div>
               </Accordion>
