@@ -6,7 +6,7 @@ The three SQL files in `migrations/` are the source of truth. Apply them in time
 | --- | --- | --- |
 | Customers and addresses | `customers`, `customer_addresses`, `profiles` view | Customer profile key references `auth.users`; saved addresses are customer-owned; checkout writes a separate immutable `shipping_addresses` snapshot per order. |
 | Catalog | `products`, `product_variants`, `categories`, `product_categories`, `product_sizes`, `product_colors`, `product_attributes`, `collections`, `collection_products` | Variants belong to products and have unique SKU/product-size-color combinations. Categories and collections are many-to-many through join tables. Product options are materialized from existing variant values at migration time. |
-| Product media | `media_assets`, `product_media`, `collection_media`, `product_images` view | Metadata references Cloudinary public IDs, secure CDN URLs, hashes, dimensions, formats and responsive variants; binary files remain in Cloudinary. Galleries preserve order, featured image, view and alt text. Foreign keys and locked reference checks protect shared media from deletion. |
+| Product media | `media_assets`, `product_media`, `collection_media`, `product_images` view | Metadata references external provider IDs, CDN URLs, hashes, dimensions, formats and responsive variants; binaries remain in ImageKit. Galleries preserve order, featured image, view and alt text. Foreign keys and locked reference checks protect shared media from deletion. Legacy Cloudinary rows remain supported. |
 | Stock | `inventory`, `inventory_movements`, `stock_reservations` | One inventory row per variant; reservation rows are linked to order and variant; an inventory trigger records stock deltas. Checkout reserves stock atomically; payment/COD collection commits it; cancellation releases it. |
 | Customers' active state | `carts`, `cart_items`, `wishlists`, `wishlist_items` | Carts and wishlist rows belong to one customer. Checkout idempotency key is stored in Postgres on the cart/order, not browser storage. |
 | Orders | `orders`, `order_items`, `order_status_history` | Orders snapshot product/price/variant/address details; customer ownership is indexed; status changes are validated and recorded with actor/source. |
@@ -22,7 +22,7 @@ The three SQL files in `migrations/` are the source of truth. Apply them in time
 - Authenticated customers can access only their own profile, saved addresses, cart, wishlist, orders, order lines, payment references, refunds and shipment status.
 - Catalog, media and order-manager roles get their specific RLS policies. Admins inherit non-owner capabilities; only owners can grant or remove admin roles.
 - Payment status and refund/shipping provider references are written by trusted Edge Functions or Postgres functions. Public and authenticated clients cannot directly insert or alter payment transaction rows.
-- Storefront binaries are never uploaded to Supabase Storage. Signed Cloudinary uploads and server-side deletion require an owner/admin/media-manager role; delete requests lock the asset and reject any media still attached to products, collections, categories, homepage content or banners.
+- Storefront binaries are never uploaded to Supabase Storage. ImageKit upload authorization and server-side deletion require an owner/admin/media-manager role; delete requests lock the asset and reject any media still attached to products, collections, categories, homepage content or banners.
 
 ## Known boundaries
 

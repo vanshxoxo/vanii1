@@ -17,14 +17,6 @@ function fileSha256(file: File) {
   );
 }
 
-async function dimensions(file: File): Promise<{ width: number | null; height: number | null }> {
-  if (!file.type.startsWith('image/')) return { width: null, height: null };
-  const bitmap = await createImageBitmap(file);
-  const result = { width: bitmap.width, height: bitmap.height };
-  bitmap.close();
-  return result;
-}
-
 export default function AdminPage() {
   const [access, setAccess] = useState<Status>(isSupabaseConfigured ? 'loading' : 'unconfigured');
   const [tab, setTab] = useState<Tab>('products');
@@ -173,6 +165,14 @@ export default function AdminPage() {
     report('Gallery link removed. The media asset was kept in the library.'); await selectProduct(selectedProduct);
   }
 
+  async function replaceGalleryAsset(id: string, assetId: string) {
+    if (!supabase || !assetId) return;
+    const { error: replaceError } = await supabase.from('product_media').update({ asset_id: assetId }).eq('id', id);
+    if (replaceError) { fail(replaceError.message); return; }
+    report('Gallery image replaced. The previous media file remains in the shared library.');
+    await selectProduct(selectedProduct);
+  }
+
   async function saveCategory(event: FormEvent) {
     event.preventDefault(); if (!supabase) return;
     const payload = { ...categoryForm, image_asset_id: categoryForm.image_asset_id || null };
@@ -187,35 +187,43 @@ export default function AdminPage() {
     for (let i = 0; i < list.length; i++) {
       const file = list[i]; setUploadState(`Checking ${file.name} (${i + 1}/${list.length})…`);
       const isVideo = file.type.startsWith('video/');
-      if (!/^(image\/(jpeg|png|webp|avif|gif)|video\/(mp4|webm))$/.test(file.type) || file.size > (isVideo ? 100 : 25) * 1024 * 1024) { fail(`${file.name}: use JPG, PNG, WebP, AVIF, GIF up to 25 MB, or MP4/WebM up to 100 MB.`); continue; }
+      if (!/^(image\/(jpeg|png|webp|avif|gif)|video\/(mp4|webm))$/.test(file.type) || file.size > (isVideo ? 100 : 20) * 1024 * 1024) { fail(`${file.name}: use JPG, PNG, WebP, AVIF, GIF up to 20 MB, or MP4/WebM up to 100 MB.`); continue; }
       try {
         const checksum = await fileSha256(file);
         const { data: duplicate, error: duplicateError } = await supabase.from('media_assets').select('*').eq('checksum_sha256', checksum).maybeSingle();
         if (duplicateError) throw duplicateError;
         let asset = duplicate;
         if (!asset) {
-          const signed = await supabase.functions.invoke('media', { body: { action: 'sign', checksum, filename: file.name, mime_type: file.type, file_size_bytes: file.size, purpose } });
-          if (signed.error || signed.data?.error) throw new Error(signed.data?.error || signed.error?.message || 'Cloudinary upload could not be authorized.');
-          if (signed.data?.existing) asset = signed.data.existing;
-          else {
-            setUploadState(`Uploading ${file.name} to secure media storage (${i + 1}/${list.length})…`);
-            const form = new FormData();
-            form.append('file', file);
-            for (const [key, value] of Object.entries(signed.data.params as Record<string, string>)) form.append(key, value);
-            form.append('api_key', signed.data.api_key);
-            form.append('signature', signed.data.signature);
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${signed.data.cloud_name}/${signed.data.resource_type}/upload`, { method: 'POST', body: form });
-            const uploaded = await response.json();
-            if (!response.ok) {
-              const raced = await supabase.functions.invoke('media', { body: { action: 'register', checksum, filename: file.name, mime_type: file.type, resource_type: signed.data.resource_type, public_id: `little-loom/${checksum}`, purpose } });
-              if (!raced.error && raced.data?.asset) asset = raced.data.asset;
-              else throw new Error(uploaded.error?.message || 'Cloudinary upload failed.');
-            } else {
-              const size = await dimensions(file);
-              const registered = await supabase.functions.invoke('media', { body: { action: 'register', checksum, filename: file.name, mime_type: file.type, width: size.width, height: size.height, resource_type: signed.data.resource_type, public_id: uploaded.public_id, purpose } });
-              if (registered.error || registered.data?.error || !registered.data?.asset) throw new Error(registered.data?.error || registered.error?.message || 'Cloudinary uploaded the file but its metadata could not be registered.');
-              asset = registered.data.asset;
-            }
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          if (!accessToken) throw new Error('Your administrator session expired. Sign in again.');
+          const authorization = await fetch('/api/imagekit-auth', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ purpose, mime_type: file.type, file_size_bytes: file.size }) });
+          const auth = await authorization.json();
+          if (!authorization.ok) throw new Error(auth.error || 'ImageKit upload could not be authorized.');
+          setUploadState(`Uploading ${file.name} to ImageKit (${i + 1}/${list.length})…`);
+          const extension = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g, '') : 'bin';
+          const folder = purpose === 'product' ? '/little-loom/products' : purpose === 'category' ? '/little-loom/categories' : purpose === 'collection' ? '/little-loom/collections' : purpose === 'video' ? '/little-loom/videos' : '/little-loom/content';
+          const form = new FormData();
+          form.append('file', file);
+          form.append('fileName', `${checksum}.${extension}`);
+          form.append('folder', folder);
+          form.append('useUniqueFileName', 'false');
+          form.append('overwriteFile', 'false');
+          form.append('token', auth.token);
+          form.append('expire', String(auth.expire));
+          form.append('signature', auth.signature);
+          form.append('publicKey', auth.publicKey);
+          const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+          const uploaded = await response.json();
+          if (!response.ok) {
+            const { data: raced } = await supabase.from('media_assets').select('*').eq('checksum_sha256', checksum).maybeSingle();
+            if (!raced) throw new Error(uploaded.message || 'ImageKit upload failed.');
+            asset = raced;
+          } else {
+            const registered = await fetch('/api/imagekit-register', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ file_id: uploaded.fileId, checksum, filename: file.name, mime_type: file.type, purpose }) });
+            const registration = await registered.json();
+            if (!registered.ok || !registration.asset) throw new Error(registration.error || 'ImageKit uploaded the file but Supabase could not register its metadata.');
+            asset = registration.asset;
           }
         }
         if (purpose === 'product' && selectedProduct) {
@@ -235,8 +243,12 @@ export default function AdminPage() {
 
   async function deleteMediaAsset(asset: any) {
     if (!supabase || !window.confirm(`Permanently delete ${asset.original_filename} from the media provider? Assets still used by products, banners or CMS cannot be deleted.`)) return;
-    const { data, error: deleteError } = await supabase.functions.invoke('media', { body: { action: 'delete', asset_id: asset.id } });
-    if (deleteError || data?.error) { fail(data?.error || deleteError?.message || 'Media deletion failed.'); return; }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) { fail('Your administrator session expired. Sign in again.'); return; }
+    const response = await fetch('/api/imagekit-delete', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ asset_id: asset.id }) });
+    const data = await response.json();
+    if (!response.ok || data?.error) { fail(data?.error || 'Media deletion failed.'); return; }
     report('Media asset deleted from the provider and library.'); await loadAdminData();
   }
 
@@ -346,7 +358,7 @@ export default function AdminPage() {
             <div className="sm:col-span-3"><Button type="submit" size="sm">Add variant</Button></div>
           </form>
           <div className="mt-4 space-y-3">{variants.map((variant) => <VariantEditor key={variant.id} variant={variant} onChange={(next) => setVariants((rows) => rows.map((row) => row.id === next.id ? next : row))} onSave={() => void saveVariant(variant)} />)}</div>
-          <div className="mt-8 border-t border-ink/10 pt-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-serif text-xl">Product gallery</h2><p className="mt-1 text-xs text-ink-light">Images are linked from the shared library; removing a link keeps the file.</p></div><div className="flex gap-2"><select value={galleryAssetId} onChange={(e) => setGalleryAssetId(e.target.value)} className="border border-ink/15 bg-transparent p-2 text-xs"><option value="">Reuse a library asset…</option>{media.map((asset) => <option key={asset.id} value={asset.id}>{asset.original_filename} · {asset.purpose}</option>)}</select><Button size="sm" onClick={() => void attachAsset()}>Attach</Button></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{gallery.map((item, index) => { const asset = Array.isArray(item.media_assets) ? item.media_assets[0] : item.media_assets; return <GalleryEditor key={item.id} item={item} asset={asset} index={index} count={gallery.length} onChange={(next) => setGallery((rows) => rows.map((row) => row.id === next.id ? next : row))} onMove={(direction) => setGallery((rows) => { const next = [...rows]; const target = index + direction; if (target < 0 || target >= next.length) return rows; [next[index], next[target]] = [next[target], next[index]]; return next; })} onRemove={() => void removeGalleryLink(item.id)} />; })}</div>{gallery.length > 0 && <Button className="mt-4" size="sm" onClick={() => void saveGallery()}>Save gallery order and alt text</Button>}</div>
+          <div className="mt-8 border-t border-ink/10 pt-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-serif text-xl">Product gallery</h2><p className="mt-1 text-xs text-ink-light">Images are linked from the shared library; removing a link keeps the file.</p></div><div className="flex gap-2"><select value={galleryAssetId} onChange={(e) => setGalleryAssetId(e.target.value)} className="border border-ink/15 bg-transparent p-2 text-xs"><option value="">Reuse a library asset…</option>{media.map((asset) => <option key={asset.id} value={asset.id}>{asset.original_filename} · {asset.purpose}</option>)}</select><Button size="sm" onClick={() => void attachAsset()}>Attach</Button></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{gallery.map((item, index) => { const asset = Array.isArray(item.media_assets) ? item.media_assets[0] : item.media_assets; return <GalleryEditor key={item.id} item={item} asset={asset} media={media.filter((row) => row.mime_type?.startsWith('image/') && !gallery.some((linked) => linked.id !== item.id && linked.asset_id === row.id))} index={index} count={gallery.length} onChange={(next) => setGallery((rows) => rows.map((row) => row.id === next.id ? next : row))} onReplace={(assetId) => void replaceGalleryAsset(item.id, assetId)} onMove={(direction) => setGallery((rows) => { const next = [...rows]; const target = index + direction; if (target < 0 || target >= next.length) return rows; [next[index], next[target]] = [next[target], next[index]]; return next; })} onRemove={() => void removeGalleryLink(item.id)} />; })}</div>{gallery.length > 0 && <Button className="mt-4" size="sm" onClick={() => void saveGallery()}>Save gallery order and alt text</Button>}</div>
           </section>}
         </div>
       </section>}
@@ -356,7 +368,7 @@ export default function AdminPage() {
       {tab === 'media' && <section className="mt-6">
         <div className="grid gap-4 sm:grid-cols-[1fr_220px]"><input value={mediaSearch} onChange={(e) => setMediaSearch(e.target.value)} placeholder="Search filename or purpose" className="admin-input" /><select value={purpose} onChange={(e) => setPurpose(e.target.value)} className="admin-input">{purposes.map((value) => <option key={value}>{value}</option>)}</select></div>
         {purpose === 'product' && <label className="mt-3 block max-w-sm text-xs">Attach uploaded assets to product<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="admin-input"><option value="">No product selected</option>{products.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
-        <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} className="mt-4 rounded border border-dashed border-ink/30 p-8 text-center"><p className="text-sm">Drop files here or choose files</p><p className="mt-1 text-xs text-ink-light">Images and video, max 25 MB per file. SHA-256 duplicate checks run before upload.</p><label className="mt-4 inline-block cursor-pointer border border-ink px-4 py-2 text-sm">Choose multiple files<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" className="sr-only" onChange={handleFileInput} /></label>{uploadState && <p role="status" className="mt-3 text-xs">{uploadState}</p>}</div>
+        <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} className="mt-4 rounded border border-dashed border-ink/30 p-8 text-center"><p className="text-sm">Drop files here or choose files</p><p className="mt-1 text-xs text-ink-light">ImageKit originals stay external; images up to 20 MB and MP4/WebM videos up to 100 MB. SHA-256 checks reuse matching uploads.</p><label className="mt-4 inline-block cursor-pointer border border-ink px-4 py-2 text-sm">Choose multiple files<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" className="sr-only" onChange={handleFileInput} /></label>{uploadState && <p role="status" className="mt-3 text-xs">{uploadState}</p>}</div>
         <p className="mt-5 text-sm text-ink-soft">{filteredMedia.length} assets · {media.reduce((sum, row) => sum + Number(row.file_size_bytes || 0), 0).toLocaleString()} bytes total metadata</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{filteredMedia.map((asset) => <MediaCard key={asset.id} asset={asset} onCleanup={() => void deleteMediaAsset(asset)} onAltSave={async (alt) => { if (!supabase) return; const { error: saveError } = await supabase.from('media_assets').update({ alt_text: alt }).eq('id', asset.id); if (saveError) fail(saveError.message); else { report('Alt text saved.'); await loadAdminData(); } }} />)}</div>
       </section>}
@@ -383,9 +395,9 @@ function AdminMessage({ title, body, link = false }: { title: string; body: stri
   return <main className="mx-auto max-w-xl px-4 py-20 text-center"><h1 className="font-serif text-3xl">{title}</h1><p className="mt-3 text-sm text-ink-soft">{body}</p>{link && <Link to="/account" className="mt-5 inline-block underline">Sign in</Link>}</main>;
 }
 
-function GalleryEditor({ item, asset, index, count, onChange, onMove, onRemove }: { item: any; asset: any; index: number; count: number; onChange: (item: any) => void; onMove: (direction: number) => void; onRemove: () => void }) {
+function GalleryEditor({ item, asset, media, index, count, onChange, onReplace, onMove, onRemove }: { item: any; asset: any; media: any[]; index: number; count: number; onChange: (item: any) => void; onReplace: (assetId: string) => void; onMove: (direction: number) => void; onRemove: () => void }) {
   const image = asset ? publicMediaUrl(asset, 400) : '';
-  return <article className="border border-ink/10 p-3"><div className="flex aspect-[4/3] items-center justify-center bg-ink/5">{image && <img src={image} alt={item.alt_text} loading="lazy" className="h-full w-full object-cover" />}</div><p className="mt-2 truncate text-xs">{asset?.original_filename || 'Media asset'}</p><label className="mt-2 block text-xs">Image alt text<input value={item.alt_text} onChange={(e) => onChange({ ...item, alt_text: e.target.value })} className="admin-input" /></label><label className="mt-2 block text-xs">Gallery view<select value={item.view_label} onChange={(e) => onChange({ ...item, view_label: e.target.value })} className="admin-input">{['front','back','side','detail','lifestyle','additional'].map((view) => <option key={view}>{view}</option>)}</select></label><div className="mt-3 flex items-center justify-between text-xs"><span>{index === 0 ? 'Primary image' : `Image ${index + 1}`}</span><span className="flex gap-2"><button type="button" disabled={index === 0} onClick={() => onMove(-1)} aria-label="Move image earlier" className="underline disabled:opacity-30">↑</button><button type="button" disabled={index === count - 1} onClick={() => onMove(1)} aria-label="Move image later" className="underline disabled:opacity-30">↓</button><button type="button" onClick={onRemove} className="text-red-700 underline">Unlink</button></span></div></article>;
+  return <article className="border border-ink/10 p-3"><div className="flex aspect-[4/3] items-center justify-center bg-ink/5">{image && <img src={image} alt={item.alt_text} loading="lazy" className="h-full w-full object-cover" />}</div><p className="mt-2 truncate text-xs">{asset?.original_filename || 'Media asset'}</p><label className="mt-2 block text-xs">Replace with library image<select value="" onChange={(e) => onReplace(e.target.value)} className="admin-input"><option value="">Choose an image…</option>{media.filter((row) => row.id !== asset?.id).map((row) => <option key={row.id} value={row.id}>{row.original_filename}</option>)}</select></label><label className="mt-2 block text-xs">Image alt text<input value={item.alt_text} onChange={(e) => onChange({ ...item, alt_text: e.target.value })} className="admin-input" /></label><label className="mt-2 block text-xs">Gallery view<select value={item.view_label} onChange={(e) => onChange({ ...item, view_label: e.target.value })} className="admin-input">{['front','back','side','detail','lifestyle','additional'].map((view) => <option key={view}>{view}</option>)}</select></label><div className="mt-3 flex items-center justify-between text-xs"><span>{index === 0 ? 'Primary image' : `Image ${index + 1}`}</span><span className="flex gap-2"><button type="button" disabled={index === 0} onClick={() => onMove(-1)} aria-label="Move image earlier" className="underline disabled:opacity-30">↑</button><button type="button" disabled={index === count - 1} onClick={() => onMove(1)} aria-label="Move image later" className="underline disabled:opacity-30">↓</button><button type="button" onClick={onRemove} className="text-red-700 underline">Unlink</button></span></div></article>;
 }
 
 function VariantEditor({ variant, onChange, onSave }: { variant: any; onChange: (value: any) => void; onSave: () => void }) {

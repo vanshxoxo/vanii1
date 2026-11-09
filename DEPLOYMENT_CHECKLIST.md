@@ -9,9 +9,9 @@
 - [ ] Configure Vercel's Production Branch as `main`, production domain `https://vanii1.vercel.app`, Vite build `npm run build`, output `dist`, and SPA refresh rewrite.
 - [ ] Add the Preview and Production Supabase URL/publishable-key variables to the matching Vercel environments. Keep service-role and provider secrets server-side.
 - [ ] Set exact per-project `STOREFRONT_ORIGIN` and the corresponding `SUPABASE_ENVIRONMENT` Edge Function secret.
-- [ ] Set Cloudinary secrets in Supabase Edge Function secrets for each environment and deploy the `media` function.
-- [ ] Create/publish actual product catalog, sizes, colors, Cloudinary product media, inventory, categories, policies, FAQs, homepage sections and banners.
-- [ ] Verify signed upload, provider-side optimized variants, CDN delivery, duplicate reuse, gallery editing and unreferenced-only deletion. No storefront media bucket is needed in Supabase Storage.
+- [ ] Set ImageKit URL endpoint, public key and private key in Vercel Preview and Production; keep the private key a server-side Secret.
+- [ ] Create/publish the actual product catalog, sizes, colors, ImageKit product media, inventory, categories, policies, FAQs, homepage sections and banners.
+- [ ] Verify signed ImageKit upload, provider-side optimized variants, CDN delivery, duplicate reuse, gallery editing and unreferenced-only deletion. No storefront media bucket is needed in Supabase Storage.
 
 ## Payment and fulfillment rehearsal
 
