@@ -3,12 +3,15 @@ import { Search, User, Heart, ShoppingBag, Menu } from 'lucide-react';
 import { useStore } from '../useStore';
 import { useEffect, useState } from 'react';
 import { useCmsSection } from '../lib/cms';
+import { useCatalog } from '../lib/catalog';
 
 export default function Header() {
   const { cartCount, wishlist, openCart, openSearch, openMobileNav, cartPulse } = useStore();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const announcement = useCmsSection('announcement');
+  const brandStory = useCmsSection('brand-story');
+  const { products, ages, collections } = useCatalog();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -17,11 +20,11 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Latest', href: '/shop?filter=new' },
     { label: 'Shop', href: '/shop' },
-    { label: 'By Age', href: '/#shop-by-age' },
-    { label: 'Collections', href: '/shop' },
-    { label: 'Our World', href: '/#brand-story' },
+    ...(products.some((product) => product.isNew) ? [{ label: 'Latest', href: '/shop?filter=new' }] : []),
+    ...(ages.length ? [{ label: 'By Age', href: '/#shop-by-age' }] : []),
+    ...(collections.length ? [{ label: 'Collections', href: '/#collections' }] : []),
+    ...(brandStory ? [{ label: 'Our Story', href: '/#brand-story' }] : []),
   ];
 
   const isActive = (href: string) => {
@@ -32,15 +35,15 @@ export default function Header() {
   return (
     <>
       {/* Announcement bar — slim, dark, centered */}
-      <div role="region" aria-label="Announcement" className="announcement-bar bg-charcoal text-ivory">
+      {announcement?.heading && <div role="region" aria-label="Announcement" className="announcement-bar bg-charcoal text-ivory">
         <div className="announcement-track" aria-hidden="true">
           {[0, 1].map((copy) => (
             <span key={copy} className="announcement-message">
-              {announcement?.heading || "LITTLE OUTFITS FOR LIFE'S BIGGEST LITTLE ADVENTURES"}
+              {announcement.heading}
             </span>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* Main header */}
       <header

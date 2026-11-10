@@ -2,7 +2,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { checkSameOrigin, json, requireImageKit, requireMediaManager } from './_media-shared.js';
 
 const mimePattern = /^(image\/(jpeg|png|webp|avif|gif)|video\/(mp4|webm))$/;
-const purposes = new Set(['product', 'collection', 'category', 'homepage_hero', 'campaign', 'brand_story', 'lookbook', 'video', 'placeholder']);
+const purposes = new Set(['product', 'collection', 'category', 'homepage_hero', 'campaign', 'brand_story', 'lookbook', 'video']);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed.' });

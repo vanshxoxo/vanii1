@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (!/^[\w-]{12,100}$/.test(fileId) || !/^[a-f0-9]{64}$/.test(checksum) || !filename || !/^(image\/(jpeg|png|webp|avif|gif)|video\/(mp4|webm))$/.test(mime)) {
       return json(res, 400, { error: 'Invalid uploaded file metadata.' });
     }
-    const allowedPurposes = ['product','collection','category','homepage_hero','campaign','brand_story','lookbook','video','placeholder'];
+    const allowedPurposes = ['product','collection','category','homepage_hero','campaign','brand_story','lookbook','video'];
     if (!allowedPurposes.includes(purpose)) return json(res, 400, { error: 'Invalid media purpose.' });
     const { data: duplicate, error: duplicateError } = await client.from('media_assets').select('*').eq('checksum_sha256', checksum).maybeSingle();
     if (duplicateError) return json(res, 503, { error: 'Media library is unavailable. Confirm the Supabase migrations and manager role.' });

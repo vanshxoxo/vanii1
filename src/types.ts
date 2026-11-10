@@ -4,7 +4,7 @@ export type Category = string;
 
 export interface ColorOption {
   name: string;
-  hex: string;
+  hex?: string;
 }
 
 export interface Product {
@@ -23,13 +23,9 @@ export interface Product {
   fabric: string;
   care: string;
   isNew?: boolean;
-  isBestseller?: boolean;
   tags?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;
-  isDemo?: boolean;
-  sku?: string;
-  demoStockQuantity?: number;
   imageAltTexts?: string[];
 }
 
@@ -52,7 +48,6 @@ export interface CartItem {
   size: string;
   quantity: number;
   variantId?: string;
-  isDemo?: boolean;
 }
 
 export interface AgeInfo {

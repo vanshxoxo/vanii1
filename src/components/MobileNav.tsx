@@ -2,9 +2,13 @@ import { X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../useStore';
 import { useEffect } from 'react';
+import { useCatalog } from '../lib/catalog';
+import { useCmsSection } from '../lib/cms';
 
 export default function MobileNav() {
   const { isMobileNavOpen, closeMobileNav } = useStore();
+  const { products, ages, collections } = useCatalog();
+  const brandStory = useCmsSection('brand-story');
 
   useEffect(() => {
     if (isMobileNavOpen) {
@@ -20,18 +24,10 @@ export default function MobileNav() {
   if (!isMobileNavOpen) return null;
 
   const navLinks = [
-    { label: 'Latest', href: '/shop?filter=new' },
     { label: 'Shop', href: '/shop' },
-    { label: 'By Age', href: '/#shop-by-age' },
-    { label: 'Collections', href: '/shop' },
-    { label: 'Our World', href: '/#brand-story' },
-  ];
-
-  const ageLinks = [
-    { label: 'Newborn (0–3M)', href: '/shop?age=Newborn' },
-    { label: 'Baby (3–12M)', href: '/shop?age=Baby' },
-    { label: 'Toddler (1–2Y)', href: '/shop?age=Toddler' },
-    { label: 'Little Kids (2–4Y)', href: '/shop?age=Little+Kids' },
+    ...(products.some((product) => product.isNew) ? [{ label: 'Latest', href: '/shop?filter=new' }] : []),
+    ...(collections.length ? [{ label: 'Collections', href: '/#collections' }] : []),
+    ...(brandStory ? [{ label: 'Our Story', href: '/#brand-story' }] : []),
   ];
 
   return (
@@ -64,22 +60,22 @@ export default function MobileNav() {
             ))}
           </ul>
 
-          <div className="mt-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-light mb-3">Shop by Age</p>
+          {ages.length > 0 && <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-light mb-3">Shop by age</p>
             <ul className="flex flex-col gap-1">
-              {ageLinks.map((link) => (
-                <li key={link.label}>
+              {ages.map((age) => (
+                <li key={age.id}>
                   <Link
-                    to={link.href}
+                    to={`/shop?age=${encodeURIComponent(age.id)}`}
                     onClick={closeMobileNav}
                     className="block py-2.5 text-sm text-ink-soft hover:text-ink"
                   >
-                    {link.label}
+                    {age.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </div>}
 
           <div className="mt-6 flex flex-col gap-3">
             <Link to="/wishlist" onClick={closeMobileNav} className="text-sm text-ink-soft hover:text-ink">
