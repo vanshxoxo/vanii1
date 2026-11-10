@@ -20,22 +20,32 @@ function agePhoto(label: string) {
   return `${editorial}little-kids.webp`;
 }
 
-function categoryPhoto(name: string, index: number) {
-  const value = name.toLowerCase();
-  if (value.includes('romper')) return `${editorial}category-rompers.webp`;
-  if (value.includes('coord') || value.includes('set')) return `${editorial}category-coords.webp`;
-  if (value.includes('tee') || value.includes('top')) return `${editorial}category-tops.webp`;
-  if (value.includes('dress')) return `${editorial}category-dresses.webp`;
-  if (value.includes('bottom')) return `${editorial}category-bottoms.webp`;
-  if (value.includes('sleep') || value.includes('night')) return `${editorial}category-sleepwear.webp`;
-  return [`${editorial}category-coords.webp`, `${editorial}category-rompers.webp`, `${editorial}category-bottoms.webp`][index % 3];
-}
+const homeCategories = [
+  { name: 'Rompers', photo: `${editorial}category-rompers.webp`, span: 'row-span-2' },
+  { name: 'Co-ord Sets', photo: `${editorial}category-coords.webp`, span: 'col-span-2' },
+  { name: 'Tees & Tops', photo: `${editorial}category-tops.webp`, span: '' },
+  { name: 'Dresses', photo: `${editorial}category-dresses.webp`, span: 'row-span-2' },
+  { name: 'Bottoms', photo: `${editorial}category-bottoms.webp`, span: 'col-span-2' },
+  { name: 'Sleepwear', photo: `${editorial}category-sleepwear.webp`, span: '' },
+];
+
+const pexelsEditorialPhotos = [
+  'pexels-kidswear-editorial-29562273.webp', 'pexels-kidswear-editorial-32234111.webp',
+  'pexels-kidswear-editorial-32233627.webp', 'pexels-kidswear-editorial-15443075.webp',
+  'pexels-kidswear-editorial-13627298.webp', 'pexels-kidswear-editorial-15967300.webp',
+  'pexels-kidswear-editorial-33581402.webp', 'pexels-kidswear-editorial-30111516.webp',
+  'pexels-kidswear-editorial-18279333.webp', 'pexels-kidswear-editorial-33253247.webp',
+  'pexels-kidswear-editorial-31380756.webp', 'pexels-kidswear-editorial-37529058.webp',
+  'pexels-kidswear-editorial-38543840.webp', 'pexels-kidswear-editorial-7787255.webp',
+  'pexels-kidswear-editorial-28490495.webp',
+];
 
 export default function HomePage() {
   const { addToCart } = useStore();
   const { products, ages, categories, collections, hero, error } = useCatalog();
   const campaign = useCmsSection('featured-campaign');
   const brandStory = useCmsSection('brand-story');
+  const fabricDetail = useCmsSection('fabric-detail');
   const railRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -53,7 +63,7 @@ export default function HomePage() {
   const hasProducts = products.length > 0;
   const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/shop?filter=new';
   const heroDesktopImage = hero?.image || `${editorial}hero-desktop.webp`;
-  const heroMobileImage = hero?.mobileImage || (hero?.image ? hero.image : `${editorial}hero-mobile.webp`);
+  const heroMobileImage = hero?.mobileImage || `${editorial}hero-mobile.webp`;
 
   const handleQuickAdd = (product: Product) => {
     const variant = product.variants?.find((item) => item.available);
@@ -77,35 +87,28 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-          <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
-            <div className="order-2 flex flex-col gap-5 lg:order-1 lg:py-8">
-              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-peach" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity 0.55s ease-out, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                <Sparkles size={14} /> Little Loom
-              </span>
-              <h1 className="hero-headline font-serif font-light leading-[1.02] text-ink text-balance">
-                <span className={`hero-line ${mounted ? 'is-visible' : ''}`}>{heroLines[0]}</span>
-                {heroLines[1] && <span className={`hero-line italic ${mounted ? 'is-visible' : ''}`}>{heroLines[1]}</span>}
-              </h1>
-              <p className="max-w-md text-base leading-relaxed text-ink-soft lg:text-lg" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)', transition: 'opacity 0.6s ease-out 0.2s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s' }}>
-                {hero?.body || 'Clothing and details shared by Little Loom.'}
-              </p>
-              <div className="mt-2 flex flex-col gap-3 sm:flex-row" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)', transition: 'opacity 0.6s ease-out 0.3s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s' }}>
-                {hasProducts ? <Link to={heroHref}><Button variant="primary" size="lg" className="group">{hero?.ctaLabel || 'Shop the collection'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
-                  : <a href="#shop-by-age"><Button variant="primary" size="lg" className="group">Explore by age<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></a>}
-                <a href="#shop-by-category"><Button variant="outline" size="lg">Browse categories</Button></a>
-              </div>
-              {error && <p role="status" className="text-sm text-ink-soft">The published catalogue is temporarily unavailable.</p>}
-              <p className="text-[10px] uppercase tracking-[0.14em] text-ink-soft">Editorial photograph · <a href="/images/editorial/SOURCES.md" target="_blank" rel="noreferrer" className="underline underline-offset-2">Pexels image credits</a></p>
+      <section className="relative isolate min-h-[680px] overflow-hidden bg-[#594d40] sm:min-h-[720px] lg:min-h-[min(790px,calc(100svh-110px))]">
+        <picture className="absolute inset-0 -z-20 block h-full w-full">
+          <source media="(max-width: 639px)" srcSet={heroMobileImage} />
+          <img src={heroDesktopImage} alt={hero?.image ? 'Little Loom homepage hero image' : 'Pexels editorial photograph of two children outdoors; not a Little Loom product photograph'} className="h-full w-full object-cover object-center" fetchPriority="high" decoding="async" />
+        </picture>
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#201d1a]/75 via-[#201d1a]/20 to-transparent sm:from-[#201d1a]/65 sm:via-[#201d1a]/10" />
+        <div className="mx-auto flex min-h-[680px] max-w-[1600px] items-end px-4 pb-6 pt-16 sm:min-h-[720px] sm:px-8 sm:pb-10 lg:min-h-[min(790px,calc(100svh-110px))] lg:items-center lg:px-14 lg:py-16">
+          <div className="hero-copy max-w-xl rounded-xl bg-ivory/95 p-6 shadow-xl shadow-black/10 backdrop-blur-sm sm:p-9 lg:rounded-2xl lg:p-12" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(18px)', transition: 'opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-peach sm:text-xs"><Sparkles size={14} /> Little Loom</span>
+            <h1 className="hero-headline mt-4 font-serif font-light leading-[0.98] text-ink text-balance">
+              <span className={`hero-line ${mounted ? 'is-visible' : ''}`}>{heroLines[0]}</span>
+              {heroLines[1] && <span className={`hero-line italic ${mounted ? 'is-visible' : ''}`}>{heroLines[1]}</span>}
+            </h1>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft sm:mt-5 sm:text-base lg:text-lg">
+              {hero?.body || 'A little visual world for growing up, getting dressed and making memories.'}
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row">
+              <Link to={heroHref}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || 'Shop the collection'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
+              <a href="#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
             </div>
-
-            <div className="hero-image order-1 relative lg:order-2" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity 0.8s ease-out 0.12s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.12s' }}>
-              <div className="aspect-[4/5] overflow-hidden rounded-xl bg-cream lg:aspect-[5/5.5] lg:rounded-2xl">
-                <picture className="block h-full w-full"><source media="(max-width: 639px)" srcSet={heroMobileImage} /><img src={heroDesktopImage} alt={hero?.heading ? `Editorial image accompanying ${hero.heading}` : 'Pexels stock photograph of two children outdoors'} className="h-full w-full object-cover" fetchPriority="high" decoding="async" /></picture>
-              </div>
-              <span className="absolute bottom-4 left-4 bg-ivory/95 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-charcoal lg:bottom-6 lg:left-6">Pexels editorial</span>
-            </div>
+            {error && <p role="status" className="mt-4 text-xs text-ink-soft">The published catalogue is temporarily unavailable.</p>}
+            <p className="mt-5 text-[9px] uppercase tracking-[0.14em] text-ink-soft">{hero?.image ? 'Homepage image' : 'Pexels editorial photograph'} · <a href="/images/editorial/SOURCES.md" target="_blank" rel="noreferrer" className="underline underline-offset-2">Image credits</a></p>
           </div>
         </div>
       </section>
@@ -116,7 +119,7 @@ export default function HomePage() {
           <div className="mt-8 grid grid-cols-2 gap-3 lg:mt-12 lg:grid-cols-4 lg:gap-5">
             {ageCards.map((age, index) => <Reveal key={age.id} delay={index * 90}>
               <Link to={`/shop?age=${encodeURIComponent(age.id)}`} className="group relative block aspect-[3/4] overflow-hidden rounded-xl lg:rounded-2xl">
-                <img src={age.image || agePhoto(age.label)} alt={`Editorial photograph for ${age.label}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                <img src={age.image || agePhoto(age.label)} alt={age.image ? `Little Loom ${age.label} category image` : `Pexels editorial photograph illustrating ${age.label}; not a product photo`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent transition-opacity duration-300 group-hover:from-ink/80" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-5">{age.range && <p className="mb-0.5 text-xs text-cream/70">{age.range}</p>}<h2 className="font-serif text-xl font-medium text-cream lg:text-2xl">{age.label}</h2><span className="mt-1 inline-flex items-center gap-1 text-xs text-cream/70 transition-all group-hover:gap-2">Browse age group <ArrowRight size={12} /></span></div>
               </Link>
@@ -154,29 +157,29 @@ export default function HomePage() {
               <p className="relative mt-5 max-w-md text-sm leading-relaxed text-cream/85 lg:text-base">{campaign?.body || 'These Pexels photographs set the visual mood. They do not represent specific Little Loom products or an active promotion.'}</p>
               {campaign?.cta_label && campaign.cta_href?.startsWith('/') && <Link to={campaign.cta_href} className="relative mt-7"><Button variant="primary" size="lg" className="group">{campaign.cta_label}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>}
             </div></Reveal>
-            <Reveal y={40} delay={150} className="order-1 lg:order-2"><figure className="group relative min-h-[300px] overflow-hidden rounded-2xl lg:min-h-[500px] lg:rounded-3xl"><img src={campaign?.desktopImage || `${editorial}campaign.webp`} alt={campaign?.desktopImage ? (campaign.heading || 'Little Loom editorial campaign') : 'Pexels editorial photograph of two young children in soft daylight'} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" /><figcaption className="absolute bottom-3 left-3 bg-ivory/95 px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-charcoal">Pexels stock · editorial only</figcaption></figure></Reveal>
+            <Reveal y={40} delay={150} className="order-1 lg:order-2"><figure className="group relative min-h-[300px] overflow-hidden rounded-2xl lg:min-h-[500px] lg:rounded-3xl"><picture className="absolute inset-0 block"><source media="(max-width: 639px)" srcSet={campaign?.mobileImage || `${editorial}campaign.webp`} /><img src={campaign?.desktopImage || `${editorial}campaign.webp`} alt={campaign?.desktopImage ? 'Little Loom homepage campaign image' : 'Pexels editorial photograph of children in everyday clothing; not a Little Loom product'} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" /></picture><figcaption className="absolute bottom-3 left-3 bg-ivory/95 px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-charcoal">{campaign?.desktopImage ? 'Little Loom campaign image' : 'Pexels stock · editorial only'}</figcaption></figure></Reveal>
           </div>
         </div>
       </section>
 
-      {categories.length > 0 && <section id="shop-by-category" className="py-16 lg:py-24">
+      <section id="shop-by-category" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><SectionHeading eyebrow="Browse the wardrobe" title={<>Shop by <span className="italic">category</span></>} align="center" /></Reveal>
           <div className="mt-8 grid auto-rows-[200px] grid-cols-2 gap-3 lg:mt-12 lg:auto-rows-[280px] lg:grid-cols-4 lg:gap-5">
-            {categories.map((category, index) => {
-              const span = category.span === 'tall' || (category.span === 'normal' && index === 0) ? 'row-span-2' : category.span === 'wide' ? 'col-span-2' : '';
-              return <Reveal key={category.id} delay={index * 70} className={span}>
-                <Link to={`/shop?category=${encodeURIComponent(category.id)}`} className="group relative block h-full overflow-hidden rounded-xl lg:rounded-2xl">
-                  <img src={category.image || categoryPhoto(category.name, index)} alt={`Editorial stock image for the ${category.name} category`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            {homeCategories.map((item, index) => {
+              const category = categories.find((entry) => entry.name.toLowerCase() === item.name.toLowerCase());
+              return <Reveal key={item.name} delay={index * 70} className={item.span}>
+                <Link to={`/shop?category=${encodeURIComponent(category?.id || item.name)}`} className="group relative block h-full overflow-hidden rounded-xl bg-cream lg:rounded-2xl">
+                  <img src={category?.image || item.photo} alt={category?.image ? `Little Loom category image for ${item.name}` : `Pexels editorial photograph illustrating ${item.name}; not a Little Loom product photo`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/65 via-ink/5 to-transparent transition-opacity group-hover:from-ink/75" />
-                  <div className="absolute inset-x-0 bottom-0 p-4 lg:p-5"><h2 className="font-serif text-lg font-medium text-cream lg:text-2xl">{category.name}</h2><span className="mt-1 inline-flex items-center gap-1 text-xs text-cream/75">Browse category <ArrowRight size={12} /></span></div>
+                  <div className="absolute inset-x-0 bottom-0 p-4 lg:p-5"><h2 className="font-serif text-lg font-medium text-cream lg:text-2xl">{item.name}</h2><span className="mt-1 inline-flex items-center gap-1 text-xs text-cream/75">Browse category <ArrowRight size={12} /></span></div>
                 </Link>
               </Reveal>;
             })}
           </div>
           <p className="mt-3 text-center text-[10px] uppercase tracking-[0.12em] text-ink-soft">Category cover photos are editorial Pexels stock, not product photographs.</p>
         </div>
-      </section>}
+      </section>
 
       {collections.length > 0 && <section id="collections" className="bg-[#f8f4f0] py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published by Little Loom" title={<>The little <span className="italic">edits</span></>} align="center" /></Reveal>
@@ -193,9 +196,42 @@ export default function HomePage() {
 
       <section id="brand-story" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
-          <Reveal y={40} className="lg:col-span-5"><div className="relative"><div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl"><img src={brandStory?.desktopImage || `${editorial}brand-story.webp`} alt={brandStory?.desktopImage ? (brandStory.heading || 'Little Loom brand story') : 'Pexels editorial photograph of a parent and child outdoors'} loading="lazy" className="h-full w-full object-cover" /></div></div></Reveal>
+          <Reveal y={40} className="lg:col-span-5"><div className="relative"><div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl"><picture className="block h-full w-full"><source media="(max-width: 639px)" srcSet={brandStory?.mobileImage || `${editorial}brand-story.webp`} /><img src={brandStory?.desktopImage || `${editorial}brand-story.webp`} alt={brandStory?.desktopImage ? 'Little Loom brand story image' : 'Pexels editorial photograph for Little Loom’s brand story; not a product photo'} loading="lazy" className="h-full w-full object-cover" /></picture></div></div></Reveal>
           <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'Browse the published catalogue for current product information, imagery and availability. Editorial photographs on this page are licensed stock images and do not depict Little Loom products.'}</p></div><Link to={hasProducts ? '/shop' : '#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link><a href="/images/editorial/SOURCES.md" target="_blank" rel="noreferrer" className="text-[10px] uppercase tracking-[0.12em] text-ink-soft underline underline-offset-2">Editorial image credits</a></div></Reveal>
         </div></div>
+      </section>
+
+      <section id="fabric-detail" className="bg-[#efe9e1] py-16 lg:py-24">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
+          <Reveal className="order-2 lg:order-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(fabricDetail?.content?.eyebrow as string) || 'A closer look'}</p>
+            <h2 className="mt-4 font-serif text-3xl font-light leading-tight text-ink text-balance sm:text-4xl lg:text-5xl">{fabricDetail?.heading || 'Little details, in focus.'}</h2>
+            <p className="mt-5 max-w-lg text-sm leading-7 text-ink-soft lg:text-base">{fabricDetail?.body || 'A quiet editorial study of fabric, texture and small details. This licensed stock photograph does not depict a Little Loom product.'}</p>
+            <a href="/images/catalog-preview/SOURCES.md" target="_blank" rel="noreferrer" className="mt-6 inline-block text-[10px] uppercase tracking-[0.12em] text-ink-soft underline underline-offset-2">View photo sources and credits</a>
+          </Reveal>
+          <Reveal y={35} delay={120} className="order-1 lg:order-2">
+            <figure className="relative overflow-hidden rounded-2xl lg:rounded-3xl">
+              <picture className="block aspect-[5/4] w-full"><source media="(max-width: 639px)" srcSet={fabricDetail?.mobileImage || `${editorial}fabric-detail.webp`} /><img src={fabricDetail?.desktopImage || `${editorial}fabric-detail.webp`} alt={fabricDetail?.desktopImage ? 'Little Loom fabric detail image' : 'Pexels editorial close-up of children’s clothing fabric; not Little Loom inventory'} loading="lazy" className="h-full w-full object-cover" /></picture>
+              <figcaption className="absolute bottom-3 left-3 bg-ivory/95 px-3 py-2 text-[9px] uppercase tracking-[0.12em] text-charcoal">Editorial stock · not product photography</figcaption>
+            </figure>
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="editorial-image-archive" className="py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Reveal><SectionHeading eyebrow="Pexels editorial photography" title={<>A little visual <span className="italic">world</span></>} align="center" /></Reveal>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-ink-soft">These licensed stock photographs are visual inspiration only. They are not Little Loom products, product galleries, or evidence of available inventory.</p>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:mt-12 lg:grid-cols-5 lg:gap-4">
+            {pexelsEditorialPhotos.map((filename, index) => <Reveal key={filename} delay={(index % 5) * 45} className={index === 0 || index === 7 || index === 12 ? 'row-span-2' : ''}>
+              <figure className="group relative h-full min-h-40 overflow-hidden rounded-xl bg-cream lg:rounded-2xl">
+                <img src={`/images/catalog-preview/${filename}`} alt={`Pexels licensed editorial photograph ${index + 1}; not a Little Loom product photo`} loading="lazy" decoding="async" className="h-full min-h-40 w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <figcaption className="absolute bottom-2 left-2 bg-ivory/90 px-2 py-1 text-[8px] uppercase tracking-[0.1em] text-charcoal sm:bottom-3 sm:left-3 sm:text-[9px]">Pexels · editorial</figcaption>
+              </figure>
+            </Reveal>)}
+          </div>
+          <p className="mt-5 text-center text-[10px] text-ink-soft"><a href="/images/catalog-preview/SOURCES.md" target="_blank" rel="noreferrer" className="underline underline-offset-2">Image sources, license notes and legacy gallery mapping</a></p>
+        </div>
       </section>
     </div>
   );
