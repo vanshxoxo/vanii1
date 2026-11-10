@@ -94,7 +94,7 @@ drop trigger if exists inventory_stock_audit on public.inventory;
 create trigger inventory_stock_audit after insert or update of quantity_on_hand on public.inventory for each row execute function public.record_inventory_change();
 
 create table if not exists public.media_assets (
- id uuid primary key default gen_random_uuid(), provider text not null default 'cloudinary' check(provider in ('cloudinary','imagekit','external','supabase')),
+ id uuid primary key default gen_random_uuid(), provider text not null default 'imagekit' check(provider in ('cloudinary','imagekit','external','supabase')),
  provider_asset_id text, resource_type text not null default 'image' check(resource_type in ('image','video','raw')),
  delivery_url text, format text, bucket_id text, storage_path text, external_url text, original_filename text not null, mime_type text not null,
  file_size_bytes bigint not null default 0 check(file_size_bytes>=0), width int check(width is null or width>0),

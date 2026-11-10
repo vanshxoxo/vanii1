@@ -1,12 +1,12 @@
 -- Product and storefront media live in a dedicated CDN. PostgreSQL keeps references only.
-alter table public.media_assets alter column provider set default 'cloudinary';
+alter table public.media_assets alter column provider set default 'imagekit';
 alter table public.media_assets add column if not exists provider_asset_id text;
 alter table public.media_assets add column if not exists resource_type text not null default 'image' check(resource_type in ('image','video','raw'));
 alter table public.media_assets add column if not exists delivery_url text;
 alter table public.media_assets add column if not exists format text;
 alter table public.media_assets add column if not exists derived_urls jsonb not null default '{}'::jsonb;
 alter table public.media_assets add column if not exists lifecycle_status text not null default 'active' check(lifecycle_status in ('active','deleting'));
-alter table public.media_assets alter column provider drop default;
+alter table public.media_assets alter column provider set default 'imagekit';
 alter table public.media_assets drop constraint if exists media_assets_provider_check;
 alter table public.media_assets add constraint media_assets_provider_check check(provider in ('cloudinary','imagekit','external','supabase'));
 alter table public.media_assets drop constraint if exists media_assets_check;
@@ -50,7 +50,7 @@ returns table(provider text,provider_asset_id text,resource_type text)
 language plpgsql security definer set search_path=public,pg_temp set row_security=off as $$
 declare a public.media_assets%rowtype; refs bigint;
 begin
- if current_setting('request.jwt.claim.role',true)<>'service_role' then raise exception 'Trusted media service only'; end if;
+ if not public.has_role('media_manager') then raise exception 'Media manager permission required'; end if;
  select * into a from public.media_assets where id=p_asset_id for update;
  if not found then raise exception 'Media asset not found'; end if;
  select (select count(*) from public.product_media where asset_id=p_asset_id)
@@ -65,16 +65,37 @@ begin
  return query select a.provider,a.provider_asset_id,a.resource_type;
 end $$;
 revoke all on function public.claim_external_media_deletion(uuid) from public,anon,authenticated;
-grant execute on function public.claim_external_media_deletion(uuid) to service_role;
+grant execute on function public.claim_external_media_deletion(uuid) to authenticated,service_role;
 
 create or replace function public.release_external_media_deletion(p_asset_id uuid)
 returns void language plpgsql security definer set search_path=public,pg_temp set row_security=off as $$
 begin
- if current_setting('request.jwt.claim.role',true)<>'service_role' then raise exception 'Trusted media service only'; end if;
+ if not public.has_role('media_manager') then raise exception 'Media manager permission required'; end if;
  update public.media_assets set lifecycle_status='active' where id=p_asset_id and lifecycle_status='deleting';
 end $$;
 revoke all on function public.release_external_media_deletion(uuid) from public,anon,authenticated;
-grant execute on function public.release_external_media_deletion(uuid) to service_role;
+grant execute on function public.release_external_media_deletion(uuid) to authenticated,service_role;
+
+create or replace function public.finalize_external_media_deletion(p_asset_id uuid)
+returns boolean language plpgsql security definer set search_path=public,pg_temp set row_security=off as $$
+declare refs bigint;
+begin
+ if not public.has_role('media_manager') then raise exception 'Media manager permission required'; end if;
+ perform 1 from public.media_assets where id=p_asset_id and lifecycle_status='deleting' for update;
+ if not found then return false; end if;
+ select (select count(*) from public.product_media where asset_id=p_asset_id)
+      + (select count(*) from public.collection_media where asset_id=p_asset_id)
+      + (select count(*) from public.collections where cover_asset_id=p_asset_id)
+      + (select count(*) from public.categories where image_asset_id=p_asset_id)
+      + (select count(*) from public.homepage_sections where desktop_asset_id=p_asset_id or mobile_asset_id=p_asset_id)
+      + (select count(*) from public.banners where desktop_asset_id=p_asset_id or mobile_asset_id=p_asset_id)
+ into refs;
+ if refs>0 then raise exception 'Media acquired a reference during deletion'; end if;
+ delete from public.media_assets where id=p_asset_id and lifecycle_status='deleting';
+ return found;
+end $$;
+revoke all on function public.finalize_external_media_deletion(uuid) from public,anon;
+grant execute on function public.finalize_external_media_deletion(uuid) to authenticated,service_role;
 
 comment on table public.media_assets is 'Media metadata and provider references only. Product binaries and variants live in an external media provider/CDN.';
 comment on column public.media_assets.derived_urls is 'Optional provider-generated thumbnail and responsive variant URLs; generated/delivered by the external media provider.';

@@ -4,7 +4,7 @@ export type Category = string;
 
 export interface ColorOption {
   name: string;
-  hex: string;
+  hex?: string;
 }
 
 export interface Product {
@@ -27,6 +27,7 @@ export interface Product {
   tags?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;
+  imageAltTexts?: string[];
 }
 
 export interface ProductVariant {

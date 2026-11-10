@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, X, Check, ChevronDown, Package } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { SlidersHorizontal, X, Check, ChevronDown, Package, ArrowRight } from 'lucide-react';
 import { useCatalog } from '../lib/catalog';
 import type { Product, AgeGroup, Category } from '../types';
 import ProductCard from '../components/ProductCard';
@@ -16,7 +16,7 @@ export default function ShopPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<SortOption>('featured');
-  const { products, ages, categories } = useCatalog();
+  const { products, ages, categories, loading: catalogLoading, error: catalogError } = useCatalog();
   const allSizes = [...new Set(products.flatMap((product) => product.sizes))];
   const allColors = [...new Map(products.flatMap((product) => product.colors.map((color) => [color.name, color] as const))).values()];
   const allAges: AgeGroup[] = ages.map((age) => age.id);
@@ -27,7 +27,8 @@ export default function ShopPage() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set());
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
+  const priceLimit = Math.ceil(Math.max(...products.map((product) => product.price), 0) / 100) * 100;
   const [inStockOnly, setInStockOnly] = useState(false);
 
   // Sync from URL params on mount and when they change
@@ -53,7 +54,7 @@ export default function ShopPage() {
     setSelectedCategories(new Set());
     setSelectedSizes(new Set());
     setSelectedColors(new Set());
-    setPriceRange([0, 3000]);
+    setPriceRange([0, Number.MAX_SAFE_INTEGER]);
     setInStockOnly(false);
     setSearchParams({});
   };
@@ -73,7 +74,7 @@ export default function ShopPage() {
     if (selectedColors.size > 0) {
       result = result.filter((p) => p.colors.some((c) => selectedColors.has(c.name)));
     }
-    result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    result = result.filter((p) => p.price >= priceRange[0] && p.price <= Math.min(priceRange[1], priceLimit));
     if (inStockOnly) {
       result = result.filter((product) => product.inStock === true);
     }
@@ -89,16 +90,30 @@ export default function ShopPage() {
         result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         break;
       default:
-        // featured: bestsellers first
-        result.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
+        // Products arrive ordered by published_at from the database.
     }
 
     return result;
-  }, [products, selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort]);
+  }, [products, selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort, priceLimit]);
 
   const activeFilterCount =
     selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size +
-    (priceRange[0] > 0 || priceRange[1] < 3000 ? 1 : 0) + (inStockOnly ? 1 : 0);
+    (priceRange[0] > 0 || priceRange[1] < Number.MAX_SAFE_INTEGER ? 1 : 0) + (inStockOnly ? 1 : 0);
+
+  if (catalogLoading || catalogError || products.length === 0) {
+    const unavailable = Boolean(catalogError);
+    return <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+      <div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
+        <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-16">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-peach">Little Loom · Shop</p>
+          <h1 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{catalogLoading ? 'Loading the published collection' : unavailable ? 'The catalogue is unavailable' : 'No products are currently published'}</h1>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-ink-soft">{catalogLoading ? 'Published products will appear here once the catalogue has loaded.' : unavailable ? 'We could not retrieve the published catalogue just now. Please try again shortly.' : 'Product listings and prices will appear here when they are published in the Little Loom catalogue.'}</p>
+          {!catalogLoading && <Link to="/" className="mt-7 inline-flex items-center gap-2 self-start text-sm underline underline-offset-4">Return to Little Loom<ArrowRight size={15} /></Link>}
+        </div>
+        <img src="/images/editorial/version-b/category-rompers.webp" alt="Children outdoors in relaxed everyday clothing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[440px]" />
+      </div>
+    </main>;
+  }
 
   const handleQuickAdd = (product: Product) => {
     const availableVariant = product.variants?.find((variant) => variant.available);
@@ -193,14 +208,14 @@ export default function ShopPage() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs text-ink-soft">
             <span>₹{priceRange[0]}</span>
-            <span>₹{priceRange[1]}</span>
+            <span>₹{Math.min(priceRange[1], priceLimit)}</span>
           </div>
           <input
             type="range"
             min={0}
-            max={3000}
+            max={priceLimit}
             step={100}
-            value={priceRange[1]}
+            value={Math.min(priceRange[1], priceLimit)}
             onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
             className="w-full accent-ink"
             aria-label="Maximum price"
@@ -240,7 +255,7 @@ export default function ShopPage() {
                 The Collection
               </h1>
               <p className="mt-2 text-sm text-ink-soft max-w-lg">
-                Everyday favorites for tiny adventures — rompers, co-ord sets, dresses, and more, sized for newborns to 4 years.
+                Browse the products currently published by Little Loom.
               </p>
             </div>
           </div>

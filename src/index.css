@@ -123,7 +123,7 @@
 }
 @media (max-width: 639px) {
   .announcement-message { padding-inline: 1.5rem; font-size: 9px; }
-  .hero-headline { font-size: clamp(3.1rem, 13vw, 4.6rem); }
+  .hero-headline { font-size: clamp(2.75rem, 11.5vw, 3.5rem); }
 }
 
 /* Respect reduced motion */

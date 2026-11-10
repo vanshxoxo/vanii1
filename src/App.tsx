@@ -53,7 +53,7 @@ export default function App() {
       <StoreProvider>
         <ScrollToTop />
         <HandleHashScroll />
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-screen flex-col overflow-x-clip">
           <Header />
           <main className="flex-1">
             <PageTransition>

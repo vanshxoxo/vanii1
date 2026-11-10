@@ -6,11 +6,7 @@ import {
   Plus,
   ShoppingBag,
   Ruler,
-  Truck,
-  RefreshCw,
-  Check,
   ChevronDown,
-  X,
   ArrowRight,
 } from 'lucide-react';
 import { formatINR } from '../data';
@@ -20,7 +16,6 @@ import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 import ProductCard from '../components/ProductCard';
 import Reveal from '../components/Reveal';
-import type { Product } from '../types';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -35,10 +30,7 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [errors, setErrors] = useState<{ color?: string; size?: string }>({});
-  const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>('description');
-  const [pincode, setPincode] = useState('');
-  const [pincodeStatus, setPincodeStatus] = useState<'idle' | 'checking' | 'available' | 'invalid'>('idle');
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -49,8 +41,6 @@ export default function ProductPage() {
     setSelectedSize(null);
     setQuantity(1);
     setErrors({});
-    setPincode('');
-    setPincodeStatus('idle');
   }, [slug]);
 
   if (!product && catalogLoading) {
@@ -59,8 +49,8 @@ export default function ProductPage() {
   if (!product) {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h1 className="font-serif text-3xl text-ink mb-4">Product not found</h1>
-        <p className="text-sm text-ink-soft mb-6">We couldn't find what you're looking for.</p>
+        <h1 className="font-serif text-3xl text-ink mb-4">Product unavailable</h1>
+        <p className="text-sm text-ink-soft mb-6">This product is not currently published.</p>
         <Button variant="primary" onClick={() => navigate('/shop')}>
           Back to Shop
         </Button>
@@ -107,17 +97,6 @@ export default function ProductPage() {
     setTimeout(() => setAddedFeedback(false), 2000);
   };
 
-  const handlePincodeCheck = () => {
-    if (!/^\d{6}$/.test(pincode)) {
-      setPincodeStatus('invalid');
-      return;
-    }
-    setPincodeStatus('checking');
-    setTimeout(() => {
-      setPincodeStatus('available');
-    }, 800);
-  };
-
   const fadeInStyle = (delay: number) => ({
     opacity: mounted ? 1 : 0,
     transform: mounted ? 'translateY(0)' : 'translateY(20px)',
@@ -149,7 +128,7 @@ export default function ProductPage() {
                       activeImage === i ? 'border-ink scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} view ${i + 1}`} className="h-full w-full object-cover" />
+                    <img src={img} alt={product.imageAltTexts?.[i] || `${product.name} view ${i + 1}`} className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -163,7 +142,7 @@ export default function ProductPage() {
                     src={img}
                     srcSet={product.imageSrcSets?.[i] || undefined}
                     sizes="(max-width: 1024px) 100vw, 60vw"
-                    alt={product.name}
+                    alt={product.imageAltTexts?.[i] || product.name}
                     className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
                       activeImage === i ? 'opacity-100' : 'opacity-0'
                     }`}
@@ -244,13 +223,10 @@ export default function ProductPage() {
                 <label className="text-sm font-medium text-ink">
                   Size {selectedSize && <span className="text-ink-light font-normal">· {selectedSize}</span>}
                 </label>
-                <button
-                  onClick={() => setShowSizeGuide(true)}
-                  className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors"
-                >
+                <Link to="/size-guide" className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors">
                   <Ruler size={14} />
                   Size Guide
-                </button>
+                </Link>
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
@@ -331,48 +307,6 @@ export default function ProductPage() {
               </button>
             </div>
 
-            {/* Delivery pincode */}
-            <div className="mt-2 p-4 bg-cream rounded-xl border border-ink/8" style={fadeInStyle(0.35)}>
-              <div className="flex items-center gap-2 mb-3">
-                <Truck size={18} className="text-ink-soft" />
-                <span className="text-sm font-medium text-ink">Check delivery</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={pincode}
-                  onChange={(e) => {
-                    setPincode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                    setPincodeStatus('idle');
-                  }}
-                  placeholder="Enter 6-digit pincode"
-                  className="flex-1 px-3 py-2 text-sm bg-white border border-ink/15 rounded-lg outline-none focus:border-ink transition-colors"
-                  aria-label="Delivery pincode"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePincodeCheck}
-                  disabled={pincode.length !== 6 || pincodeStatus === 'checking'}
-                >
-                  {pincodeStatus === 'checking' ? 'Checking...' : 'Check'}
-                </Button>
-              </div>
-              {pincodeStatus === 'available' && (
-                <p className="mt-2 text-xs text-pistachio flex items-center gap-1.5 animate-slide-down">
-                  <Check size={14} /> Delivery available to {pincode}. Estimated delivery in 3–5 days. (Demo)
-                </p>
-              )}
-              {pincodeStatus === 'invalid' && (
-                <p className="mt-2 text-xs text-peach animate-slide-down">
-                  Please enter a valid 6-digit pincode.
-                </p>
-              )}
-              <p className="mt-2 text-xs text-ink-light">
-                This is a demo check — no real delivery estimates.
-              </p>
-            </div>
-
             {/* Accordions */}
             <div className="mt-2 border-t border-ink/8" style={fadeInStyle(0.4)}>
               <Accordion
@@ -396,24 +330,6 @@ export default function ProductPage() {
                     <span className="font-medium text-ink">Care: </span>
                     {product.care}
                   </div>
-                </div>
-              </Accordion>
-              <Accordion
-                title="Shipping & Returns"
-                isOpen={openSection === 'shipping'}
-                onToggle={() => setOpenSection(openSection === 'shipping' ? null : 'shipping')}
-              >
-                <div className="space-y-2 text-sm text-ink-soft">
-                  <p className="flex items-start gap-2">
-                    <Truck size={16} className="text-ink-light shrink-0 mt-0.5" />
-                    Free shipping on orders above ₹1,499. Standard delivery in 3–5 business days.
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <RefreshCw size={16} className="text-ink-light shrink-0 mt-0.5" />
-                    Easy 7-day returns. Items must be unworn with original tags.
-                  </p>
-                  <p className="text-xs text-ink-light mt-2">
-                  </p>
                 </div>
               </Accordion>
             </div>
@@ -448,7 +364,6 @@ export default function ProductPage() {
       </div>
 
       {/* Size guide modal */}
-      {showSizeGuide && <SizeGuideModal product={product} onClose={() => setShowSizeGuide(false)} />}
     </div>
   );
 }
@@ -481,74 +396,6 @@ function Accordion({
         <div>
           <div className="pb-4">{children}</div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function SizeGuideModal({ product, onClose }: { product: Product; onClose: () => void }) {
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', handleEsc);
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, [onClose]);
-
-  const sizeChart: Record<string, { height: string; weight: string }> = {
-    '0-3M': { height: '50–58 cm', weight: '3–5 kg' },
-    '3-6M': { height: '58–65 cm', weight: '5–7 kg' },
-    '6-12M': { height: '65–75 cm', weight: '7–9 kg' },
-    '12-18M': { height: '75–82 cm', weight: '9–11 kg' },
-    '1-2Y': { height: '80–88 cm', weight: '10–12 kg' },
-    '2-3Y': { height: '88–96 cm', weight: '12–14 kg' },
-    '3-4Y': { height: '96–104 cm', weight: '14–16 kg' },
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-cream rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto animate-bounce-in p-6 lg:p-8 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-serif text-2xl font-light text-ink">Size Guide</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close size guide"
-            className="p-2 -mr-2 text-ink hover:text-peach hover:rotate-90 transition-all duration-300"
-          >
-            <X size={22} />
-          </button>
-        </div>
-        <p className="text-sm text-ink-soft mb-5">
-          Available sizes for {product.name}: {product.sizes.join(', ')}
-        </p>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-ink/15">
-              <th className="text-left py-3 font-medium text-ink">Size</th>
-              <th className="text-left py-3 font-medium text-ink">Height</th>
-              <th className="text-left py-3 font-medium text-ink">Weight</th>
-            </tr>
-          </thead>
-          <tbody>
-            {product.sizes.map((size, i) => (
-              <tr
-                key={size}
-                className="border-b border-ink/8 animate-slide-up-fade"
-                style={{ animationDelay: `${i * 0.05}s` }}
-              >
-                <td className="py-3 font-medium text-ink">{size}</td>
-                <td className="py-3 text-ink-soft">{sizeChart[size]?.height || '—'}</td>
-                <td className="py-3 text-ink-soft">{sizeChart[size]?.weight || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="mt-5 text-xs text-ink-light">
-          When in between sizes, we recommend sizing up for longer wear. This is a general guide — actual fit may vary by style.
-        </p>
       </div>
     </div>
   );

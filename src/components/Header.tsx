@@ -32,11 +32,11 @@ export default function Header() {
   return (
     <>
       {/* Announcement bar — slim, dark, centered */}
-      <div role="region" aria-label="Announcement" className="announcement-bar bg-charcoal text-ivory">
+      <div role="region" aria-label="Little Loom announcement" className="announcement-bar bg-charcoal text-ivory">
         <div className="announcement-track" aria-hidden="true">
           {[0, 1].map((copy) => (
             <span key={copy} className="announcement-message">
-              {announcement?.heading || "LITTLE OUTFITS FOR LIFE'S BIGGEST LITTLE ADVENTURES"}
+              {announcement?.heading || 'LITTLE LOOM · CHILDREN’S CLOTHING'}
             </span>
           ))}
         </div>

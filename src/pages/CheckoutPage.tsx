@@ -34,8 +34,6 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState<PaymentMethod>('razorpay');
   const [codEnabled, setCodEnabled] = useState(false);
   const [codFee, setCodFee] = useState(0);
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState(1490);
-  const [standardShippingFee, setStandardShippingFee] = useState(99);
   const [userEmail, setUserEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -52,10 +50,9 @@ export default function CheckoutPage() {
         setSavedAddresses(rows);
         if (rows[0]) { setSelectedAddressId(rows[0].id); setAddress(rows[0]); }
       }),
-      supabase.from('store_settings').select('setting_key,setting_value').in('setting_key', ['cod_enabled','cod_surcharge','free_shipping_threshold','standard_shipping_fee']).then(({ data }) => {
+      supabase.from('store_settings').select('setting_key,setting_value').in('setting_key', ['cod_enabled','cod_surcharge']).then(({ data }) => {
         const values = Object.fromEntries((data || []).map((row: any) => [row.setting_key, row.setting_value]));
         setCodEnabled(values.cod_enabled === true); setCodFee(Number(values.cod_surcharge || 0));
-        setFreeShippingThreshold(Number(values.free_shipping_threshold ?? 1490)); setStandardShippingFee(Number(values.standard_shipping_fee ?? 99));
       }),
     ]);
   }, []);
@@ -123,6 +120,6 @@ export default function CheckoutPage() {
         <p className="flex items-center gap-2 text-xs text-ink-light"><Lock size={14} /> Payment details are handled by the payment provider and never stored here.</p>
         <Button type="submit" size="lg" disabled={busy || !userEmail}>{busy ? 'Preparing secure checkout…' : method === 'cod' ? 'Place COD order' : 'Continue to secure payment'}</Button>
       </form>
-      <aside className="h-fit border border-ink/10"><h2 className="border-b border-ink/10 px-5 py-4 text-sm font-semibold">Order summary</h2><ul className="divide-y divide-ink/8">{cart.map((item) => <li key={`${item.productId}-${item.color}-${item.size}`} className="flex gap-4 px-5 py-4"><img src={item.image} alt={item.name} className="h-16 w-14 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.name}</p><p className="mt-0.5 text-xs text-ink-light">{item.color} · {item.size} · Qty {item.quantity}</p></div><span className="text-sm">{formatINR(item.price*item.quantity)}</span></li>)}</ul><div className="space-y-2 border-t border-ink/10 px-5 py-4 text-sm"><div className="flex justify-between"><span>Estimated subtotal</span><span>{formatINR(cartTotal)}</span></div><div className="flex justify-between"><span>Estimated shipping</span><span>{cartTotal >= freeShippingThreshold ? 'Free' : formatINR(standardShippingFee)}</span></div><p className="border-t border-ink/10 pt-3 text-xs text-ink-light">Price, stock, shipping, and any COD fee are rechecked on the server.</p></div></aside>
+      <aside className="h-fit border border-ink/10"><h2 className="border-b border-ink/10 px-5 py-4 text-sm font-semibold">Order summary</h2><ul className="divide-y divide-ink/8">{cart.map((item) => <li key={`${item.productId}-${item.color}-${item.size}`} className="flex gap-4 px-5 py-4"><img src={item.image} alt={item.name} className="h-16 w-14 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.name}</p><p className="mt-0.5 text-xs text-ink-light">{item.color} · {item.size} · Qty {item.quantity}</p></div><span className="text-sm">{formatINR(item.price*item.quantity)}</span></li>)}</ul><div className="space-y-2 border-t border-ink/10 px-5 py-4 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>{formatINR(cartTotal)}</span></div><p className="border-t border-ink/10 pt-3 text-xs text-ink-light">Final prices, stock, delivery charges, and any COD fee are calculated from current store settings and rechecked by the server before an order is created.</p></div></aside>
     </div>}</div>;
 }

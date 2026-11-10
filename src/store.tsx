@@ -144,9 +144,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const { data: row } = await supabase!.from('wishlists').upsert({ customer_id: userId }, { onConflict: 'customer_id' }).select('id').single();
       if (!row?.id) return;
-      if (wishlist.length) await supabase!.from('wishlist_items').upsert(wishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
+      const persistentWishlist = wishlist;
+      if (persistentWishlist.length) await supabase!.from('wishlist_items').upsert(persistentWishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
       const { data: existing } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', row.id);
-      const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !wishlist.includes(id));
+      const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !persistentWishlist.includes(id));
       if (remove.length) await supabase!.from('wishlist_items').delete().eq('wishlist_id', row.id).in('product_id', remove);
     })();
   }, [wishlist, userId, remoteReady]);
