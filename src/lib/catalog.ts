@@ -35,6 +35,11 @@ export function useCatalog(): CatalogResult {
       ]);
       if (cancelled) return;
       if (productResponse.error || categoryResponse.error) {
+        if (isDemoPreviewHost()) {
+          console.warn('Little Loom preview is using its demo catalog because the public Supabase catalog query failed.');
+          setResult({ ...demoCatalog(), loading: false, error: null });
+          return;
+        }
         setResult((current) => ({ ...current, loading: false, error: productResponse.error?.message || categoryResponse.error?.message || 'Could not load catalog.' }));
         return;
       }

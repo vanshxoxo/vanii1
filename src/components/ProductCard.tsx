@@ -23,7 +23,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
               src={product.images[0]}
               srcSet={product.imageSrcSets?.[0] || undefined}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              alt={product.name}
+              alt={product.imageAltTexts?.[0] || product.name}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
@@ -34,7 +34,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
                 src={product.images[1]}
                 srcSet={product.imageSrcSets?.[1] || undefined}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                alt={`${product.name} alternate view`}
+                alt={product.imageAltTexts?.[1] || `${product.name} alternate view`}
                 loading="lazy"
                 className="h-full w-full object-cover"
               />

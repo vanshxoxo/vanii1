@@ -28,6 +28,9 @@ export interface Product {
   variants?: ProductVariant[];
   inStock?: boolean;
   isDemo?: boolean;
+  sku?: string;
+  demoStockQuantity?: number;
+  imageAltTexts?: string[];
 }
 
 export interface ProductVariant {

@@ -150,7 +150,7 @@ export default function ProductPage() {
                       activeImage === i ? 'border-ink scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} view ${i + 1}`} className="h-full w-full object-cover" />
+                    <img src={img} alt={product.imageAltTexts?.[i] || `${product.name} view ${i + 1}`} className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -164,7 +164,7 @@ export default function ProductPage() {
                     src={img}
                     srcSet={product.imageSrcSets?.[i] || undefined}
                     sizes="(max-width: 1024px) 100vw, 60vw"
-                    alt={product.name}
+                    alt={product.imageAltTexts?.[i] || product.name}
                     className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
                       activeImage === i ? 'opacity-100' : 'opacity-0'
                     }`}
@@ -201,6 +201,7 @@ export default function ProductPage() {
                   </>
                 )}
               </div>
+              {product.isDemo && <p className="mt-2 text-xs text-ink-soft">SKU {product.sku} · Demo inventory: {product.demoStockQuantity} sample units · Not real stock</p>}
             </div>
 
             {/* Color selector */}

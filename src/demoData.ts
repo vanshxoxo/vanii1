@@ -376,10 +376,13 @@ export function formatINR(amount: number): string {
 
 // These were the original repository's sample catalog records. They are demo-only
 // and never seeded into Supabase or treated as real stock/orders.
-export const demoProducts: Product[] = products.map((product) => ({
+export const demoProducts: Product[] = products.map((product, index) => ({
   ...product,
   id: `demo-${product.id}`,
   slug: `demo-${product.slug}`,
+  sku: `LL-DEMO-${String(index + 1).padStart(3, '0')}`,
+  demoStockQuantity: 8 + ((index * 7) % 17),
+  imageAltTexts: product.images.map((_, imageIndex) => `${product.name} ${imageIndex === 0 ? 'front' : 'alternate'} view, Pexels demo photo`),
   isDemo: true,
   inStock: false,
   variants: [],
@@ -388,6 +391,11 @@ export const demoProducts: Product[] = products.map((product) => ({
 export function isDemoPreviewHost() {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
-  return host === 'localhost' || host === '127.0.0.1' ||
-    (host.endsWith('.vercel.app') && host.includes('-git-codex-imagekit-client-preview-'));
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (!host.endsWith('.vercel.app')) return false;
+
+  // The stable project domain serves Production. Vercel branch and deployment
+  // URLs are separate hosts; use demo content there even when Supabase is empty
+  // or its public catalog queries fail.
+  return host !== 'vanii1.vercel.app' && !host.includes('-git-main-');
 }
