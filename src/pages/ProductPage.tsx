@@ -332,6 +332,13 @@ export default function ProductPage() {
                   </div>
                 </div>
               </Accordion>
+              {product.sizeMeasurements?.trim() && <Accordion
+                title="Garment measurements"
+                isOpen={openSection === 'measurements'}
+                onToggle={() => setOpenSection(openSection === 'measurements' ? null : 'measurements')}
+              >
+                <p className="whitespace-pre-line text-sm leading-relaxed text-ink-soft">{product.sizeMeasurements}</p>
+              </Accordion>}
             </div>
           </div>
         </div>

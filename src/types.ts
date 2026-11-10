@@ -22,9 +22,11 @@ export interface Product {
   description: string;
   fabric: string;
   care: string;
+  sizeMeasurements?: string;
   isNew?: boolean;
   isBestseller?: boolean;
   tags?: string[];
+  collections?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;
   imageAltTexts?: string[];

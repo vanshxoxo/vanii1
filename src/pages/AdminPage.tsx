@@ -7,8 +7,8 @@ import { formatINR } from '../data';
 
 type Tab = 'overview' | 'products' | 'categories' | 'media' | 'homepage' | 'collections' | 'content' | 'customers' | 'roles' | 'orders' | 'settings';
 type Status = 'loading' | 'signed-out' | 'denied' | 'ready' | 'unconfigured';
-type ProductForm = { id?: string; name: string; slug: string; description: string; material: string; fabric_composition: string; care_instructions: string; price: string; compare_at_price: string; status: string; seo_title: string; seo_description: string; tags: string[] };
-const emptyProduct: ProductForm = { name: '', slug: '', description: '', material: '', fabric_composition: '', care_instructions: '', price: '', compare_at_price: '', status: 'draft', seo_title: '', seo_description: '', tags: [] };
+type ProductForm = { id?: string; name: string; slug: string; description: string; material: string; fabric_composition: string; care_instructions: string; size_measurements: string; price: string; compare_at_price: string; status: string; seo_title: string; seo_description: string; tags: string[] };
+const emptyProduct: ProductForm = { name: '', slug: '', description: '', material: '', fabric_composition: '', care_instructions: '', size_measurements: '', price: '', compare_at_price: '', status: 'draft', seo_title: '', seo_description: '', tags: [] };
 const purposes = ['product', 'collection', 'category', 'homepage_hero', 'campaign', 'brand_story', 'lookbook', 'video'];
 
 function fileSha256(file: File) {
@@ -19,23 +19,25 @@ function fileSha256(file: File) {
 
 function pendingProductApprovals(product: any): string[] {
   const missing: string[] = [];
-  if (product.tags?.includes('owner-intake') || /intake draft/i.test(product.name || '')) missing.push('approved name');
+  if (product.tags?.includes('owner-intake') || product.tags?.includes('owner-review-required') || product.tags?.includes('proposed-name') || /intake draft/i.test(product.name || '')) missing.push('owner-approved name');
+  if (product.tags?.includes('proposed-price')) missing.push('verified price');
   if (product.price == null || Number(product.price) <= 0) missing.push('price');
   if (!product.description?.trim()) missing.push('description');
   if (!(product.material?.trim() || product.fabric_composition?.trim())) missing.push('fabric details');
   if (!product.care_instructions?.trim()) missing.push('care instructions');
+  if (!product.size_measurements?.trim()) missing.push('garment measurements by size');
   const links = product.product_categories || [];
   const kinds = links.map((link: any) => (Array.isArray(link.categories) ? link.categories[0] : link.categories)?.kind);
   if (!kinds.includes('product')) missing.push('product category');
   if (!kinds.includes('age')) missing.push('age group');
-  if (!product.product_variants?.length) missing.push('variants and SKUs');
   const variants = product.product_variants || [];
-  const hasInventory = variants.every((variant: any) => {
+  const hasInventory = variants.length > 0 && variants.every((variant: any) => {
     const inventory = Array.isArray(variant.inventory) ? variant.inventory[0] : variant.inventory;
-    return inventory && Number.isFinite(Number(inventory.quantity_on_hand));
+    return variant.is_active && String(variant.sku || '').trim() && String(variant.size || '').trim() && String(variant.colour || '').trim() && inventory && Number.isFinite(Number(inventory.quantity_on_hand));
   });
-  if (!variants.length || !hasInventory) missing.push('verified stock');
-  if (!product.product_media?.length) missing.push('authorized photos');
+  if (!hasInventory) missing.push('verified sizes, colours, SKUs and stock');
+  const assets = (product.product_media || []).map((link: any) => Array.isArray(link.media_assets) ? link.media_assets[0] : link.media_assets).filter(Boolean);
+  if (!assets.some((asset: any) => asset.provider === 'imagekit' && asset.purpose === 'product' && asset.lifecycle_status === 'active')) missing.push('authorized ImageKit product photos');
   return missing;
 }
 
@@ -76,7 +78,7 @@ export default function AdminPage() {
   const loadAdminData = useCallback(async () => {
     if (!supabase) return;
     const [p, c, m, h, cl, s, o, customerRows, roleRows, summary] = await Promise.all([
-      supabase.from('products').select('*,product_variants(id,sku,size,colour,inventory(quantity_on_hand,quantity_reserved)),product_media(id,media_assets(id)),product_categories(categories(id,kind))').order('updated_at', { ascending: false }),
+      supabase.from('products').select('*,product_variants(id,sku,size,colour,is_active,inventory(quantity_on_hand,quantity_reserved)),product_media(id,media_assets(id,provider,purpose,lifecycle_status)),product_categories(categories(id,kind))').order('updated_at', { ascending: false }),
       supabase.from('categories').select('*').order('display_order'),
       supabase.from('media_assets').select('*').order('created_at', { ascending: false }),
       supabase.from('homepage_sections').select('*').order('display_order'),
@@ -122,11 +124,11 @@ export default function AdminPage() {
       supabase.from('products').select('*').eq('id', id).single(),
       supabase.from('product_variants').select('*,inventory(quantity_on_hand,quantity_reserved)').eq('product_id', id).order('size'),
       supabase.from('product_categories').select('category_id').eq('product_id', id),
-      supabase.from('product_media').select('id,asset_id,display_order,is_primary,alt_text,view_label,media_assets(id,provider,delivery_url,external_url,resource_type,format,original_filename,width,height,file_size_bytes)').eq('product_id', id).order('display_order'),
+      supabase.from('product_media').select('id,asset_id,display_order,is_primary,alt_text,view_label,media_assets(id,provider,purpose,lifecycle_status,delivery_url,external_url,resource_type,format,original_filename,width,height,file_size_bytes)').eq('product_id', id).order('display_order'),
     ]);
     if (product.error) { fail(product.error.message); return; }
     const p = product.data;
-    setProductForm({ id, name: p.name, slug: p.slug, description: p.description || '', material: p.material || '', fabric_composition: p.fabric_composition || '', care_instructions: p.care_instructions || '', price: p.price == null ? '' : String(p.price), compare_at_price: p.compare_at_price == null ? '' : String(p.compare_at_price), status: p.status, seo_title: p.seo_title || '', seo_description: p.seo_description || '', tags: p.tags || [] });
+    setProductForm({ id, name: p.name, slug: p.slug, description: p.description || '', material: p.material || '', fabric_composition: p.fabric_composition || '', care_instructions: p.care_instructions || '', size_measurements: p.size_measurements || '', price: p.price == null ? '' : String(p.price), compare_at_price: p.compare_at_price == null ? '' : String(p.compare_at_price), status: p.status, seo_title: p.seo_title || '', seo_description: p.seo_description || '', tags: p.tags || [] });
     setVariants((variantRows.data || []).map((row: any) => ({ ...row, stock: row.inventory?.quantity_on_hand ?? 0 })));
     setCategoryIds((categoryRows.data || []).map((row: any) => row.category_id));
     setGallery(productGallery.data || []);
@@ -145,11 +147,17 @@ export default function AdminPage() {
         const inventory = Array.isArray(variant.inventory) ? variant.inventory[0] : variant.inventory;
         return String(variant.sku || '').trim() && String(variant.size || '').trim() && String(variant.colour || '').trim() && inventory && Number.isFinite(Number(inventory.quantity_on_hand));
       });
-      if (productForm.tags.includes('owner-intake') || /intake draft/i.test(productForm.name) || !productForm.name.trim() || !productForm.description.trim() || !(productForm.material.trim() || productForm.fabric_composition.trim()) || !productForm.care_instructions.trim() || !productForm.price.trim() || Number(productForm.price) <= 0 || !hasProductCategory || !hasAgeCategory || !hasCompleteVariants || gallery.length === 0) {
-        fail('Keep this product as a draft until its owner-approved name, verified description, material, care, price, product and age categories, SKU variants and stock, and authorized product photos are complete.'); return;
+      const hasAuthorizedProductImage = gallery.some((link) => {
+        const asset = Array.isArray(link.media_assets) ? link.media_assets[0] : link.media_assets;
+        return asset?.provider === 'imagekit' && asset?.purpose === 'product' && asset?.lifecycle_status === 'active';
+      });
+      const requiresOwnerReview = ['owner-intake', 'owner-review-required', 'proposed-name', 'proposed-price'].some((tag) => productForm.tags.includes(tag));
+      if (requiresOwnerReview || /intake draft/i.test(productForm.name) || !productForm.name.trim() || !productForm.description.trim() || !(productForm.material.trim() || productForm.fabric_composition.trim()) || !productForm.care_instructions.trim() || !productForm.size_measurements.trim() || !productForm.price.trim() || Number(productForm.price) <= 0 || !hasProductCategory || !hasAgeCategory || !hasCompleteVariants || !hasAuthorizedProductImage) {
+        fail('Keep this product as a draft until its name, price, description, fabric, care, measurements, product and age categories, size and colour variants, SKUs, stock, and authorized ImageKit product photos are verified.'); return;
       }
     }
-    const payload = { name: productForm.name.trim(), slug: productForm.slug.trim(), description: productForm.description, material: productForm.material, fabric_composition: productForm.fabric_composition, care_instructions: productForm.care_instructions, price: productForm.price.trim() ? Number(productForm.price) : null, compare_at_price: productForm.compare_at_price ? Number(productForm.compare_at_price) : null, status: productForm.status, seo_title: productForm.seo_title || null, seo_description: productForm.seo_description || null, tags: productForm.tags, published_at: productForm.status === 'published' ? new Date().toISOString() : null };
+    const publishAfterSave = productForm.status === 'published';
+    const payload = { name: productForm.name.trim(), slug: productForm.slug.trim(), description: productForm.description, material: productForm.material, fabric_composition: productForm.fabric_composition, care_instructions: productForm.care_instructions, size_measurements: productForm.size_measurements, price: productForm.price.trim() ? Number(productForm.price) : null, compare_at_price: productForm.compare_at_price ? Number(productForm.compare_at_price) : null, status: publishAfterSave ? 'draft' : productForm.status, seo_title: productForm.seo_title || null, seo_description: productForm.seo_description || null, tags: productForm.tags, published_at: null };
     const result = productForm.id ? await supabase.from('products').update(payload).eq('id', productForm.id).select('id').single() : await supabase.from('products').insert(payload).select('id').single();
     if (result.error) { fail(result.error.message); return; }
     const id = result.data.id;
@@ -158,6 +166,10 @@ export default function AdminPage() {
     if (categoryIds.length) {
       const linked = await supabase.from('product_categories').insert(categoryIds.map((category_id) => ({ product_id: id, category_id })));
       if (linked.error) { fail(linked.error.message); return; }
+    }
+    if (publishAfterSave) {
+      const published = await supabase.from('products').update({ status: 'published', published_at: new Date().toISOString() }).eq('id', id).select('id').single();
+      if (published.error) { fail(published.error.message); return; }
     }
     setSelectedProduct(id); setProductForm({ ...productForm, id });
     report('Product saved.'); await loadAdminData();
@@ -405,19 +417,20 @@ export default function AdminPage() {
       {tab === 'roles' && isOwner && <section className="mt-6 grid gap-8 lg:grid-cols-[360px_1fr]"><form onSubmit={(e) => void assignRole(e)} className="space-y-4"><h2 className="font-serif text-xl">Assign team role</h2><p className="text-xs leading-5 text-ink-soft">Select an existing registered customer account. Only the owner can change team roles. Owner access must be provisioned securely by the database owner.</p><label className="block text-sm">Account<select required value={roleAssignment.user_id} onChange={(e) => setRoleAssignment({ ...roleAssignment, user_id: e.target.value })} className="admin-input"><option value="">Choose account…</option>{customers.map((item) => <option key={item.id} value={item.id}>{item.email || item.full_name || item.id}</option>)}</select></label><label className="block text-sm">Role<select value={roleAssignment.role} onChange={(e) => setRoleAssignment({ ...roleAssignment, role: e.target.value })} className="admin-input">{['admin','catalog_manager','media_manager','order_manager'].map((role) => <option key={role} value={role}>{role.replace('_',' ')}</option>)}</select></label><Button type="submit">Assign role</Button></form><div><h2 className="font-serif text-xl">Current team</h2><ul className="mt-3 divide-y divide-ink/10">{adminUsers.map((item, index) => <li key={`${item.user_id}-${item.role}-${index}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><span>{item.email || item.full_name || item.user_id} <span className="ml-2 text-xs text-ink-light">{item.role.replace('_',' ')}</span></span><button type="button" disabled={item.role === 'owner'} onClick={() => void removeRole(item.user_id, item.role)} className="text-xs underline disabled:opacity-40">{item.role === 'owner' ? 'Owner protected' : 'Remove role'}</button></li>)}</ul></div></section>}
 
       {tab === 'products' && <section className="mt-6 grid gap-8 lg:grid-cols-[280px_1fr]">
-        <aside><p className="text-xs leading-5 text-ink-soft">Owner-intake drafts are not real products and cannot be published until every approval field is complete.</p><label className="mt-3 block text-xs uppercase tracking-wider text-ink-soft">Products<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="mt-2 w-full border border-ink/15 bg-transparent p-3"><option value="">Create a product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} · {product.status}</option>)}</select></label><div className="mt-4 space-y-1">{products.map((product) => { const missing = pendingProductApprovals(product); return <button key={product.id} onClick={() => void selectProduct(product.id)} className="block w-full border-b border-ink/5 py-2 text-left hover:underline"><span className="block truncate text-sm">{product.name}</span><span className="text-[10px] text-ink-light">{product.status} · {missing.length ? `${missing.length} approvals needed` : 'ready for review'}</span></button>; })}</div><p className="mt-4 text-[10px] leading-4 text-ink-light">Completion checklist per record: owner-approved name, price, description, fabric and care details, product and age categories, variant SKUs, verified inventory and authorized product photography.</p></aside>
+        <aside><p className="text-xs leading-5 text-ink-soft">Proposed launch assortment entries are drafts. The suggested names and prices are not verified supplier products and cannot be published until every real product fact and image is reviewed.</p><label className="mt-3 block text-xs uppercase tracking-wider text-ink-soft">Products<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="mt-2 w-full border border-ink/15 bg-transparent p-3"><option value="">Create a product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} · {product.status}{product.tags?.includes('owner-intake') ? ' · proposed' : ''}</option>)}</select></label><div className="mt-4 space-y-1">{products.map((product) => { const missing = pendingProductApprovals(product); return <button key={product.id} onClick={() => void selectProduct(product.id)} className="block w-full border-b border-ink/5 py-2 text-left hover:underline"><span className="block truncate text-sm">{product.name}{product.tags?.includes('owner-intake') && <span className="ml-2 text-[9px] uppercase tracking-wider text-amber-800">proposed</span>}</span><span className="text-[10px] text-ink-light">{product.status} · {missing.length ? `${missing.length} approvals needed` : 'ready for review'}</span></button>; })}</div><p className="mt-4 text-[10px] leading-4 text-ink-light">Before publication, enter the owner-approved name and price; verified fabric, garment measurements by size and care; confirmed product and age categories; size, colour, SKU and stock details; and authorized product photographs uploaded to ImageKit.</p></aside>
         <div className="space-y-8">
           <form onSubmit={(e) => void saveProduct(e)} className="grid gap-4 sm:grid-cols-2">
-            {productForm.tags.includes('owner-intake') && <div className="sm:col-span-2 border border-amber-700/20 bg-amber-50 p-3"><p className="text-sm font-medium">Owner intake draft · not approved</p><p className="mt-1 text-xs leading-5">This is an empty catalog slot, not a real product. Replace the name with approved business information and complete all checklist fields before unchecking this marker.</p><label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={productForm.tags.includes('owner-intake')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? [...new Set([...productForm.tags, 'owner-intake'])] : productForm.tags.filter((tag) => tag !== 'owner-intake') })} />Keep marked as owner intake draft</label></div>}
-            <label className="text-sm">Product name<input required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="admin-input" /></label>
+            {(productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')) && <div className="sm:col-span-2 border border-amber-700/20 bg-amber-50 p-3"><p className="text-sm font-medium">Proposed launch entry · unpublished</p><p className="mt-1 text-xs leading-5">The assortment name and indicative price below are owner-approved proposals, not verified product facts. Editorial preview photographs are not product photos. Suggested age group: {productForm.tags.find((tag) => tag.startsWith('suggested-age-group:'))?.slice('suggested-age-group:'.length).replace(/-/g, ' ') || 'none'} (review only; not linked to the product).</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-name')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-name') : [...new Set([...productForm.tags, 'proposed-name'])] })} />I verified or replaced the proposed product name.</label><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-price')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-price') : [...new Set([...productForm.tags, 'proposed-price'])] })} />I verified or replaced the proposed price.</label></div><label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" checked={productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? [...new Set([...productForm.tags, 'owner-intake', 'owner-review-required'])] : productForm.tags.filter((tag) => !['owner-intake', 'owner-review-required', 'approval-required'].includes(tag)) })} />Keep this item marked as owner-review draft until its actual details and authorized product photo are complete.</label></div>}
+            <label className="text-sm">{productForm.tags.includes('proposed-name') ? 'Proposed product name' : 'Product name'}<input required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Slug<input required value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} className="admin-input" /></label>
-            <label className="text-sm">Price (INR) · leave blank until verified<input type="number" min="0.01" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="admin-input" /></label>
+            <label className="text-sm">{productForm.tags.includes('proposed-price') ? 'Suggested price (INR)' : 'Price (INR)'}<input type="number" min="0.01" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="admin-input" />{productForm.tags.includes('proposed-price') && <span className="mt-1 block text-[10px] text-amber-800">Indicative only; confirm with the owner before publication.</span>}</label>
             <label className="text-sm">Compare-at price<input type="number" min="0" step="0.01" value={productForm.compare_at_price} onChange={(e) => setProductForm({ ...productForm, compare_at_price: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Status<select value={productForm.status} onChange={(e) => setProductForm({ ...productForm, status: e.target.value })} className="admin-input"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
             <label className="text-sm">Material<input value={productForm.material} onChange={(e) => setProductForm({ ...productForm, material: e.target.value })} className="admin-input" /></label>
             <label className="text-sm sm:col-span-2">Fabric composition<input value={productForm.fabric_composition} onChange={(e) => setProductForm({ ...productForm, fabric_composition: e.target.value })} className="admin-input" /></label>
             <label className="text-sm sm:col-span-2">Description<textarea rows={4} value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} className="admin-input" /></label>
             <label className="text-sm sm:col-span-2">Care instructions<textarea rows={2} value={productForm.care_instructions} onChange={(e) => setProductForm({ ...productForm, care_instructions: e.target.value })} className="admin-input" /></label>
+            <label className="text-sm sm:col-span-2">Verified garment measurements by size<textarea rows={3} value={productForm.size_measurements} onChange={(e) => setProductForm({ ...productForm, size_measurements: e.target.value })} className="admin-input" placeholder="Enter measured garment points and units for each size; do not use estimates." /><span className="mt-1 block text-[10px] text-ink-light">This field is required before publication. Enter actual measured values for each offered size.</span></label>
             <label className="text-sm">SEO title<input value={productForm.seo_title} onChange={(e) => setProductForm({ ...productForm, seo_title: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">SEO description<input value={productForm.seo_description} onChange={(e) => setProductForm({ ...productForm, seo_description: e.target.value })} className="admin-input" /></label>
             <fieldset className="sm:col-span-2"><legend className="text-sm">Categories and age groups</legend><div className="mt-2 flex flex-wrap gap-3">{categories.filter((category) => category.is_active).map((category) => <label key={category.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={categoryIds.includes(category.id)} onChange={(e) => setCategoryIds(e.target.checked ? [...categoryIds, category.id] : categoryIds.filter((id) => id !== category.id))} />{category.name} <span className="text-xs text-ink-light">{category.kind}</span></label>)}</div></fieldset>

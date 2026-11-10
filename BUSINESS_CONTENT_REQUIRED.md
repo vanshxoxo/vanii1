@@ -1,54 +1,39 @@
-# Little Loom: real business content required
+# Business content required before publishing products
 
-This branch no longer supplies sample products, stock photographs, fallback product data, sample inventory, or fabricated product copy. Storefront products are read from published Supabase records and are only displayed when they have authorized gallery media, a description, material/fabric, care information, and complete variants with SKU, size, and colour. Incomplete products must remain drafts until verified.
+The preview assortment contains 18 proposed styles and indicative prices from the owner. None is a verified supplier product. Every row remains a draft until Little Loom confirms the information below. Editorial preview photographs are visual inspiration only and are not attached to product records.
 
-## Current public database visibility
+## Required for each proposed style
 
-At the time of the latest audit, anonymous/public reads returned:
+- Confirm or replace the proposed product name and indicative price.
+- Confirm the supplier/manufacturer and the actual garment or style reference.
+- Supply an accurate product description and verified material/fabric composition.
+- Supply care instructions from the supplier or garment label.
+- Confirm intended age groups and actual offered sizes; do not rely on the catalogue's age suggestions.
+- Enter measured garment dimensions, with units, for every offered size.
+- Confirm each available colour and any approved swatch colour.
+- Create the real SKU for each size/colour combination and enter the counted opening stock.
+- Provide authorized product photographs, gallery order, useful alt text and the product/variant mapping. Photos must show the actual garment.
+- Provide supplier/brand permission or the commercial license for every product image.
+- Remove proposed/review markers only after these fields have been checked by the owner.
 
-- Products: 0
-- Media assets: 0
-- Product-media links: 0
-- Collections: 0
-- Homepage sections: 0
-- Banners: 0
-- Active categories: 10
+See [CATALOGUE_ASSORTMENT.md](CATALOGUE_ASSORTMENT.md) for the 18 proposed names, suggested prices, editorial visual assignments and owner-review age suggestions. A preview card's photo is not an exact item representation and cannot be used as a product gallery, checkout image or proof of stock.
 
-This describes only rows visible to the public API under current RLS. It does not prove there are no admin-only or draft rows. Confirm the private/admin view in Supabase before creating records. Do not overwrite existing records.
+## Required for storefront and fulfilment
 
-Migration `202611100004_catalog_intake_and_admin_tools.sql` adds three explicit owner-intake draft slots per active product-type category (18 across the six configured types). They are not sale listings: name, price, description, fabric/care information, photos, variants/SKUs, stock and age assignment remain unverified. The migration does not overwrite existing records and is pending application in the current checkout. Do not publish these slots until the owner replaces the intake name and supplies verified product information and authorized photos.
+- Owner-approved Little Loom brand story and any factual marketing claims.
+- Confirmed collection names, product membership, and ordering. Bestseller and new-arrival labels require actual owner approval or sales data.
+- Verified size guide content and any age/fit guidance.
+- Shipping regions, rates, delivery commitments, returns/refund policy, and business contact information.
+- Public support email, phone/WhatsApp, business details and official social profile URLs.
+- Newsletter consent wording, confirmation behavior and sending service.
+- Confirmed COD policy and limits before enabling COD.
+- Preview payment test credentials and a verified webhook before test-mode payment checks. Live payment remains disabled until separately reviewed.
+- Shiprocket credentials, pickup location and parcel defaults before shipment/tracking checks.
 
-## Required information for each product
+## ImageKit upload prerequisites
 
-- Approved product name and URL slug
-- Accurate customer-facing description
-- Current price in INR and, only if real, compare-at price
-- Product category and age group
-- SKU for every sellable size/colour variant
-- Exact available sizes and colour names (and verified colour swatch values if desired)
-- Material/fabric composition and care instructions
-- Actual stock on hand for each variant and any reserved quantities handled by inventory
-- Publication approval/status and collection placement (including genuine new-arrival or bestseller data)
-- Alt text for every photograph
+The admin uploader keeps ImageKit private credentials on the server and registers metadata in Supabase. Configure the existing `IMAGEKIT_URL_ENDPOINT`, `IMAGEKIT_PUBLIC_KEY` and server-only `IMAGEKIT_PRIVATE_KEY` in the Vercel Preview environment, and run migration 005 on a non-production Preview Supabase project before testing admin writes. Keep ImageKit private credentials and Supabase service-role credentials out of browser variables.
 
-## Required photography files and permissions
+## Database safety
 
-For each product, supply original high-resolution product photographs or files from a supplier/manufacturer that Little Loom is authorized to use. Include the product/variant mapping, gallery order, image alt text, and written license/permission or source. Do not send Pinterest screenshots or photos from other brands unless the rights holder has authorized their use. Once supplied and approved, the files can be uploaded to the configured ImageKit account and linked through the existing media tables.
-
-Also supply authorized desktop/mobile hero photos, category/collection covers, campaign/editorial imagery, and any promotional-banner assets. Include the intended placement, campaign dates, CTA destination, and usage rights.
-
-## Required business and policy content
-
-- Approved Little Loom brand story and any marketing claims
-- Actual published collections and product ordering
-- Verified size guide measurements by garment/age
-- Shipping regions, delivery terms, charges/thresholds, returns/refunds policy
-- Business contact/support email, phone/WhatsApp, and physical/business details intended for publication
-- Official social profile URLs
-- Newsletter consent/confirmation behavior and sender setup
-- Owner/admin email addresses and intended role assignments
-- Verified payment configuration and webhook setup before enabling Razorpay; verified Shiprocket credentials/configuration before promising shipping functions
-
-The database migration currently supplies initial shipping/COD setting values. Confirm those amounts and limits against Little Loom's actual policy before accepting orders; this cleanup did not alter existing database settings.
-
-Do not publish price, stock, policy, campaign, or service claims until the business owner verifies them. Payment remains subject to server-side credential and webhook gates.
+Migration 005 creates or updates only explicitly tagged `owner-intake` launch slots and leaves every proposal unpublished. It creates no variants, inventory, customer, order or payment records. Do not run it against Production; first establish a Preview Supabase project with independent data and credentials.

@@ -24,4 +24,4 @@ Pexels states that its photos may be used commercially under the [Pexels License
 
 ## Important use note
 
-Although the old file called these URLs product images, they are stock photos from Pexels. They are intentionally kept separate from the database catalog and are not attached to any product, SKU, price, variant, inventory, cart, or checkout record. The storefront labels them as Pexels editorial imagery. Only authorized supplier or Little Loom product photographs may be linked to published product records.
+These are Pexels editorial photographs, not Little Loom product photography. The storefront may use them as general visual inspiration on the proposed collection preview, but they are not exact representations of any proposed garment and are never attached to product records, SKUs, variants, inventory, cart or checkout. Source and license information stays in this manifest; no source badge is required in the storefront. Only authorized images of the actual supplier or Little Loom garments may be linked to published product records.

@@ -7,6 +7,8 @@ import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
 import { useStore } from '../useStore';
+import LaunchPreviewGrid from '../components/LaunchPreviewGrid';
+import StoreNavigationTiles from '../components/StoreNavigationTiles';
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest';
 
@@ -60,7 +62,8 @@ export default function ShopPage() {
   };
 
   const filtered = useMemo(() => {
-    let result = [...products];
+    const collection = searchParams.get('collection');
+    let result = products.filter((product) => !collection || product.collections?.includes(collection));
 
     if (selectedAges.size > 0) {
       result = result.filter((p) => p.ages.some((a) => selectedAges.has(a)));
@@ -94,24 +97,28 @@ export default function ShopPage() {
     }
 
     return result;
-  }, [products, selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort, priceLimit]);
+  }, [products, selectedAges, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort, priceLimit, searchParams]);
 
   const activeFilterCount =
-    selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size +
+    selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size + (searchParams.get('collection') ? 1 : 0) +
     (priceRange[0] > 0 || priceRange[1] < Number.MAX_SAFE_INTEGER ? 1 : 0) + (inStockOnly ? 1 : 0);
 
   if (catalogLoading || catalogError || products.length === 0) {
     const unavailable = Boolean(catalogError);
-    return <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+    const empty = !catalogLoading && !unavailable;
+    return <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
-        <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-16">
+        <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14">
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-peach">Little Loom · Shop</p>
-          <h1 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{catalogLoading ? 'Loading the published collection' : unavailable ? 'The catalogue is unavailable' : 'No products are currently published'}</h1>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-ink-soft">{catalogLoading ? 'Published products will appear here once the catalogue has loaded.' : unavailable ? 'We could not retrieve the published catalogue just now. Please try again shortly.' : 'Product listings and prices will appear here when they are published in the Little Loom catalogue.'}</p>
-          {!catalogLoading && <Link to="/" className="mt-7 inline-flex items-center gap-2 self-start text-sm underline underline-offset-4">Return to Little Loom<ArrowRight size={15} /></Link>}
+          <h1 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{catalogLoading ? 'Loading the published collection' : unavailable ? 'The catalogue is temporarily unavailable' : 'A first look at the launch assortment'}</h1>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-ink-soft">{catalogLoading ? 'Published products will appear here once the catalogue has loaded.' : unavailable ? 'Published products could not be retrieved. Editorial age and category navigation remains available below.' : 'Browse a visual preview of proposed styles and indicative prices. Product details and availability will be confirmed before anything is offered for sale.'}</p>
+          {!catalogLoading && <Link to="/" className="mt-6 inline-flex items-center gap-2 self-start text-sm underline underline-offset-4">Return to Little Loom<ArrowRight size={15} /></Link>}
         </div>
-        <img src="/images/editorial/version-b/category-rompers.webp" alt="Children outdoors in relaxed everyday clothing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[440px]" />
+        <img src="/images/editorial/version-b/category-rompers.webp" alt="Children outdoors in relaxed everyday clothing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[400px]" />
       </div>
+      {empty && searchParams.get('collection') && <p role="status" className="mt-8 text-sm text-ink-soft">This collection has no published products yet. Proposed assortment previews are kept separate from published collection membership.</p>}
+      {empty && !searchParams.get('collection') && <div className="mt-8"><LaunchPreviewGrid title={false} category={searchParams.get('category') || undefined} />{searchParams.get('age') && <p role="status" className="mt-4 text-xs leading-5 text-ink-light">Age navigation is ready, but proposed styles are not assigned to an age group until sizing is verified.</p>}</div>}
+      <StoreNavigationTiles ages={ages} categories={categories} />
     </main>;
   }
 
