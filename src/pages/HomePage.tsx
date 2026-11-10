@@ -24,6 +24,12 @@ export default function HomePage() {
   const brandStory = useCmsSection('brand-story');
   const newArrivals = products.filter((product) => product.isNew).slice(0, 6);
   const hasProducts = products.length > 0;
+  const ageCards = ages.length > 0 ? ages : [
+    { id: 'Newborn', label: 'Newborn', range: '', image: '', description: '' },
+    { id: 'Baby', label: 'Baby', range: '', image: '', description: '' },
+    { id: 'Toddler', label: 'Toddler', range: '', image: '', description: '' },
+    { id: 'Little Kids', label: 'Little Kids', range: '', image: '', description: '' },
+  ];
   const heroImage = hero?.image || '/images/editorial/hero-desktop.webp';
   const heroMobileImage = hero?.mobileImage || (hero?.image ? hero.image : '/images/editorial/hero-mobile.webp');
 
@@ -42,7 +48,7 @@ export default function HomePage() {
             <p className="mt-5 max-w-md text-base leading-7 text-ink-soft sm:text-lg">{hero?.body || 'A world of childhood, seen through the clothes we wear and the moments we keep.'}</p>
             <div className="mt-7 flex flex-wrap items-center gap-4">
               {hasProducts ? <Link to={safeHref(hero?.ctaHref, '/shop')}><Button variant="primary" size="lg" className="group">{hero?.ctaLabel || 'Shop the collection'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
-                : ages.length > 0 && <a href="#shop-by-age"><Button variant="primary" size="lg" className="group">Explore by age<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></a>}
+                : ageCards.length > 0 && <a href="#shop-by-age"><Button variant="primary" size="lg" className="group">Explore by age<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></a>}
               {error && <span role="status" className="text-sm text-ink-soft">Store catalogue is temporarily unavailable.</span>}
               {!error && !loading && !hasProducts && <span className="text-sm text-ink-soft">The published catalogue will appear here.</span>}
             </div>
@@ -51,13 +57,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {ages.length > 0 && <section id="shop-by-age" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+      {ageCards.length > 0 && <section id="shop-by-age" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div><p className="text-xs uppercase tracking-[0.2em] text-ink-soft">Browse the published sizes</p><h2 className="mt-2 font-serif text-3xl font-light text-ink sm:text-4xl">Shop by age</h2></div>
+          <div><p className="text-xs uppercase tracking-[0.2em] text-ink-soft">Browse by age</p><h2 className="mt-2 font-serif text-3xl font-light text-ink sm:text-4xl">Shop by age</h2></div>
           {hasProducts && <Link to="/shop" className="inline-flex items-center gap-2 text-sm text-ink underline underline-offset-4">View all products<ArrowRight size={15} /></Link>}
         </div>
         <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-          {ages.map((age) => <Link key={age.id} to={`/shop?age=${encodeURIComponent(age.id)}`} className="group relative block overflow-hidden bg-[#eee9e3]">
+          {ageCards.map((age) => <Link key={age.id} to={`/shop?age=${encodeURIComponent(age.id)}`} className="group relative block overflow-hidden bg-[#eee9e3]">
             <div className="aspect-[4/5] overflow-hidden"><img src={age.image || ageImage(age.label)} alt={`Editorial photograph for ${age.label}`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" /></div>
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/55 to-transparent px-4 pb-4 pt-14 text-white sm:px-5 sm:pb-5"><span className="font-serif text-xl sm:text-2xl">{age.label}</span><ArrowRight size={17} className="mb-1 transition-transform group-hover:translate-x-1" /></div>
           </Link>)}
