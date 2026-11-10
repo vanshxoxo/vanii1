@@ -21,7 +21,7 @@ Audit scope: branch `codex/imagekit-client-preview`; repository source and migra
 | COD | **BLOCKED (policy confirmation)** | Database RPC reads `cod_enabled`, limits and surcharge from `store_settings`; defaults fail closed if unavailable. Owner must confirm business policy and actual setting values before enabling or accepting COD. |
 | Shiprocket | **BLOCKED (business setup)** | Function requires server-side credentials and pickup/parcel settings; no Preview credentials or pickup details were available. No shipping/tracking claim is verified. |
 | Local desktop homepage | **PASS (direct browser check)** | Opened the local Vite build and confirmed the hero, editorial imagery, age navigation, empty-catalog state, brand story, newsletter and footer rendered. No real product cards are expected without configured Supabase data. This is not the deployed Preview. |
-| Deployed Preview and mobile layout | **BLOCKED** | The latest Vercel Preview is protected by SSO and the connected Vercel account cannot access its project/deployment. No deployed browser console/network, actual product pages, image requests or 375px mobile check could be performed. |
+| Deployed Preview and mobile layout | **BLOCKED** | After push `d1bcdce`, the connected Vercel scope returned no matching deployment for `vanii1` / `codex/imagekit-client-preview`; earlier deployment access was protected by SSO and the connected account could not access the owning project. No new Preview URL/build status, deployed browser console/network, actual product pages, image requests or 375px mobile check could be confirmed. |
 
 ## Environment variables by runtime
 
@@ -49,7 +49,7 @@ Never print secret values. No environment values were available to verify in thi
 ## Next actions
 
 1. Apply migration 004 to the intended Supabase project after reviewing its safe, unpublished intake behavior; verify all four migrations in SQL Editor.
-2. Set the exact Preview origin in the Supabase function secret `STOREFRONT_ORIGINS`, deploy the changed Edge Functions, and configure Preview Vercel Config/Secret variables.
+2. Restore Vercel access to the team owning `vanii1` and confirm the Git integration creates a Preview for `d1bcdce`. Set the exact Preview origin in the Supabase function secret `STOREFRONT_ORIGINS`, deploy the changed Edge Functions, and configure Preview Vercel Config/Secret variables.
 3. Bootstrap the verified owner using `ADMIN_SETUP.md`; sign in and run owner, catalog manager, media manager, order manager, customer and anonymous access checks.
 4. Supply and approve real product data, variants, prices, stock, policies and authorized product photography per `BUSINESS_CONTENT_REQUIRED.md`. Keep incomplete products as drafts.
 5. Only after actual COD policy confirmation, decide whether to enable COD. Keep online payments locked until a Preview test credential/webhook end-to-end test passes. Configure Shiprocket only after pickup setup is supplied.
