@@ -7,6 +7,7 @@ import CartDrawer from './components/CartDrawer';
 import SearchOverlay from './components/SearchOverlay';
 import MobileNav from './components/MobileNav';
 import ToastContainer from './components/Toast';
+import DemoPreviewNotice from './components/DemoPreviewNotice';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
@@ -53,7 +54,8 @@ export default function App() {
       <StoreProvider>
         <ScrollToTop />
         <HandleHashScroll />
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-screen flex-col overflow-x-clip">
+          <DemoPreviewNotice />
           <Header />
           <main className="flex-1">
             <PageTransition>

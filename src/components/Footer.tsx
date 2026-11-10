@@ -3,6 +3,7 @@ import { Instagram } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCmsSection } from '../lib/cms';
+import { isDemoPreviewHost } from '../demoData';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -21,6 +22,11 @@ export default function Footer() {
       return;
     }
     setError('');
+    if (isDemoPreviewHost()) {
+      setSubscribed(true);
+      setEmail('');
+      return;
+    }
     if (supabase) {
       const { error: subscribeError } = await supabase.from('newsletter_subscribers').upsert({ email: email.trim().toLowerCase(), status: 'pending', consented_at: new Date().toISOString() }, { onConflict: 'email', ignoreDuplicates: true });
       if (subscribeError) { setError('We could not save your signup. Please try again.'); return; }
@@ -88,13 +94,13 @@ export default function Footer() {
                   type="submit"
                   className="px-5 py-2.5 bg-ivory text-charcoal text-[13px] font-medium hover:bg-ivory/90 transition-colors whitespace-nowrap"
                 >
-                  Subscribe
+                  {isDemoPreviewHost() ? 'Preview only' : 'Subscribe'}
                 </button>
               </div>
               {error && <p className="mt-2 text-xs text-clay">{error}</p>}
               {subscribed && (
                 <p className="mt-2 text-xs text-ivory/60">
-                  {supabase ? 'Thanks — your signup request has been received.' : "You're on the list! Welcome to the Little Loom family. (Demo confirmation)"}
+                  {isDemoPreviewHost() ? 'Newsletter signups are disabled in this client preview.' : supabase ? 'Thanks — your signup request has been received.' : "You're on the list! Welcome to the Little Loom family. (Demo confirmation)"}
                 </p>
               )}
             </form>

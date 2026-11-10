@@ -27,6 +27,7 @@ export interface Product {
   tags?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;
+  isDemo?: boolean;
 }
 
 export interface ProductVariant {
@@ -48,6 +49,7 @@ export interface CartItem {
   size: string;
   quantity: number;
   variantId?: string;
+  isDemo?: boolean;
 }
 
 export interface AgeInfo {

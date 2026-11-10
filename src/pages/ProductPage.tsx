@@ -102,6 +102,7 @@ export default function ProductPage() {
       size: chosenSize,
       quantity,
       variantId: selectedVariant?.id,
+      isDemo: product.isDemo,
     });
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2000);

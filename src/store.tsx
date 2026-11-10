@@ -96,7 +96,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const image = imageRow?.media_assets ? publicMediaUrl(imageRow.media_assets, 600) : '';
           return [{ productId: product.id, slug: product.slug, name: product.name, price: Number(product.price), image, color: variant.colour, size: variant.size, quantity: row.quantity, variantId: row.variant_id }];
         });
-        setCart(merged);
+        setCart([...merged, ...cartRef.current.filter((item) => item.isDemo)]);
       }
 
       const { data: wishlistRow } = await supabase!.from('wishlists').upsert({ customer_id: customerId }, { onConflict: 'customer_id' }).select('id').single();
@@ -104,7 +104,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const { data: saved } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', wishlistRow.id);
         let ids = (saved || []).map((row: any) => row.product_id as string);
         if (wishlistRef.current.length) {
-          const toAdd = wishlistRef.current.filter((id) => !ids.includes(id));
+          const toAdd = wishlistRef.current.filter((id) => !id.startsWith('demo-') && !ids.includes(id));
           if (toAdd.length) await supabase!.from('wishlist_items').upsert(toAdd.map((product_id) => ({ wishlist_id: wishlistRow.id, product_id })), { onConflict: 'wishlist_id,product_id' });
           ids = [...new Set([...ids, ...wishlistRef.current])];
         }
@@ -144,9 +144,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const { data: row } = await supabase!.from('wishlists').upsert({ customer_id: userId }, { onConflict: 'customer_id' }).select('id').single();
       if (!row?.id) return;
-      if (wishlist.length) await supabase!.from('wishlist_items').upsert(wishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
+      const persistentWishlist = wishlist.filter((productId) => !productId.startsWith('demo-'));
+      if (persistentWishlist.length) await supabase!.from('wishlist_items').upsert(persistentWishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
       const { data: existing } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', row.id);
-      const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !wishlist.includes(id));
+      const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !persistentWishlist.includes(id));
       if (remove.length) await supabase!.from('wishlist_items').delete().eq('wishlist_id', row.id).in('product_id', remove);
     })();
   }, [wishlist, userId, remoteReady]);

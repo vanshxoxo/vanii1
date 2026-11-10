@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react';
 import type { AgeInfo, CategoryInfo, Product } from '../types';
 import { isSupabaseConfigured, publicMediaUrl, responsiveMediaSrcSet, supabase } from './supabase';
+import { ageGroups as demoAges, categories as demoCategories, demoProducts, editorialImages, isDemoPreviewHost } from '../demoData';
 
 type CatalogResult = { products: Product[]; ages: AgeInfo[]; categories: CategoryInfo[]; hero: { heading: string; body: string; image: string; mobileImage: string; ctaLabel: string; ctaHref: string } | null; loading: boolean; error: string | null };
 type RawAsset = { provider: 'cloudinary' | 'imagekit' | 'external' | 'supabase'; delivery_url: string | null; external_url: string | null; resource_type?: string };
 
+const demoHero = {
+  heading: 'Small humans.\nBig outfits.',
+  body: 'A little demo wardrobe for tiny adventures. These sample styles and images are for preview only.',
+  image: editorialImages[0], mobileImage: editorialImages[3],
+  ctaLabel: 'Shop Demo Styles', ctaHref: '/shop',
+};
+
+function demoCatalog(): Pick<CatalogResult, 'products' | 'ages' | 'categories' | 'hero'> {
+  return { products: demoProducts, ages: demoAges, categories: demoCategories, hero: demoHero };
+}
+
 export function useCatalog(): CatalogResult {
   const [result, setResult] = useState<CatalogResult>({
-    products: [],
-    ages: [],
-    categories: [],
-    hero: null,
+    ...(isDemoPreviewHost() && !isSupabaseConfigured ? demoCatalog() : { products: [], ages: [], categories: [], hero: null }),
     loading: isSupabaseConfigured,
-    error: isSupabaseConfigured ? null : 'Connect a Supabase project to load the product catalog.',
+    error: isSupabaseConfigured || isDemoPreviewHost() ? null : 'Connect a Supabase project to load the product catalog.',
   });
 
   useEffect(() => {
@@ -77,6 +86,10 @@ export function useCatalog(): CatalogResult {
         mobileImage: mobileAsset ? publicMediaUrl(mobileAsset as RawAsset, 800) : '',
         ctaLabel: heroData.cta_label || '', ctaHref: heroData.cta_href || '',
       } : null;
+      if (products.length === 0 && isDemoPreviewHost()) {
+        setResult({ ...demoCatalog(), loading: false, error: null });
+        return;
+      }
       setResult({ products, ages, categories, hero, loading: false, error: null });
     }
     void load();

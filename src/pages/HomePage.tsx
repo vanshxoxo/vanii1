@@ -24,6 +24,11 @@ export default function HomePage() {
 
   const newArrivals = products.filter((p) => p.isNew).slice(0, 6);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
+  const previewCollections = products[0]?.isDemo ? [
+    { name: 'Soft Starts', label: 'Newborn essentials', category: 'Rompers', image: products.find((p) => p.category === 'Rompers')?.images[0] },
+    { name: 'Little Explorers', label: 'Easy play sets', category: 'Co-ord Sets', image: products.find((p) => p.category === 'Co-ord Sets')?.images[0] },
+    { name: 'Sleepy Time', label: 'Cozy nights', category: 'Sleepwear', image: products.find((p) => p.category === 'Sleepwear')?.images[0] },
+  ] : [];
   const heroLines = hero?.heading ? hero.heading.split('\n') : ['Small humans.', 'Big outfits.'];
   const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/shop?filter=new';
   const campaignHref = campaign?.cta_href?.startsWith('/') ? campaign.cta_href : '/shop';
@@ -41,6 +46,7 @@ export default function HomePage() {
       size: availableVariant?.size ?? product.sizes[0],
       quantity: 1,
       variantId: availableVariant?.id,
+      isDemo: product.isDemo,
     });
   };
 
@@ -297,6 +303,21 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {previewCollections.length > 0 && <section className="bg-[#f8f4f0] py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Reveal><SectionHeading eyebrow="Curated for little lives" title={<>The little <span className="italic">edits</span></>} description="Sample collections for the Little Loom preview." align="center" /></Reveal>
+          <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:mt-12 lg:gap-6">
+            {previewCollections.map((collection, index) => <Reveal key={collection.name} delay={index * 90}>
+              <Link to={`/shop?category=${encodeURIComponent(collection.category)}`} className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-cream">
+                {collection.image && <img src={collection.image} alt={`${collection.name} sample styles`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/65 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5 text-cream lg:p-7"><p className="text-[10px] uppercase tracking-[0.18em] text-cream/75">{collection.label}</p><h3 className="mt-1 font-serif text-2xl lg:text-3xl">{collection.name}</h3><span className="mt-3 inline-block text-xs underline underline-offset-4">Explore sample looks</span></div>
+              </Link>
+            </Reveal>)}
+          </div>
+        </div>
+      </section>}
 
       {/* F. BESTSELLERS */}
       <section className="py-16 lg:py-24 bg-cream">

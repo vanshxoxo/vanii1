@@ -113,6 +113,7 @@ export default function ShopPage() {
       size: availableVariant?.size ?? product.sizes[0],
       quantity: 1,
       variantId: availableVariant?.id,
+      isDemo: product.isDemo,
     });
   };
 
