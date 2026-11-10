@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed.' });
   if (!checkSameOrigin(req)) return json(res, 403, { error: 'Origin is not allowed.' });
   try {
-    const { publicKey, privateKey } = requireImageKit();
     await requireMediaManager(req);
+    const { publicKey, privateKey } = requireImageKit();
     const mime = String(req.body?.mime_type || '');
     const size = Number(req.body?.file_size_bytes || 0);
     const purpose = String(req.body?.purpose || '');
