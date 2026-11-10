@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../useStore';
 import { useEffect } from 'react';
 import { useCatalog } from '../lib/catalog';
-import { useCmsSection } from '../lib/cms';
 
 export default function MobileNav() {
   const { isMobileNavOpen, closeMobileNav } = useStore();
-  const { products, ages, collections } = useCatalog();
-  const brandStory = useCmsSection('brand-story');
+  const { ages } = useCatalog();
 
   useEffect(() => {
     if (isMobileNavOpen) {
@@ -24,10 +22,15 @@ export default function MobileNav() {
   if (!isMobileNavOpen) return null;
 
   const navLinks = [
+    { label: 'Latest', href: '/shop?filter=new' },
     { label: 'Shop', href: '/shop' },
-    ...(products.some((product) => product.isNew) ? [{ label: 'Latest', href: '/shop?filter=new' }] : []),
-    ...(collections.length ? [{ label: 'Collections', href: '/#collections' }] : []),
-    ...(brandStory ? [{ label: 'Our Story', href: '/#brand-story' }] : []),
+    { label: 'Collections', href: '/shop' },
+    { label: 'Our World', href: '/#brand-story' },
+  ];
+
+  const ageLinks = ages.length > 0 ? ages.map((age) => ({ id: age.id, label: age.label })) : [
+    { id: 'Newborn', label: 'Newborn' }, { id: 'Baby', label: 'Baby' },
+    { id: 'Toddler', label: 'Toddler' }, { id: 'Little Kids', label: 'Little Kids' },
   ];
 
   return (
@@ -60,10 +63,10 @@ export default function MobileNav() {
             ))}
           </ul>
 
-          {ages.length > 0 && <div className="mt-6">
+          {ageLinks.length > 0 && <div className="mt-6">
             <p className="text-xs font-semibold uppercase tracking-wider text-ink-light mb-3">Shop by age</p>
             <ul className="flex flex-col gap-1">
-              {ages.map((age) => (
+              {ageLinks.map((age) => (
                 <li key={age.id}>
                   <Link
                     to={`/shop?age=${encodeURIComponent(age.id)}`}

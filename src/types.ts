@@ -23,6 +23,7 @@ export interface Product {
   fabric: string;
   care: string;
   isNew?: boolean;
+  isBestseller?: boolean;
   tags?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;

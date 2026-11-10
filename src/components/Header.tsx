@@ -3,15 +3,12 @@ import { Search, User, Heart, ShoppingBag, Menu } from 'lucide-react';
 import { useStore } from '../useStore';
 import { useEffect, useState } from 'react';
 import { useCmsSection } from '../lib/cms';
-import { useCatalog } from '../lib/catalog';
 
 export default function Header() {
   const { cartCount, wishlist, openCart, openSearch, openMobileNav, cartPulse } = useStore();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const announcement = useCmsSection('announcement');
-  const brandStory = useCmsSection('brand-story');
-  const { products, ages, collections } = useCatalog();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -20,11 +17,11 @@ export default function Header() {
   }, []);
 
   const navLinks = [
+    { label: 'Latest', href: '/shop?filter=new' },
     { label: 'Shop', href: '/shop' },
-    ...(products.some((product) => product.isNew) ? [{ label: 'Latest', href: '/shop?filter=new' }] : []),
-    ...(ages.length ? [{ label: 'By Age', href: '/#shop-by-age' }] : []),
-    ...(collections.length ? [{ label: 'Collections', href: '/#collections' }] : []),
-    ...(brandStory ? [{ label: 'Our Story', href: '/#brand-story' }] : []),
+    { label: 'By Age', href: '/#shop-by-age' },
+    { label: 'Collections', href: '/shop' },
+    { label: 'Our World', href: '/#brand-story' },
   ];
 
   const isActive = (href: string) => {
@@ -35,15 +32,15 @@ export default function Header() {
   return (
     <>
       {/* Announcement bar — slim, dark, centered */}
-      {announcement?.heading && <div role="region" aria-label="Announcement" className="announcement-bar bg-charcoal text-ivory">
+      <div role="region" aria-label="Little Loom announcement" className="announcement-bar bg-charcoal text-ivory">
         <div className="announcement-track" aria-hidden="true">
           {[0, 1].map((copy) => (
             <span key={copy} className="announcement-message">
-              {announcement.heading}
+              {announcement?.heading || 'LITTLE LOOM · CHILDREN’S CLOTHING'}
             </span>
           ))}
         </div>
-      </div>}
+      </div>
 
       {/* Main header */}
       <header

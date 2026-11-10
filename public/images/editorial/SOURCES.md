@@ -16,3 +16,26 @@ Pexels' license permits commercial use of photos subject to its restrictions. Do
 | `clothing-detail.webp` | [Cozy Children's Clothing Hanging in Soft Light](https://www.pexels.com/photo/cozy-childrens-clothing-hanging-in-soft-light-35675691/) | Rumeysa Demir | Editorial wardrobe / brand story |
 
 The source files are WebP derivatives generated from Pexels image CDN downloads; no product data, Supabase records, or customer data are stored here. Keep this source manifest with the assets if they are copied or migrated to ImageKit.
+
+## Recovered Version B image set
+
+These local files were recovered from the Pexels CDN URLs already present in Version B's `src/demoData.ts` at commit [`98396e1`](https://github.com/vanshxoxo/vanii1/commit/98396e17698d76209fdb590fe0cc89045305cb3e). The old code also attached several of these images to invented sample products; that product/catalog use was deliberately discarded. Here they are used only as editorial design imagery and category illustrations. They are never presented as Little Loom product photographs. The commit did not retain photographer names or the original Pexels photo page metadata, so those names are not asserted here.
+
+| Local asset | Pexels CDN source | Intended editorial use |
+|---|---|---|
+| `version-b/hero-desktop.webp`, `version-b/hero-mobile.webp` | [Photo 19465616](https://images.pexels.com/photos/19465616/pexels-photo-19465616.jpeg?auto=compress&cs=tinysrgb&h=500&w=500) | Responsive homepage hero |
+| `version-b/newborn.webp` | [Photo 16949145](https://images.pexels.com/photos/16949145/pexels-photo-16949145.jpeg?auto=compress&cs=tinysrgb&h=500&w=400) | Newborn age tile |
+| `version-b/baby.webp` | [Photo 16949262](https://images.pexels.com/photos/16949262/pexels-photo-16949262.jpeg?auto=compress&cs=tinysrgb&h=500&w=400) | Baby age tile |
+| `version-b/toddler.webp` | [Photo 15443075](https://images.pexels.com/photos/15443075/pexels-photo-15443075.jpeg?auto=compress&cs=tinysrgb&h=500&w=400) | Toddler age tile |
+| `version-b/little-kids.webp` | [Photo 13627298](https://images.pexels.com/photos/13627298/pexels-photo-13627298.jpeg?auto=compress&cs=tinysrgb&h=500&w=400) | Little kids age tile |
+| `version-b/category-rompers.webp` | [Photo 29562273](https://images.pexels.com/photos/29562273/pexels-photo-29562273.jpeg?auto=compress&cs=tinysrgb&h=700&w=500) | Rompers category illustration |
+| `version-b/category-tops.webp` | [Photo 15967300](https://images.pexels.com/photos/15967300/pexels-photo-15967300.jpeg?auto=compress&cs=tinysrgb&h=500&w=500) | Tops category illustration |
+| `version-b/category-dresses.webp` | [Photo 30111516](https://images.pexels.com/photos/30111516/pexels-photo-30111516.jpeg?auto=compress&cs=tinysrgb&h=700&w=500) | Dresses category illustration |
+| `version-b/category-bottoms.webp` | [Photo 33581402](https://images.pexels.com/photos/33581402/pexels-photo-33581402.jpeg?auto=compress&cs=tinysrgb&h=500&w=600) | Bottoms category illustration |
+| `version-b/category-sleepwear.webp` | [Photo 33253247](https://images.pexels.com/photos/33253247/pexels-photo-33253247.jpeg?auto=compress&cs=tinysrgb&h=500&w=500) | Sleepwear category illustration |
+| `version-b/category-coords.webp` | [Photo 32234111](https://images.pexels.com/photos/32234111/pexels-photo-32234111.jpeg?auto=compress&cs=tinysrgb&h=900&w=600) | Co-ords category illustration |
+| `version-b/campaign.webp` | [Photo 1652116](https://images.pexels.com/photos/1652116/pexels-photo-1652116.jpeg?auto=compress&cs=tinysrgb&h=500&w=500) | Editorial campaign panel |
+| `version-b/brand-story.webp` | [Photo 4982526](https://images.pexels.com/photos/4982526/pexels-photo-4982526.jpeg?auto=compress&cs=tinysrgb&h=500&w=500) | Editorial brand-story panel |
+| `version-b/fabric-detail.webp` | [Photo 32233627](https://images.pexels.com/photos/32233627/pexels-photo-32233627.jpeg?auto=compress&cs=tinysrgb&h=900&w=600) | Fabric/detail panel |
+
+Pexels states that its images may be used commercially subject to the [Pexels License](https://www.pexels.com/license/); do not imply endorsement or associate these editorial photos with actual product listings.

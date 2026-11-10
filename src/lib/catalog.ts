@@ -59,7 +59,7 @@ export function useCatalog(): CatalogResult {
           category: mainCategory, ages: ageNames, sizes, colors,
           images: images.map((image) => image.url), imageSrcSets: images.map((image) => image.srcSet), imageAltTexts: images.map((image) => image.alt),
           fabric: row.fabric_composition || row.material || '', care: row.care_instructions || '',
-          tags: row.tags || [], isNew: collections.includes('new-arrivals'),
+          tags: row.tags || [], isNew: collections.includes('new-arrivals'), isBestseller: collections.includes('bestsellers'),
           variants: variants.map((variant: any) => ({ id: variant.id, sku: variant.sku, size: variant.size, colour: variant.colour, price: Number(variant.price_override ?? row.price), available: availability.get(variant.id) === true })),
           inStock: variants.some((variant: any) => availability.get(variant.id) === true),
         } as Product;

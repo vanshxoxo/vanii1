@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, X, Check, ChevronDown, Package } from 'lucide-react';
+import { SlidersHorizontal, X, Check, ChevronDown, Package, ArrowRight } from 'lucide-react';
 import { useCatalog } from '../lib/catalog';
 import type { Product, AgeGroup, Category } from '../types';
 import ProductCard from '../components/ProductCard';
@@ -100,9 +100,21 @@ export default function ShopPage() {
     selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size +
     (priceRange[0] > 0 || priceRange[1] < Number.MAX_SAFE_INTEGER ? 1 : 0) + (inStockOnly ? 1 : 0);
 
-  if (catalogLoading) return <main className="mx-auto max-w-3xl px-4 py-24 text-center text-sm text-ink-soft">Loading the published catalogue…</main>;
-  if (catalogError) return <main className="mx-auto max-w-3xl px-4 py-24 text-center"><h1 className="font-serif text-3xl text-ink">The catalogue is unavailable</h1><p className="mt-3 text-sm text-ink-soft">Store data could not be loaded. Please try again later.</p></main>;
-  if (products.length === 0) return <main className="mx-auto max-w-3xl px-4 py-24 text-center"><p className="text-xs uppercase tracking-[0.2em] text-ink-soft">Little Loom</p><h1 className="mt-3 font-serif text-3xl text-ink sm:text-4xl">No products are currently available</h1><p className="mt-4 text-sm leading-6 text-ink-soft">The public catalogue has no published products yet.</p><Link to="/" className="mt-7 inline-block text-sm underline underline-offset-4">Return to Little Loom</Link></main>;
+  if (catalogLoading || catalogError || products.length === 0) {
+    const unavailable = Boolean(catalogError);
+    return <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+      <div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
+        <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-16">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-peach">Little Loom · Shop</p>
+          <h1 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{catalogLoading ? 'Loading the published collection' : unavailable ? 'The catalogue is unavailable' : 'No products are currently published'}</h1>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-ink-soft">{catalogLoading ? 'Published products will appear here once the catalogue has loaded.' : unavailable ? 'We could not retrieve the published catalogue just now. Please try again shortly.' : 'Product listings and prices will appear here when they are published in the Little Loom catalogue.'}</p>
+          {!catalogLoading && <Link to="/" className="mt-7 inline-flex items-center gap-2 self-start text-sm underline underline-offset-4">Return to Little Loom<ArrowRight size={15} /></Link>}
+        </div>
+        <img src="/images/editorial/version-b/category-rompers.webp" alt="Editorial Pexels photograph of children outdoors; this image is not a product listing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[440px]" />
+      </div>
+      <p className="mt-3 text-center text-[10px] uppercase tracking-[0.12em] text-ink-soft">Editorial photograph · Pexels · not a Little Loom product image</p>
+    </main>;
+  }
 
   const handleQuickAdd = (product: Product) => {
     const availableVariant = product.variants?.find((variant) => variant.available);
