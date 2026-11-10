@@ -110,9 +110,8 @@ export default function ShopPage() {
           <p className="mt-4 max-w-lg text-sm leading-7 text-ink-soft">{catalogLoading ? 'Published products will appear here once the catalogue has loaded.' : unavailable ? 'We could not retrieve the published catalogue just now. Please try again shortly.' : 'Product listings and prices will appear here when they are published in the Little Loom catalogue.'}</p>
           {!catalogLoading && <Link to="/" className="mt-7 inline-flex items-center gap-2 self-start text-sm underline underline-offset-4">Return to Little Loom<ArrowRight size={15} /></Link>}
         </div>
-        <img src="/images/editorial/version-b/category-rompers.webp" alt="Editorial Pexels photograph of children outdoors; this image is not a product listing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[440px]" />
+        <img src="/images/editorial/version-b/category-rompers.webp" alt="Children outdoors in relaxed everyday clothing" loading="eager" className="min-h-72 w-full object-cover lg:min-h-[440px]" />
       </div>
-      <p className="mt-3 text-center text-[10px] uppercase tracking-[0.12em] text-ink-soft">Editorial photograph · Pexels · not a Little Loom product image</p>
     </main>;
   }
 
