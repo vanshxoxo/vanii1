@@ -5,10 +5,10 @@ import Button from '../components/Button';
 import AdminContentPage from './AdminContentPage';
 import { formatINR } from '../data';
 
-type Tab = 'products' | 'categories' | 'media' | 'homepage' | 'collections' | 'content' | 'orders' | 'settings';
+type Tab = 'overview' | 'products' | 'categories' | 'media' | 'homepage' | 'collections' | 'content' | 'customers' | 'roles' | 'orders' | 'settings';
 type Status = 'loading' | 'signed-out' | 'denied' | 'ready' | 'unconfigured';
-type ProductForm = { id?: string; name: string; slug: string; description: string; material: string; fabric_composition: string; care_instructions: string; price: string; compare_at_price: string; status: string; seo_title: string; seo_description: string };
-const emptyProduct: ProductForm = { name: '', slug: '', description: '', material: '', fabric_composition: '', care_instructions: '', price: '', compare_at_price: '', status: 'draft', seo_title: '', seo_description: '' };
+type ProductForm = { id?: string; name: string; slug: string; description: string; material: string; fabric_composition: string; care_instructions: string; price: string; compare_at_price: string; status: string; seo_title: string; seo_description: string; tags: string[] };
+const emptyProduct: ProductForm = { name: '', slug: '', description: '', material: '', fabric_composition: '', care_instructions: '', price: '', compare_at_price: '', status: 'draft', seo_title: '', seo_description: '', tags: [] };
 const purposes = ['product', 'collection', 'category', 'homepage_hero', 'campaign', 'brand_story', 'lookbook', 'video'];
 
 function fileSha256(file: File) {
@@ -17,13 +17,39 @@ function fileSha256(file: File) {
   );
 }
 
+function pendingProductApprovals(product: any): string[] {
+  const missing: string[] = [];
+  if (product.tags?.includes('owner-intake') || /intake draft/i.test(product.name || '')) missing.push('approved name');
+  if (product.price == null || Number(product.price) <= 0) missing.push('price');
+  if (!product.description?.trim()) missing.push('description');
+  if (!(product.material?.trim() || product.fabric_composition?.trim())) missing.push('fabric details');
+  if (!product.care_instructions?.trim()) missing.push('care instructions');
+  const links = product.product_categories || [];
+  const kinds = links.map((link: any) => (Array.isArray(link.categories) ? link.categories[0] : link.categories)?.kind);
+  if (!kinds.includes('product')) missing.push('product category');
+  if (!kinds.includes('age')) missing.push('age group');
+  if (!product.product_variants?.length) missing.push('variants and SKUs');
+  const variants = product.product_variants || [];
+  const hasInventory = variants.every((variant: any) => {
+    const inventory = Array.isArray(variant.inventory) ? variant.inventory[0] : variant.inventory;
+    return inventory && Number.isFinite(Number(inventory.quantity_on_hand));
+  });
+  if (!variants.length || !hasInventory) missing.push('verified stock');
+  if (!product.product_media?.length) missing.push('authorized photos');
+  return missing;
+}
+
 export default function AdminPage() {
   const [access, setAccess] = useState<Status>(isSupabaseConfigured ? 'loading' : 'unconfigured');
-  const [tab, setTab] = useState<Tab>('products');
+  const [tab, setTab] = useState<Tab>('overview');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [roleAssignment, setRoleAssignment] = useState({ user_id: '', role: 'catalog_manager' });
   const [adminRoles, setAdminRoles] = useState<string[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [variants, setVariants] = useState<any[]>([]);
@@ -41,7 +67,7 @@ export default function AdminPage() {
   const [sections, setSections] = useState<any[]>([]);
   const [sectionForm, setSectionForm] = useState({ section_key: 'hero', section_type: 'hero', heading: '', body: '', cta_label: '', cta_href: '', desktop_asset_id: '', mobile_asset_id: '', is_published: false });
   const [collections, setCollections] = useState<any[]>([]);
-  const [collectionForm, setCollectionForm] = useState({ name: '', slug: '', description: '', product_id: '' });
+  const [collectionForm, setCollectionForm] = useState<{ id?: string; name: string; slug: string; description: string; product_id: string; cover_asset_id: string; display_order: number; status: string }>({ name: '', slug: '', description: '', product_id: '', cover_asset_id: '', display_order: 0, status: 'draft' });
   const [settings, setSettings] = useState<Record<string, any>>({});
 
   const report = (message: string) => { setNotice(message); setError(''); };
@@ -49,16 +75,19 @@ export default function AdminPage() {
 
   const loadAdminData = useCallback(async () => {
     if (!supabase) return;
-    const [p, c, m, h, cl, s, o] = await Promise.all([
-      supabase.from('products').select('*').order('updated_at', { ascending: false }),
+    const [p, c, m, h, cl, s, o, customerRows, roleRows, summary] = await Promise.all([
+      supabase.from('products').select('*,product_variants(id,sku,size,colour,inventory(quantity_on_hand,quantity_reserved)),product_media(id,media_assets(id)),product_categories(categories(id,kind))').order('updated_at', { ascending: false }),
       supabase.from('categories').select('*').order('display_order'),
       supabase.from('media_assets').select('*').order('created_at', { ascending: false }),
       supabase.from('homepage_sections').select('*').order('display_order'),
       supabase.from('collections').select('*').order('updated_at', { ascending: false }),
       supabase.from('store_settings').select('*'),
       supabase.from('orders').select('id,order_number,status,total,currency,payment_method,placed_at,order_items(product_name_snapshot,size_snapshot,colour_snapshot,quantity),payments(status,provider,refunds(status,amount)),shipments(status,awb_code,courier_name,tracking_url)').order('placed_at', { ascending: false }).limit(100),
+      supabase.from('customers').select('id,email,full_name,phone,created_at').order('created_at', { ascending: false }).limit(500),
+      supabase.from('admin_users').select('user_id,email,full_name,role').order('email'),
+      supabase.rpc('admin_dashboard_summary'),
     ]);
-    if (p.data) setProducts(p.data); if (c.data) setCategories(c.data); if (m.data) setMedia(m.data); if (h.data) setSections(h.data); if (cl.data) setCollections(cl.data); if (o.data) setOrders(o.data);
+    if (p.data) setProducts(p.data); if (c.data) setCategories(c.data); if (m.data) setMedia(m.data); if (h.data) setSections(h.data); if (cl.data) setCollections(cl.data); if (o.data) setOrders(o.data); if (customerRows.data) setCustomers(customerRows.data); if (roleRows.data) setAdminUsers(roleRows.data); if (summary.data) setDashboard(summary.data);
     if (s.data) setSettings(Object.fromEntries(s.data.map((row: any) => [row.setting_key, row.setting_value])));
   }, []);
 
@@ -75,7 +104,8 @@ export default function AdminPage() {
       if (!(roles || []).some((row: any) => ['owner', 'admin', 'catalog_manager', 'media_manager', 'order_manager'].includes(row.role))) { setAccess('denied'); return; }
       const roleNames = (roles || []).map((row: any) => row.role as string);
       setAdminRoles(roleNames);
-      if (roleNames.some((role) => role === 'owner' || role === 'admin' || role === 'catalog_manager')) setTab('products');
+      if (roleNames.some((role) => role === 'owner' || role === 'admin')) setTab('overview');
+      else if (roleNames.includes('catalog_manager')) setTab('products');
       else if (roleNames.includes('media_manager')) setTab('media');
       else setTab('orders');
       setAccess('ready');
@@ -96,7 +126,7 @@ export default function AdminPage() {
     ]);
     if (product.error) { fail(product.error.message); return; }
     const p = product.data;
-    setProductForm({ id, name: p.name, slug: p.slug, description: p.description, material: p.material, fabric_composition: p.fabric_composition, care_instructions: p.care_instructions, price: String(p.price), compare_at_price: p.compare_at_price == null ? '' : String(p.compare_at_price), status: p.status, seo_title: p.seo_title || '', seo_description: p.seo_description || '' });
+    setProductForm({ id, name: p.name, slug: p.slug, description: p.description || '', material: p.material || '', fabric_composition: p.fabric_composition || '', care_instructions: p.care_instructions || '', price: p.price == null ? '' : String(p.price), compare_at_price: p.compare_at_price == null ? '' : String(p.compare_at_price), status: p.status, seo_title: p.seo_title || '', seo_description: p.seo_description || '', tags: p.tags || [] });
     setVariants((variantRows.data || []).map((row: any) => ({ ...row, stock: row.inventory?.quantity_on_hand ?? 0 })));
     setCategoryIds((categoryRows.data || []).map((row: any) => row.category_id));
     setGallery(productGallery.data || []);
@@ -105,15 +135,21 @@ export default function AdminPage() {
   async function saveProduct(event: FormEvent) {
     event.preventDefault(); if (!supabase) return;
     setError(''); setNotice('');
+    if (productForm.compare_at_price.trim() && (!productForm.price.trim() || Number(productForm.compare_at_price) < Number(productForm.price))) {
+      fail('A compare-at price needs a verified base price and must be at least as high.'); return;
+    }
     if (productForm.status === 'published') {
       const hasProductCategory = categoryIds.some((id) => categories.some((category) => category.id === id && category.kind === 'product'));
       const hasAgeCategory = categoryIds.some((id) => categories.some((category) => category.id === id && category.kind === 'age'));
-      const hasCompleteVariants = variants.length > 0 && variants.every((variant) => String(variant.sku || '').trim() && String(variant.size || '').trim() && String(variant.colour || '').trim());
-      if (!productForm.description.trim() || !(productForm.material.trim() || productForm.fabric_composition.trim()) || !productForm.care_instructions.trim() || Number(productForm.price) <= 0 || !hasProductCategory || !hasAgeCategory || !hasCompleteVariants || gallery.length === 0) {
-        fail('Keep this product as a draft until its verified description, material, care, price, category, age group, SKU variants, and authorized product photos are complete.'); return;
+      const hasCompleteVariants = variants.length > 0 && variants.every((variant) => {
+        const inventory = Array.isArray(variant.inventory) ? variant.inventory[0] : variant.inventory;
+        return String(variant.sku || '').trim() && String(variant.size || '').trim() && String(variant.colour || '').trim() && inventory && Number.isFinite(Number(inventory.quantity_on_hand));
+      });
+      if (productForm.tags.includes('owner-intake') || /intake draft/i.test(productForm.name) || !productForm.name.trim() || !productForm.description.trim() || !(productForm.material.trim() || productForm.fabric_composition.trim()) || !productForm.care_instructions.trim() || !productForm.price.trim() || Number(productForm.price) <= 0 || !hasProductCategory || !hasAgeCategory || !hasCompleteVariants || gallery.length === 0) {
+        fail('Keep this product as a draft until its owner-approved name, verified description, material, care, price, product and age categories, SKU variants and stock, and authorized product photos are complete.'); return;
       }
     }
-    const payload = { name: productForm.name.trim(), slug: productForm.slug.trim(), description: productForm.description, material: productForm.material, fabric_composition: productForm.fabric_composition, care_instructions: productForm.care_instructions, price: Number(productForm.price), compare_at_price: productForm.compare_at_price ? Number(productForm.compare_at_price) : null, status: productForm.status, seo_title: productForm.seo_title || null, seo_description: productForm.seo_description || null, published_at: productForm.status === 'published' ? new Date().toISOString() : null };
+    const payload = { name: productForm.name.trim(), slug: productForm.slug.trim(), description: productForm.description, material: productForm.material, fabric_composition: productForm.fabric_composition, care_instructions: productForm.care_instructions, price: productForm.price.trim() ? Number(productForm.price) : null, compare_at_price: productForm.compare_at_price ? Number(productForm.compare_at_price) : null, status: productForm.status, seo_title: productForm.seo_title || null, seo_description: productForm.seo_description || null, tags: productForm.tags, published_at: productForm.status === 'published' ? new Date().toISOString() : null };
     const result = productForm.id ? await supabase.from('products').update(payload).eq('id', productForm.id).select('id').single() : await supabase.from('products').insert(payload).select('id').single();
     if (result.error) { fail(result.error.message); return; }
     const id = result.data.id;
@@ -187,6 +223,21 @@ export default function AdminPage() {
     const result = categoryForm.id ? await supabase.from('categories').update(payload).eq('id', categoryForm.id) : await supabase.from('categories').insert(payload);
     if (result.error) { fail(result.error.message); return; }
     report('Category saved.'); setCategoryForm({ kind: 'product', name: '', slug: '', description: '', display_order: 0, is_active: true, image_asset_id: '' }); await loadAdminData();
+  }
+
+  async function assignRole(event: FormEvent) {
+    event.preventDefault();
+    if (!supabase || !adminRoles.includes('owner') || !roleAssignment.user_id) return;
+    const { error: assignError } = await supabase.from('admin_roles').insert(roleAssignment);
+    if (assignError) { fail(assignError.message); return; }
+    report('Role assigned.'); await loadAdminData();
+  }
+
+  async function removeRole(userId: string, role: string) {
+    if (!supabase || !adminRoles.includes('owner') || role === 'owner') return;
+    const { error: removeError } = await supabase.from('admin_roles').delete().eq('user_id', userId).eq('role', role);
+    if (removeError) { fail(removeError.message); return; }
+    report('Role removed.'); await loadAdminData();
   }
 
   const onFiles = async (files: FileList | File[]) => {
@@ -270,13 +321,16 @@ export default function AdminPage() {
 
   async function createCollection(event: FormEvent) {
     event.preventDefault(); if (!supabase) return;
-    const { data, error: createError } = await supabase.from('collections').insert({ name: collectionForm.name, slug: collectionForm.slug, description: collectionForm.description, status: 'published', published_at: new Date().toISOString() }).select('id').single();
+    const payload = { name: collectionForm.name.trim(), slug: collectionForm.slug.trim(), description: collectionForm.description, cover_asset_id: collectionForm.cover_asset_id || null, display_order: collectionForm.display_order, status: collectionForm.status, published_at: collectionForm.status === 'published' ? new Date().toISOString() : null };
+    const { data, error: createError } = collectionForm.id
+      ? await supabase.from('collections').update(payload).eq('id', collectionForm.id).select('id').single()
+      : await supabase.from('collections').insert(payload).select('id').single();
     if (createError) { fail(createError.message); return; }
     if (collectionForm.product_id) {
-      const link = await supabase.from('collection_products').insert({ collection_id: data.id, product_id: collectionForm.product_id });
+      const link = await supabase.from('collection_products').upsert({ collection_id: data.id, product_id: collectionForm.product_id, display_order: 0 }, { onConflict: 'collection_id,product_id' });
       if (link.error) { fail(link.error.message); return; }
     }
-    setCollectionForm({ name: '', slug: '', description: '', product_id: '' }); report('Collection created.'); await loadAdminData();
+    setCollectionForm({ name: '', slug: '', description: '', product_id: '', cover_asset_id: '', display_order: collections.length, status: 'draft' }); report('Collection saved.'); await loadAdminData();
   }
 
   async function updateSetting(key: string, value: any) {
@@ -318,10 +372,11 @@ export default function AdminPage() {
 
   const filteredMedia = useMemo(() => media.filter((asset) => `${asset.original_filename} ${asset.purpose} ${asset.mime_type}`.toLowerCase().includes(mediaSearch.toLowerCase())), [media, mediaSearch]);
   const allAccess = adminRoles.some((role) => role === 'owner' || role === 'admin');
-  const allowedTabs: Tab[] = allAccess ? ['products','categories','media','homepage','collections','content','orders','settings'] : [
+  const isOwner = adminRoles.includes('owner');
+  const allowedTabs: Tab[] = allAccess ? ['overview','products','categories','media','homepage','collections','content','customers','orders','settings', ...(isOwner ? ['roles' as Tab] : [])] : [
     ...(adminRoles.includes('catalog_manager') ? ['products','categories','homepage','collections','content'] as Tab[] : []),
     ...(adminRoles.includes('media_manager') ? ['media'] as Tab[] : []),
-    ...(adminRoles.includes('order_manager') ? ['orders'] as Tab[] : []),
+    ...(adminRoles.includes('order_manager') ? ['orders','customers'] as Tab[] : []),
   ];
 
   if (access === 'unconfigured') return <AdminMessage title="Admin setup needed" body="Add your Supabase project URL and publishable key in .env.local, then apply the database migration." />;
@@ -334,16 +389,29 @@ export default function AdminPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.18em] text-ink-light">Little Loom</p><h1 className="mt-1 font-serif text-3xl">Store administration</h1></div><Link className="text-sm underline" to="/">View storefront</Link></div>
-      <nav className="mt-6 flex gap-2 overflow-x-auto border-b border-ink/10">{allowedTabs.map((item) => tabButton(item, ({ products: 'Products & variants', categories: 'Categories', media: 'Media library', homepage: 'Homepage CMS', collections: 'Collections', content: 'Policies, FAQs & banners', orders: 'Orders', settings: 'Store settings' } as Record<Tab,string>)[item]))}</nav>
+      <nav className="mt-6 flex gap-2 overflow-x-auto border-b border-ink/10">{allowedTabs.map((item) => tabButton(item, ({ overview: 'Overview', products: 'Products & variants', categories: 'Categories', media: 'Media library', homepage: 'Homepage CMS', collections: 'Collections', content: 'Policies, FAQs & banners', customers: 'Customers', roles: 'Team roles', orders: 'Orders', settings: 'Store settings' } as Record<Tab,string>)[item]))}</nav>
       {(error || notice) && <p role={error ? 'alert' : 'status'} className={`mt-4 p-3 text-sm ${error ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-900'}`}>{error || notice}</p>}
 
+      {tab === 'overview' && <section className="mt-6 space-y-8">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[
+      ['Products', dashboard?.total_products], ['Published', dashboard?.published_products], ['Drafts needing review', dashboard?.draft_products], ['Active categories', dashboard?.active_categories],
+          ['Available units', dashboard?.available_units], ['Out of stock variants', dashboard?.out_of_stock_variants], ['Orders', dashboard?.total_orders], ['Recognized revenue', dashboard?.recognized_revenue == null ? null : formatINR(Number(dashboard.recognized_revenue))],
+        ].map(([label, value]) => <article key={String(label)} className="border border-ink/10 p-4"><p className="text-xs uppercase tracking-wider text-ink-light">{label}</p><p className="mt-2 font-serif text-2xl">{value == null ? '—' : value}</p></article>)}</div>
+        <div className="grid gap-8 lg:grid-cols-2"><div><h2 className="font-serif text-xl">Categories</h2><ul className="mt-3 divide-y divide-ink/10">{categories.map((item) => <li key={item.id} className="flex justify-between py-2 text-sm"><span>{item.name}</span><span className="text-ink-light">{products.filter((product) => (product.product_categories || []).some((link: any) => (Array.isArray(link.categories) ? link.categories[0] : link.categories)?.id === item.id)).length} products</span></li>)}</ul></div><div><h2 className="font-serif text-xl">Recent activity</h2><ul className="mt-3 divide-y divide-ink/10">{(dashboard?.recent_activity || []).map((item: any, index: number) => <li key={`${item.record_id}-${index}`} className="py-2 text-xs"><span className="font-medium">{item.operation}</span> · {item.table_name} · {new Date(item.created_at).toLocaleString()}</li>)}</ul>{!dashboard?.recent_activity?.length && <p className="mt-2 text-sm text-ink-soft">No audit activity is recorded yet.</p>}</div></div>
+      </section>}
+
+      {tab === 'customers' && <section className="mt-6"><h2 className="font-serif text-xl">Customer accounts</h2><p className="mt-1 text-xs text-ink-light">Private contact details are shown only to authorized order managers and administrators.</p><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[640px] border-collapse text-left text-sm"><thead><tr className="border-b border-ink/15 text-xs uppercase tracking-wider text-ink-light"><th className="py-3 pr-3">Customer</th><th className="py-3 pr-3">Email</th><th className="py-3 pr-3">Phone</th><th className="py-3">Joined</th></tr></thead><tbody>{customers.map((customer) => <tr key={customer.id} className="border-b border-ink/10"><td className="py-3 pr-3">{customer.full_name || 'Name not provided'}</td><td className="py-3 pr-3">{customer.email || 'Email unavailable'}</td><td className="py-3 pr-3">{customer.phone || '—'}</td><td className="py-3">{new Date(customer.created_at).toLocaleDateString()}</td></tr>)}</tbody></table></div>{!customers.length && <p className="mt-4 text-sm text-ink-soft">No customer profiles are visible to this account.</p>}</section>}
+
+      {tab === 'roles' && isOwner && <section className="mt-6 grid gap-8 lg:grid-cols-[360px_1fr]"><form onSubmit={(e) => void assignRole(e)} className="space-y-4"><h2 className="font-serif text-xl">Assign team role</h2><p className="text-xs leading-5 text-ink-soft">Select an existing registered customer account. Only the owner can change team roles. Owner access must be provisioned securely by the database owner.</p><label className="block text-sm">Account<select required value={roleAssignment.user_id} onChange={(e) => setRoleAssignment({ ...roleAssignment, user_id: e.target.value })} className="admin-input"><option value="">Choose account…</option>{customers.map((item) => <option key={item.id} value={item.id}>{item.email || item.full_name || item.id}</option>)}</select></label><label className="block text-sm">Role<select value={roleAssignment.role} onChange={(e) => setRoleAssignment({ ...roleAssignment, role: e.target.value })} className="admin-input">{['admin','catalog_manager','media_manager','order_manager'].map((role) => <option key={role} value={role}>{role.replace('_',' ')}</option>)}</select></label><Button type="submit">Assign role</Button></form><div><h2 className="font-serif text-xl">Current team</h2><ul className="mt-3 divide-y divide-ink/10">{adminUsers.map((item, index) => <li key={`${item.user_id}-${item.role}-${index}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><span>{item.email || item.full_name || item.user_id} <span className="ml-2 text-xs text-ink-light">{item.role.replace('_',' ')}</span></span><button type="button" disabled={item.role === 'owner'} onClick={() => void removeRole(item.user_id, item.role)} className="text-xs underline disabled:opacity-40">{item.role === 'owner' ? 'Owner protected' : 'Remove role'}</button></li>)}</ul></div></section>}
+
       {tab === 'products' && <section className="mt-6 grid gap-8 lg:grid-cols-[280px_1fr]">
-        <aside><label className="block text-xs uppercase tracking-wider text-ink-soft">Products<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="mt-2 w-full border border-ink/15 bg-transparent p-3"><option value="">Create a product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} · {product.status}</option>)}</select></label><div className="mt-4 space-y-1">{products.map((product) => <button key={product.id} onClick={() => void selectProduct(product.id)} className="block w-full truncate py-2 text-left text-sm hover:underline">{product.name}</button>)}</div></aside>
+        <aside><p className="text-xs leading-5 text-ink-soft">Owner-intake drafts are not real products and cannot be published until every approval field is complete.</p><label className="mt-3 block text-xs uppercase tracking-wider text-ink-soft">Products<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="mt-2 w-full border border-ink/15 bg-transparent p-3"><option value="">Create a product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} · {product.status}</option>)}</select></label><div className="mt-4 space-y-1">{products.map((product) => { const missing = pendingProductApprovals(product); return <button key={product.id} onClick={() => void selectProduct(product.id)} className="block w-full border-b border-ink/5 py-2 text-left hover:underline"><span className="block truncate text-sm">{product.name}</span><span className="text-[10px] text-ink-light">{product.status} · {missing.length ? `${missing.length} approvals needed` : 'ready for review'}</span></button>; })}</div><p className="mt-4 text-[10px] leading-4 text-ink-light">Completion checklist per record: owner-approved name, price, description, fabric and care details, product and age categories, variant SKUs, verified inventory and authorized product photography.</p></aside>
         <div className="space-y-8">
           <form onSubmit={(e) => void saveProduct(e)} className="grid gap-4 sm:grid-cols-2">
+            {productForm.tags.includes('owner-intake') && <div className="sm:col-span-2 border border-amber-700/20 bg-amber-50 p-3"><p className="text-sm font-medium">Owner intake draft · not approved</p><p className="mt-1 text-xs leading-5">This is an empty catalog slot, not a real product. Replace the name with approved business information and complete all checklist fields before unchecking this marker.</p><label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={productForm.tags.includes('owner-intake')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? [...new Set([...productForm.tags, 'owner-intake'])] : productForm.tags.filter((tag) => tag !== 'owner-intake') })} />Keep marked as owner intake draft</label></div>}
             <label className="text-sm">Product name<input required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Slug<input required value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} className="admin-input" /></label>
-            <label className="text-sm">Price (INR)<input required type="number" min="0" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="admin-input" /></label>
+            <label className="text-sm">Price (INR) · leave blank until verified<input type="number" min="0.01" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Compare-at price<input type="number" min="0" step="0.01" value={productForm.compare_at_price} onChange={(e) => setProductForm({ ...productForm, compare_at_price: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Status<select value={productForm.status} onChange={(e) => setProductForm({ ...productForm, status: e.target.value })} className="admin-input"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
             <label className="text-sm">Material<input value={productForm.material} onChange={(e) => setProductForm({ ...productForm, material: e.target.value })} className="admin-input" /></label>
@@ -383,7 +451,7 @@ export default function AdminPage() {
 
       {tab === 'homepage' && <section className="mt-6 grid gap-8 lg:grid-cols-[280px_1fr]"><aside className="space-y-2">{sections.map((item) => <button key={item.id} onClick={() => setSectionForm({ section_key: item.section_key, section_type: item.section_type, heading: item.heading, body: item.body, cta_label: item.cta_label || '', cta_href: item.cta_href || '', desktop_asset_id: item.desktop_asset_id || '', mobile_asset_id: item.mobile_asset_id || '', is_published: item.is_published })} className="block w-full border-b border-ink/10 py-2 text-left text-sm">{item.section_key} · {item.is_published ? 'published' : 'draft'}</button>)}<button onClick={() => setSectionForm({ section_key: '', section_type: 'hero', heading: '', body: '', cta_label: '', cta_href: '', desktop_asset_id: '', mobile_asset_id: '', is_published: false })} className="text-sm underline">Add homepage section</button></aside><form onSubmit={(e) => void saveSection(e)} className="space-y-4"><h2 className="font-serif text-xl">Homepage content</h2><label className="block text-sm">Section key<input required value={sectionForm.section_key} onChange={(e) => setSectionForm({ ...sectionForm, section_key: e.target.value })} className="admin-input" /></label><label className="block text-sm">Purpose<select value={sectionForm.section_type} onChange={(e) => setSectionForm({ ...sectionForm, section_type: e.target.value })} className="admin-input">{['announcement','hero','featured_collections','new_arrivals','bestsellers','shop_the_look','brand_story','newsletter','campaign_banner'].map((v) => <option key={v}>{v}</option>)}</select></label><label className="block text-sm">Heading<input value={sectionForm.heading} onChange={(e) => setSectionForm({ ...sectionForm, heading: e.target.value })} className="admin-input" /></label><label className="block text-sm">Description<textarea rows={4} value={sectionForm.body} onChange={(e) => setSectionForm({ ...sectionForm, body: e.target.value })} className="admin-input" /></label><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">CTA label<input value={sectionForm.cta_label} onChange={(e) => setSectionForm({ ...sectionForm, cta_label: e.target.value })} className="admin-input" /></label><label className="text-sm">CTA destination<input value={sectionForm.cta_href} onChange={(e) => setSectionForm({ ...sectionForm, cta_href: e.target.value })} className="admin-input" /></label></div><label className="block text-sm">Desktop media asset<select value={sectionForm.desktop_asset_id} onChange={(e) => setSectionForm({ ...sectionForm, desktop_asset_id: e.target.value })} className="admin-input"><option value="">No asset selected</option>{media.map((asset) => <option key={asset.id} value={asset.id}>{asset.original_filename} · {asset.purpose}</option>)}</select></label><label className="block text-sm">Mobile media asset<select value={sectionForm.mobile_asset_id} onChange={(e) => setSectionForm({ ...sectionForm, mobile_asset_id: e.target.value })} className="admin-input"><option value="">Use desktop asset</option>{media.map((asset) => <option key={asset.id} value={asset.id}>{asset.original_filename} · {asset.purpose}</option>)}</select></label><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={sectionForm.is_published} onChange={(e) => setSectionForm({ ...sectionForm, is_published: e.target.checked })} />Publish section</label><Button type="submit">Save section</Button></form></section>}
 
-      {tab === 'collections' && <section className="mt-6 grid gap-8 lg:grid-cols-2"><form onSubmit={(e) => void createCollection(e)} className="space-y-4"><h2 className="font-serif text-xl">Create collection</h2><label className="block text-sm">Name<input required value={collectionForm.name} onChange={(e) => setCollectionForm({ ...collectionForm, name: e.target.value })} className="admin-input" /></label><label className="block text-sm">Slug<input required value={collectionForm.slug} onChange={(e) => setCollectionForm({ ...collectionForm, slug: e.target.value })} className="admin-input" /></label><label className="block text-sm">Description<textarea value={collectionForm.description} onChange={(e) => setCollectionForm({ ...collectionForm, description: e.target.value })} className="admin-input" /></label><label className="block text-sm">Add initial product<select value={collectionForm.product_id} onChange={(e) => setCollectionForm({ ...collectionForm, product_id: e.target.value })} className="admin-input"><option value="">None</option>{products.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><Button type="submit">Create collection</Button></form><div><h2 className="font-serif text-xl">Collections</h2><ul className="mt-3 divide-y divide-ink/10">{collections.map((item) => <li key={item.id} className="py-3 text-sm">{item.name} <span className="text-ink-light">/{item.slug} · {item.status}</span></li>)}</ul></div></section>}
+      {tab === 'collections' && <section className="mt-6 grid gap-8 lg:grid-cols-2"><form onSubmit={(e) => void createCollection(e)} className="space-y-4"><h2 className="font-serif text-xl">{collectionForm.id ? 'Edit collection' : 'Create collection'}</h2><label className="block text-sm">Name<input required value={collectionForm.name} onChange={(e) => setCollectionForm({ ...collectionForm, name: e.target.value })} className="admin-input" /></label><label className="block text-sm">Slug<input required value={collectionForm.slug} onChange={(e) => setCollectionForm({ ...collectionForm, slug: e.target.value })} className="admin-input" /></label><label className="block text-sm">Description<textarea value={collectionForm.description} onChange={(e) => setCollectionForm({ ...collectionForm, description: e.target.value })} className="admin-input" /></label><label className="block text-sm">Cover image<select value={collectionForm.cover_asset_id} onChange={(e) => setCollectionForm({ ...collectionForm, cover_asset_id: e.target.value })} className="admin-input"><option value="">No image selected</option>{media.filter((asset) => asset.mime_type?.startsWith('image/')).map((asset) => <option key={asset.id} value={asset.id}>{asset.original_filename}</option>)}</select></label><div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">Status<select value={collectionForm.status} onChange={(e) => setCollectionForm({ ...collectionForm, status: e.target.value })} className="admin-input"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label><label className="block text-sm">Homepage order<input type="number" min="0" value={collectionForm.display_order} onChange={(e) => setCollectionForm({ ...collectionForm, display_order: Number(e.target.value) })} className="admin-input" /></label></div><label className="block text-sm">Add or include product<select value={collectionForm.product_id} onChange={(e) => setCollectionForm({ ...collectionForm, product_id: e.target.value })} className="admin-input"><option value="">Keep current membership</option>{products.filter((item) => item.status === 'published').map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="flex flex-wrap gap-3"><Button type="submit">Save collection</Button>{collectionForm.id && <button type="button" onClick={() => setCollectionForm({ name: '', slug: '', description: '', product_id: '', cover_asset_id: '', display_order: collections.length, status: 'draft' })} className="text-sm underline">New collection</button>}</div></form><div><h2 className="font-serif text-xl">Collections</h2><ul className="mt-3 divide-y divide-ink/10">{collections.map((item) => <li key={item.id} className="py-3"><button type="button" onClick={() => setCollectionForm({ id: item.id, name: item.name, slug: item.slug, description: item.description || '', product_id: '', cover_asset_id: item.cover_asset_id || '', display_order: item.display_order || 0, status: item.status })} className="text-left text-sm underline">{item.name} <span className="text-ink-light">/{item.slug} · {item.status}</span></button></li>)}</ul></div></section>}
 
       {tab === 'content' && <AdminContentPage />}
 

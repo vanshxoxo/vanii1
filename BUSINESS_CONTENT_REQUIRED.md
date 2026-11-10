@@ -16,6 +16,8 @@ At the time of the latest audit, anonymous/public reads returned:
 
 This describes only rows visible to the public API under current RLS. It does not prove there are no admin-only or draft rows. Confirm the private/admin view in Supabase before creating records. Do not overwrite existing records.
 
+Migration `202611100004_catalog_intake_and_admin_tools.sql` adds three explicit owner-intake draft slots per active product-type category (18 across the six configured types). They are not sale listings: name, price, description, fabric/care information, photos, variants/SKUs, stock and age assignment remain unverified. The migration does not overwrite existing records and is pending application in the current checkout. Do not publish these slots until the owner replaces the intake name and supplies verified product information and authorized photos.
+
 ## Required information for each product
 
 - Approved product name and URL slug

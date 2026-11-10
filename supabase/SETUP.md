@@ -1,6 +1,6 @@
 # Little Loom setup and integration status
 
-The repository contains a Vite storefront and Supabase migrations. The configured production target is `vanii1` / `https://vanii1.vercel.app`. This checkout has no Supabase project URL or publishable key, and the connected Vercel account could not access project `vanii1`; therefore migrations, environment settings, and deployments have not been verified or changed from this checkout.
+The repository contains a Vite storefront and Supabase migrations. The owner reported that migrations 001–003 were successfully executed. This checkout has no Supabase project URL or publishable key, so live database reads/writes and the new migration 004 cannot be verified or applied from this checkout. The connected Vercel account could not access project `vanii1`.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ The repository contains a Vite storefront and Supabase migrations. The configure
 
 ## Database
 
-Apply these migrations, in order, to the intended Supabase project: `202611090001_initial_commerce.sql`, `202611090002_production_commerce_extensions.sql`, and `202611090003_external_media_architecture.sql`. They have not been confirmed applied. Use Supabase Dashboard SQL Editor or `supabase link` followed by `supabase db push`; do not reset a database with existing data. Then create the first owner by promoting the intended existing auth user:
+Migrations `202611090001_initial_commerce.sql` through `202611090003_external_media_architecture.sql` were reported applied by the owner. Apply `202611100004_catalog_intake_and_admin_tools.sql` to the existing project with the Supabase SQL Editor or `supabase link` followed by `supabase db push`; do not reset a database with existing data. Migration 004 makes prices nullable for drafts (published products still require a positive price), adds an admin-only summary RPC, and idempotently seeds three clearly marked intake drafts per active product-type category. It creates no SKUs, variants, stock, product photographs, or age-group assignments. Then create/promote the initial owner only if that has not already been done:
 
 ```sql
 insert into public.admin_roles (user_id, role)
