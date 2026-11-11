@@ -14,14 +14,11 @@ import { categoryNavigation, resolveLaunchAge, resolveLaunchCategory } from '../
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest';
 
-function ShopPageBanner({ eyebrow, title, introduction, image }: { eyebrow: string; title: string; introduction: string; image?: string }) {
-  return <section className={`overflow-hidden rounded-2xl bg-[#f4eee8] ${image ? 'grid lg:grid-cols-2' : ''}`}>
-    <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-peach">{eyebrow}</p>
-      <h1 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl lg:text-5xl">{title}</h1>
-      <p className="mt-4 max-w-xl text-sm leading-7 text-ink-soft">{introduction}</p>
-    </div>
-    {image && <img src={image} alt={`${title} editorial`} loading="eager" decoding="async" className="min-h-64 w-full object-cover lg:min-h-[380px]" />}
+function ShopPageBanner({ eyebrow, title, introduction }: { eyebrow: string; title: string; introduction: string }) {
+  return <section className="rounded-xl bg-[#f4eee8] px-5 py-5 sm:px-7 sm:py-6">
+    <p className="text-xs font-medium uppercase tracking-[0.2em] text-peach">{eyebrow}</p>
+    <h1 className="mt-2 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{title}</h1>
+    <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">{introduction}</p>
   </section>;
 }
 
@@ -148,8 +145,6 @@ export default function ShopPage() {
   const activeAge = selectedLaunchAge || resolveLaunchAge(actualAge?.label);
   const ageLabel = actualAge?.label || selectedLaunchAge?.label;
   const categoryLabel = actualCategory?.name || selectedLaunchCategory?.label;
-  const categoryImage = actualCategory?.image || selectedLaunchCategory?.image;
-  const ageImage = actualAge?.image || selectedLaunchAge?.image;
   const pageTitle = collectionParam
     ? selectedCollection?.name || 'Collection'
     : categoryLabel && ageLabel
@@ -164,7 +159,6 @@ export default function ShopPage() {
         : ageLabel
           ? activeAge?.introduction || actualAge?.description || `Browse published styles for ${ageLabel}. Final fit will follow actual garment measurements.`
           : 'A considered edit of Little Loom styles. Preview imagery is editorial, and proposed pieces are not available to buy.';
-  const pageImage = categoryImage || ageImage || selectedCollection?.image || (collectionParam ? undefined : '/images/editorial/version-b/campaign.webp');
   const ageSuggestedCategories = activeAge
     ? [...new Set(launchAssortment.filter((item) => item.ageSuggestions.includes(activeAge.key)).map((item) => item.categorySlug))]
         .map((slug) => categoryNavigation.find((category) => category.slug === slug))
@@ -187,14 +181,13 @@ export default function ShopPage() {
           eyebrow="Little Loom · Shop"
           title={catalogLoading ? 'Loading the collection' : unavailable ? 'The catalogue is temporarily unavailable' : 'The published catalogue needs attention'}
           introduction={catalogLoading ? 'Published styles will appear here once the catalogue has loaded.' : unavailable ? 'Published products could not be retrieved. Browse the age and category edits below while the connection is restored.' : 'Published product records exist, but none currently meet the storefront requirements. Proposed previews stay separate until the published records are corrected.'}
-          image="/images/editorial/version-b/brand-story.webp"
         />
         <StoreNavigationTiles ages={ages} categories={categories} />
         {!catalogLoading && <div className="mt-10">
           <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} sort={sort === 'price-low' || sort === 'price-high' ? sort : 'featured'} onSearchChange={setPreviewSearch} onSortChange={setPreviewSort} />
         </div>}
       </> : collectionParam ? <>
-        <ShopPageBanner eyebrow="Published collection" title={pageTitle} introduction={pageIntroduction} image={pageImage} />
+        <ShopPageBanner eyebrow="Published collection" title={pageTitle} introduction={pageIntroduction} />
         <p role="status" className="mt-8 rounded-xl bg-[#f8f4f0] p-5 text-sm text-ink-soft">{selectedCollection ? 'No published products are currently assigned to this collection.' : 'This collection could not be found.'}</p>
         <Link to="/shop" className="mt-5 inline-flex items-center gap-2 text-sm underline underline-offset-4">Browse the full shop<ArrowRight size={15} /></Link>
       </> : genuinelyEmpty ? <>
@@ -202,7 +195,6 @@ export default function ShopPage() {
           eyebrow={categoryLabel && ageLabel ? `${ageLabel} · ${categoryLabel}` : categoryLabel ? 'Category edit' : ageLabel ? `${activeAge?.range || actualAge?.range || ''} · age edit` : 'Little Loom · Shop'}
           title={pageTitle}
           introduction={pageIntroduction}
-          image={pageImage}
         />
         {(categoryLabel || ageLabel) && <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           {(categoryLabel || ageLabel) && <Link to="/shop#shop-categories" className="underline underline-offset-4">Browse all categories</Link>}
@@ -360,7 +352,6 @@ export default function ShopPage() {
           eyebrow={collectionParam ? 'Published collection' : categoryLabel && ageLabel ? `${ageLabel} · ${categoryLabel}` : categoryLabel ? 'Published category' : ageLabel ? `${activeAge?.range || actualAge?.range || ''} · published age edit` : 'Little Loom · Shop'}
           title={pageTitle}
           introduction={collectionParam ? pageIntroduction : categoryLabel && ageLabel ? `Browse published ${categoryLabel.toLowerCase()} for ${ageLabel}.` : categoryLabel ? actualCategory?.description || `Browse published ${categoryLabel.toLowerCase()} styles from Little Loom.` : ageLabel ? `Browse published styles for ${ageLabel}. Final fit follows the product measurements.` : 'Browse the products currently published by Little Loom.'}
-          image={pageImage}
         /></div>
         {(categoryLabel || ageLabel) && <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           <Link to="/shop#shop-categories" className="underline underline-offset-4">Browse all categories</Link>

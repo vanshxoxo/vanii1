@@ -58,17 +58,18 @@ export default function LaunchPreviewGrid({ category, age, search = '', sort = '
       </div>
 
       {visibleProducts.length ? <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10 xl:grid-cols-5">
-        {visibleProducts.map((item) => (
-          <article key={item.key} className="min-w-0">
+        {visibleProducts.map((item) => {
+          const productUrl = `/products/${toLaunchDemoProduct(item).slug}`;
+          return <article key={item.key} className="min-w-0">
             <div className="relative overflow-hidden rounded-xl bg-cream sm:rounded-2xl">
-              <Link to={`/product/${toLaunchDemoProduct(item).slug}`} aria-label={`View temporary demo style ${item.name}`} className="block">
+              <Link to={productUrl} aria-label={`View temporary demo style ${item.name}`} className="block">
                 <img src={item.image} alt={`Editorial clothing inspiration for ${item.name}; not an exact product photo`} loading="lazy" decoding="async" className="aspect-[4/5] w-full object-cover transition-transform duration-700 hover:scale-[1.025]" />
               </Link>
               <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-ivory/95 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:left-3 sm:top-3">Demo only</span>
             </div>
             <div className="mt-3 flex min-h-[112px] flex-col sm:mt-4">
               <Link to={`/shop?category=${encodeURIComponent(item.category)}`} className="text-[9px] font-medium uppercase tracking-[0.18em] text-ink-light hover:text-ink sm:text-[10px]">{item.category}</Link>
-              <h2 className="mt-1 font-serif text-base leading-snug text-ink sm:text-lg"><Link to={`/product/${toLaunchDemoProduct(item).slug}`} className="hover:underline">{item.name}</Link></h2>
+              <h2 className="mt-1 font-serif text-base leading-snug text-ink sm:text-lg"><Link to={productUrl} className="hover:underline">{item.name}</Link></h2>
               <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                 <span className="text-sm font-medium tabular-nums text-ink">{formatProposedPrice(item.price)}</span>
                 <span className="text-[9px] uppercase tracking-[0.12em] text-ink-light">Proposed price</span>
@@ -80,9 +81,12 @@ export default function LaunchPreviewGrid({ category, age, search = '', sort = '
                   return <Link key={ageKey} to={`/shop?age=${encodeURIComponent(suggestedAge.value)}&category=${encodeURIComponent(item.category)}`} className="text-[10px] text-ink-soft underline decoration-ink/20 underline-offset-2 hover:text-ink">{suggestedAge.label}</Link>;
                 })}
               </div>
+              <Link to={productUrl} className="mt-3 inline-flex min-h-10 items-center text-xs font-medium text-ink underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
+                View product details
+              </Link>
             </div>
-          </article>
-        ))}
+          </article>;
+        })}
       </div> : <div className="rounded-2xl bg-[#f8f4f0] px-5 py-12 text-center">
         <h2 className="font-serif text-xl text-ink">No styles match this selection</h2>
         <p className="mt-2 text-sm text-ink-soft">Try another search or browse the full assortment.</p>
