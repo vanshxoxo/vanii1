@@ -49,7 +49,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           </span>
         )}
 
-        {product.isDemo && <span className="absolute left-2 top-2 rounded-full bg-ivory/95 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:left-3 sm:top-3">Demo only</span>}
+        {product.isPreviewOnly && <span className="absolute left-2 top-2 rounded-full bg-ivory/95 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:left-3 sm:top-3">Under review</span>}
 
         {/* Wishlist */}
         <button
@@ -65,7 +65,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
         </button>
 
         {/* Quick add */}
-        {onQuickAdd && (
+        {onQuickAdd && !product.isPreviewOnly && (
           <button
             onClick={() => onQuickAdd(product)}
             className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-charcoal/95 py-3 text-xs font-medium text-ivory opacity-100 translate-y-0 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus-visible:opacity-100 hover:bg-charcoal"
@@ -84,8 +84,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           </Link>
         </h3>
         <div className="mt-0.5 flex items-center gap-2">
-          <span className="text-[13px] font-medium text-charcoal">{formatINR(product.price)}</span>
-          {product.isDemo && <span className="text-[9px] uppercase tracking-wide text-charcoal-light">Indicative</span>}
+          <span className="text-[13px] font-medium text-charcoal">{product.isPreviewOnly ? 'Price to confirm' : formatINR(product.price)}</span>
           {hasDiscount && (
             <span className="text-xs text-charcoal-light line-through">{formatINR(product.originalPrice!)}</span>
           )}

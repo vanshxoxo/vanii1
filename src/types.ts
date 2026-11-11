@@ -31,7 +31,7 @@ export interface Product {
   inStock?: boolean;
   imageAltTexts?: string[];
   /** Local-only catalogue preview product. Never persist as a database product. */
-  isDemo?: boolean;
+  isPreviewOnly?: boolean;
 }
 
 export interface ProductVariant {
@@ -53,8 +53,8 @@ export interface CartItem {
   size: string;
   quantity: number;
   variantId?: string;
-  /** Demo items stay in the browser and must never reach checkout APIs. */
-  isDemo?: boolean;
+  /** preview items stay in the browser and must never reach checkout APIs. */
+  isPreviewOnly?: boolean;
 }
 
 export interface AgeInfo {

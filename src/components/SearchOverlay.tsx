@@ -2,7 +2,7 @@ import { X, Search as SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../useStore';
 import { formatINR } from '../data';
-import { launchAssortment, formatProposedPrice } from '../data/launchAssortment';
+import { launchAssortment } from '../data/launchAssortment';
 import { ageNavigation } from '../data/storeNavigation';
 import { useCatalog } from '../lib/catalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -106,9 +106,9 @@ export default function SearchOverlay() {
                           <img src={item.image} alt="Editorial inspiration, not a product photograph" className="h-16 w-14 rounded-md object-cover" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-ink">{item.name}</p>
-                            <p className="text-xs text-ink-light">{item.category} · Preview</p>
+                            <p className="text-xs text-ink-light">{item.category} · Under review</p>
                           </div>
-                          <span className="text-right text-sm font-semibold text-ink">{formatProposedPrice(item.price)}<span className="block text-[9px] font-normal uppercase tracking-wide text-ink-light">Proposed</span></span>
+                          <span className="text-right text-xs font-medium text-ink-light">Price to confirm</span>
                         </Link>
                       </li>
                     )) : results.map((product) => (

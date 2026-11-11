@@ -16,13 +16,13 @@ import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 import ProductCard from '../components/ProductCard';
 import Reveal from '../components/Reveal';
-import { findLaunchDemoProduct, launchDemoProducts } from '../data/launchAssortment';
+import { findLaunchPreviewProduct, launchPreviewProducts } from '../data/launchAssortment';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { products, loading: catalogLoading } = useCatalog();
-  const product = products.find((item) => item.slug === slug) || findLaunchDemoProduct(slug);
+  const product = products.find((item) => item.slug === slug) || findLaunchPreviewProduct(slug);
 
   const { addToCart, toggleWishlist, isWishlisted } = useStore();
 
@@ -60,15 +60,16 @@ export default function ProductPage() {
   }
 
   const wished = isWishlisted(product.id);
-  const relatedSource = product.isDemo ? launchDemoProducts : products;
+  const relatedSource = product.isPreviewOnly ? launchPreviewProducts : products;
   const related = relatedSource.filter((item) => item.id !== product.id && item.category === product.category).concat(relatedSource.filter((item) => item.id !== product.id && item.category !== product.category)).slice(0, 4);
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const hasDiscount = !product.isPreviewOnly && product.originalPrice && product.originalPrice > product.price;
   const chosenColor = selectedColor || product.colors[0]?.name;
   const chosenSize = selectedSize || product.sizes[0];
   const selectedVariant = product.variants?.find((variant) => variant.colour === chosenColor && variant.size === chosenSize);
   const displayPrice = selectedVariant?.price ?? product.price;
 
   const handleAddToCart = () => {
+    if (product.isPreviewOnly) return;
     const newErrors: { color?: string; size?: string } = {};
     if (product.colors.length > 1 && !selectedColor) {
       newErrors.color = 'Please select a color';
@@ -94,7 +95,7 @@ export default function ProductPage() {
       size: chosenSize,
       quantity,
       variantId: selectedVariant?.id,
-      isDemo: product.isDemo,
+      isPreviewOnly: product.isPreviewOnly,
     });
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2000);
@@ -152,7 +153,7 @@ export default function ProductPage() {
                   />
                 ))}
               </div>
-              {product.isDemo && <span className="absolute bottom-3 left-3 rounded-full bg-ivory/95 px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:bottom-4 sm:left-4 sm:text-[10px]">Editorial inspiration · not exact product photography</span>}
+              {product.isPreviewOnly && <span className="absolute bottom-3 left-3 rounded-full bg-ivory/95 px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:bottom-4 sm:left-4 sm:text-[10px]">Editorial inspiration · not exact product photography</span>}
               {hasDiscount && (
                 <span className="absolute top-4 left-4 bg-peach px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-white rounded animate-slide-down">
                   Sale
@@ -171,7 +172,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <div className="mt-3 flex items-center gap-3">
-                <span className="text-2xl font-medium text-ink">{formatINR(displayPrice)}</span>
+                <span className="text-2xl font-medium text-ink">{product.isPreviewOnly ? 'Price to be confirmed' : formatINR(displayPrice)}</span>
                 {hasDiscount && (
                   <>
                     <span className="text-base text-ink-light line-through">
@@ -189,7 +190,7 @@ export default function ProductPage() {
             <div style={fadeInStyle(0.15)}>
               <div className="flex items-center justify-between mb-2.5">
                 <label className="text-sm font-medium text-ink">
-                  {product.isDemo ? 'Sample colour' : 'Color'} {selectedColor && <span className="text-ink-light font-normal">· {selectedColor}</span>}
+                  {product.isPreviewOnly ? 'Suggested colour' : 'Color'} {selectedColor && <span className="text-ink-light font-normal">· {selectedColor}</span>}
                 </label>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -225,9 +226,9 @@ export default function ProductPage() {
             <div style={fadeInStyle(0.2)}>
               <div className="flex items-center justify-between mb-2.5">
                 <label className="text-sm font-medium text-ink">
-                  {product.isDemo ? 'Sample size' : 'Size'} {selectedSize && <span className="text-ink-light font-normal">· {selectedSize}</span>}
+                  {product.isPreviewOnly ? 'Suggested size' : 'Size'} {selectedSize && <span className="text-ink-light font-normal">· {selectedSize}</span>}
                 </label>
-                {product.isDemo ? <span className="text-[10px] text-ink-light">Choices are not verified sizing</span> : <Link to="/size-guide" className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors">
+                {product.isPreviewOnly ? <span className="text-[10px] text-ink-light">Options await supplier confirmation</span> : <Link to="/size-guide" className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors">
                   <Ruler size={14} /> Size Guide
                 </Link>}
               </div>
@@ -288,10 +289,10 @@ export default function ProductPage() {
                 size="lg"
                 className="flex-1 group"
                 onClick={handleAddToCart}
-                disabled={Boolean(product.variants?.length) && !product.inStock}
+                disabled={product.isPreviewOnly || (Boolean(product.variants?.length) && !product.inStock)}
               >
                 <ShoppingBag size={18} className={addedFeedback ? 'animate-wiggle' : ''} />
-                {addedFeedback ? 'Added to Bag!' : product.isDemo ? 'Add demo item' : 'Add to Bag'}
+                {addedFeedback ? 'Added to Bag!' : product.isPreviewOnly ? 'Unavailable to order' : 'Add to Bag'}
               </Button>
               <button
                 onClick={() => toggleWishlist(product.id, product.name)}
@@ -310,7 +311,7 @@ export default function ProductPage() {
               </button>
             </div>
 
-            {product.isDemo && <p role="note" className="text-xs leading-5 text-ink-light">No inventory is reserved for this sample selection. Use fictional details at demo checkout; nothing is sent or saved.</p>}
+            {product.isPreviewOnly && <p role="note" className="text-xs leading-5 text-ink-light">Supplier details and authorized product photography are still being confirmed. This style cannot be ordered yet.</p>}
 
             {/* Accordions */}
             <div className="mt-2 border-t border-ink/8" style={fadeInStyle(0.4)}>

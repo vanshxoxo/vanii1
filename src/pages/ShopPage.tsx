@@ -166,11 +166,6 @@ export default function ShopPage() {
     : [];
 
   const setPreviewSearch = (value: string) => updateQueryParam('search', value);
-  const setPreviewSort = (value: 'featured' | 'price-low' | 'price-high') => {
-    setSort(value);
-    updateQueryParam('sort', value === 'featured' ? '' : value);
-  };
-
   if (catalogLoading || catalogError || products.length === 0) {
     const unavailable = Boolean(catalogError);
     const catalogueNeedsReview = !catalogLoading && !unavailable && hasPublishedRecords;
@@ -180,11 +175,11 @@ export default function ShopPage() {
         <ShopPageBanner
           eyebrow="Little Loom · Shop"
           title={catalogLoading ? 'Loading the collection' : unavailable ? 'The catalogue is temporarily unavailable' : 'The published catalogue needs attention'}
-          introduction={catalogLoading ? 'Published styles will appear here once the catalogue has loaded.' : unavailable ? 'Published products could not be retrieved. Browse the age and category edits below while the connection is restored.' : 'Published product records exist, but none currently meet the storefront requirements. Proposed previews stay separate until the published records are corrected.'}
+          introduction={catalogLoading ? 'Published styles will appear here once the catalogue has loaded.' : unavailable ? 'Published products could not be retrieved. Browse the age and category edits below while the connection is restored.' : 'Published product records exist, but none currently meet the storefront requirements. Styles under review remain unavailable until their details are verified.'}
         />
         <StoreNavigationTiles ages={ages} categories={categories} />
         {!catalogLoading && <div className="mt-10">
-          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} sort={sort === 'price-low' || sort === 'price-high' ? sort : 'featured'} onSearchChange={setPreviewSearch} onSortChange={setPreviewSort} />
+          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} onSearchChange={setPreviewSearch} />
         </div>}
       </> : collectionParam ? <>
         <ShopPageBanner eyebrow="Published collection" title={pageTitle} introduction={pageIntroduction} />
@@ -207,7 +202,7 @@ export default function ShopPage() {
           })}
         </nav>}
         <div className="mt-8">
-          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} sort={sort === 'price-low' || sort === 'price-high' ? sort : 'featured'} onSearchChange={setPreviewSearch} onSortChange={setPreviewSort} />
+          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} onSearchChange={setPreviewSearch} />
         </div>
         {!categoryLabel && !ageLabel && !searchQuery && <div id="shop-categories" className="scroll-mt-24"><StoreNavigationTiles ages={ages} categories={categories} /></div>}
         {categoryLabel && <div id="shop-categories" className="mt-16 scroll-mt-24"><StoreNavigationTiles ages={ages} categories={categories} showAges={false} /></div>}
