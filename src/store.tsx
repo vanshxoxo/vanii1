@@ -36,40 +36,9 @@ export const StoreContext = createContext<StoreContextValue | undefined>(undefin
 
 let toastId = 0;
 
-const previewCartStorageKey = 'little-loom:preview-cart:v1';
-const previewWishlistStorageKey = 'little-loom:preview-wishlist:v1';
-
-function readPreviewCart(): CartItem[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const value: unknown = JSON.parse(window.localStorage.getItem(previewCartStorageKey) || 'null');
-    if (!Array.isArray(value)) return [];
-    return value.filter((item): item is CartItem => Boolean(
-      item && typeof item === 'object' && item.isPreviewOnly === true &&
-      typeof item.productId === 'string' && item.productId.startsWith('preview:') &&
-      typeof item.slug === 'string' && typeof item.name === 'string' &&
-      Number.isFinite(item.price) && Number(item.price) >= 0 &&
-      typeof item.image === 'string' && typeof item.color === 'string' &&
-      typeof item.size === 'string' && Number.isFinite(item.quantity) && Number(item.quantity) > 0
-    )).map((item) => ({ ...item, quantity: Math.min(99, Math.max(1, Math.floor(item.quantity))) }));
-  } catch {
-    return [];
-  }
-}
-
-function readPreviewWishlist(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const value: unknown = JSON.parse(window.localStorage.getItem(previewWishlistStorageKey) || 'null');
-    return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && /^preview:[a-z0-9-]+$/.test(id)))] : [];
-  } catch {
-    return [];
-  }
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>(readPreviewCart);
-  const [wishlist, setWishlist] = useState<string[]>(readPreviewWishlist);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const cartRef = useRef(cart);
   const wishlistRef = useRef(wishlist);
   cartRef.current = cart;
@@ -83,31 +52,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const userIdRef = useRef<string | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
   const activeCartId = useRef<string | null>(null);
-  const skipPreviewClearSync = useRef(false);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      if (cart.length > 0 && cart.every((item) => item.isPreviewOnly)) {
-        window.localStorage.setItem(previewCartStorageKey, JSON.stringify(cart));
-      } else {
-        window.localStorage.removeItem(previewCartStorageKey);
-      }
-    } catch {
-      // The preview cart still works in memory when browser storage is disabled.
-    }
-  }, [cart]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const previewItems = wishlist.filter((id) => id.startsWith('preview:'));
-      if (previewItems.length) window.localStorage.setItem(previewWishlistStorageKey, JSON.stringify(previewItems));
-      else window.localStorage.removeItem(previewWishlistStorageKey);
-    } catch {
-      // The preview wishlist still works in memory when browser storage is disabled.
-    }
-  }, [wishlist]);
+    window.localStorage.removeItem('little-loom:preview-cart:v1');
+    window.localStorage.removeItem('little-loom:preview-wishlist:v1');
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -152,20 +101,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const image = imageRow?.media_assets ? publicMediaUrl(imageRow.media_assets, 600) : '';
           return [{ productId: product.id, slug: product.slug, name: product.name, price: Number(product.price), image, color: variant.colour, size: variant.size, quantity: row.quantity, variantId: row.variant_id }];
         });
-        const localPreviewItems = cartRef.current.filter((item) => item.isPreviewOnly);
-        // Local style previews never replace or mix with the customer's saved database cart.
-        setCart(localPreviewItems.length ? localPreviewItems : merged);
+        setCart(merged);
       }
 
       const { data: wishlistRow } = await supabase!.from('wishlists').upsert({ customer_id: customerId }, { onConflict: 'customer_id' }).select('id').single();
       if (wishlistRow?.id) {
         const { data: saved } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', wishlistRow.id);
         let ids = (saved || []).map((row: any) => row.product_id as string);
-        const localPreviewWishlist = wishlistRef.current.filter((id) => id.startsWith('preview:'));
         if (wishlistRef.current.length) {
-          const toAdd = wishlistRef.current.filter((id) => !id.startsWith('preview:') && !ids.includes(id));
+          const toAdd = wishlistRef.current.filter((id) => !ids.includes(id));
           if (toAdd.length) await supabase!.from('wishlist_items').upsert(toAdd.map((product_id) => ({ wishlist_id: wishlistRow.id, product_id })), { onConflict: 'wishlist_id,product_id' });
-          ids = [...new Set([...ids, ...wishlistRef.current.filter((id) => !id.startsWith('preview:')), ...localPreviewWishlist])];
+          ids = [...new Set([...ids, ...wishlistRef.current])];
         }
         if (alive) setWishlist(ids);
       }
@@ -177,12 +123,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !userId || !remoteReady) return;
-    if (cart.some((item) => item.isPreviewOnly)) return;
-    if (cart.length === 0 && skipPreviewClearSync.current) {
-      skipPreviewClearSync.current = false;
-      return;
-    }
-    if (cart.length > 0) skipPreviewClearSync.current = false;
     let alive = true;
     void (async () => {
       let cartId = activeCartId.current;
@@ -209,7 +149,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const { data: row } = await supabase!.from('wishlists').upsert({ customer_id: userId }, { onConflict: 'customer_id' }).select('id').single();
       if (!row?.id) return;
-      const persistentWishlist = wishlist.filter((id) => !id.startsWith('preview:'));
+      const persistentWishlist = wishlist;
       if (persistentWishlist.length) await supabase!.from('wishlist_items').upsert(persistentWishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
       const { data: existing } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', row.id);
       const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !persistentWishlist.includes(id));
@@ -230,11 +170,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useCallback((item: CartItem) => {
-    const isMixedCart = cartRef.current.some((current) => Boolean(current.isPreviewOnly) !== Boolean(item.isPreviewOnly));
-    if (isMixedCart) {
-      pushToast('Styles under review and published products use separate bags. Remove the current items before switching.', 'info');
-      return;
-    }
     setCart((prev) => {
       const existing = prev.find(
         (i) => i.variantId && item.variantId ? i.variantId === item.variantId : i.productId === item.productId && i.color === item.color && i.size === item.size
@@ -272,7 +207,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearCart = useCallback(() => {
-    if (cartRef.current.some((item) => item.isPreviewOnly)) skipPreviewClearSync.current = true;
     setCart([]);
   }, []);
 
