@@ -117,11 +117,6 @@ export default function ProductPage() {
           ]}
         />
 
-        {product.isDemo && <div className="mt-5 rounded-xl border border-amber-800/20 bg-amber-50 p-4 sm:p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-900">Temporary demo product · not for sale</p>
-          <p className="mt-2 text-xs leading-5 text-amber-950/80 sm:text-sm sm:leading-6">This page demonstrates the product and cart experience. The displayed price is indicative, size and colour choices are sample interface options, and no real stock is recorded. Editorial photos are inspiration only, not exact product photography. Demo checkout will not create an order or process a payment.</p>
-        </div>}
-
         <div className="mt-6 grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Gallery */}
           <div className="flex flex-col-reverse lg:flex-row gap-4" style={fadeInStyle(0)}>
