@@ -110,7 +110,8 @@ export default function CartDrawer() {
                               updateCartQuantity(item.productId, item.color, item.size, item.quantity + 1)
                             }
                             aria-label="Increase quantity"
-                            className="p-1.5 text-ink hover:text-peach transition-colors active:scale-90"
+                            disabled={item.quantity >= 99}
+                            className="p-1.5 text-ink hover:text-peach disabled:cursor-not-allowed disabled:opacity-40 transition-colors active:scale-90"
                           >
                             <Plus size={14} />
                           </button>

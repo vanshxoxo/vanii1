@@ -40,6 +40,7 @@ export default function SearchOverlay() {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.category.toLowerCase().includes(q) ||
+          p.ages.some((age) => age.toLowerCase().includes(q)) ||
           p.tags?.some((t) => t.toLowerCase().includes(q))
       )
       .slice(0, 6);

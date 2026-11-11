@@ -170,33 +170,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useCallback((item: CartItem) => {
+    const quantity = Math.min(99, Math.max(1, Math.floor(Number.isFinite(item.quantity) ? item.quantity : 1)));
+    const normalizedItem = { ...item, quantity };
     setCart((prev) => {
       const existing = prev.find(
-        (i) => i.variantId && item.variantId ? i.variantId === item.variantId : i.productId === item.productId && i.color === item.color && i.size === item.size
+        (i) => i.variantId && normalizedItem.variantId ? i.variantId === normalizedItem.variantId : i.productId === normalizedItem.productId && i.color === normalizedItem.color && i.size === normalizedItem.size
       );
       if (existing) {
         return prev.map((i) =>
-          (i.variantId && item.variantId ? i.variantId === item.variantId : i.productId === item.productId && i.color === item.color && i.size === item.size)
-            ? { ...i, quantity: i.quantity + item.quantity }
+          (i.variantId && normalizedItem.variantId ? i.variantId === normalizedItem.variantId : i.productId === normalizedItem.productId && i.color === normalizedItem.color && i.size === normalizedItem.size)
+            ? { ...i, quantity: Math.min(99, i.quantity + normalizedItem.quantity) }
             : i
         );
       }
-      return [...prev, item];
+      return [...prev, normalizedItem];
     });
     setCartPulse((p) => p + 1);
-    pushToast(`${item.name} added to bag`, 'success');
+    pushToast(`${normalizedItem.name} added to bag`, 'success');
     setIsCartOpen(true);
   }, [pushToast]);
 
   const updateCartQuantity = useCallback((productId: string, color: string, size: string, quantity: number) => {
-    if (quantity <= 0) {
+    const requestedQuantity = Number.isFinite(quantity) ? Math.floor(quantity) : 1;
+    if (requestedQuantity <= 0) {
       setCart((prev) => prev.filter((i) => !(i.productId === productId && i.color === color && i.size === size)));
       return;
     }
+    const boundedQuantity = Math.min(99, requestedQuantity);
     setCart((prev) =>
       prev.map((i) =>
         i.productId === productId && i.color === color && i.size === size
-          ? { ...i, quantity }
+          ? { ...i, quantity: boundedQuantity }
           : i
       )
     );
