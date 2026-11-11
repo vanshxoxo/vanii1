@@ -5,14 +5,14 @@ import { useCatalog } from '../lib/catalog';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
-import { launchDemoProducts } from '../data/launchAssortment';
+import { launchPreviewProducts } from '../data/launchAssortment';
 
 export default function WishlistPage() {
   const { products } = useCatalog();
   const { wishlist } = useStore();
   const wishlistedProducts = [
     ...products.filter((product) => wishlist.includes(product.id)),
-    ...launchDemoProducts.filter((product) => wishlist.includes(product.id)),
+    ...launchPreviewProducts.filter((product) => wishlist.includes(product.id)),
   ];
 
   return (

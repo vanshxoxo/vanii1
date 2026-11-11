@@ -19,7 +19,7 @@ The source files are WebP derivatives generated from Pexels image CDN downloads;
 
 ## Recovered Version B image set
 
-These local files were recovered from the Pexels CDN URLs already present in Version B's `src/demoData.ts` at commit [`98396e1`](https://github.com/vanshxoxo/vanii1/commit/98396e17698d76209fdb590fe0cc89045305cb3e). The old code also attached several of these images to invented sample products; that product/catalog use was deliberately discarded. Here they are used only as editorial design imagery and category illustrations. They are never presented as Little Loom product photographs. The commit did not retain photographer names or the original Pexels photo page metadata, so those names are not asserted here.
+These local files were recovered from the Version B source at commit [`98396e1`](https://github.com/vanshxoxo/vanii1/commit/98396e17698d76209fdb590fe0cc89045305cb3e). The old code also attached several of these images to invented sample products; that product/catalog use was deliberately discarded. Here they are used only as editorial design imagery and category illustrations. They are never presented as Little Loom product photographs. The commit did not retain photographer names or the original Pexels photo page metadata, so those names are not asserted here.
 
 | Local asset | Pexels CDN source | Intended editorial use |
 |---|---|---|

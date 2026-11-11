@@ -93,7 +93,7 @@ export default function CartDrawer() {
                       <p className="text-xs text-ink-light mt-0.5">
                         {item.color} · Size {item.size}
                       </p>
-                      {item.isDemo && <p className="mt-1 text-[9px] font-medium uppercase tracking-wide text-amber-800">Demo only · no real inventory</p>}
+                      {item.isPreviewOnly && <p className="mt-1 text-[9px] font-medium uppercase tracking-wide text-amber-800">Under review · stock not confirmed</p>}
                       <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center border border-ink/15 rounded-md">
                           <button
@@ -117,7 +117,7 @@ export default function CartDrawer() {
                           </button>
                         </div>
                         <span className="text-sm font-semibold text-ink">
-                          {formatINR(item.price * item.quantity)}
+                          {item.isPreviewOnly ? 'Price to confirm' : formatINR(item.price * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -129,18 +129,18 @@ export default function CartDrawer() {
             {/* Footer */}
             <div className="border-t border-ink/10 px-5 py-4 shrink-0 space-y-3 animate-slide-up">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-soft">Subtotal</span>
-                <span className="text-base font-semibold text-ink">{formatINR(cartTotal)}</span>
+                <span className="text-sm text-ink-soft">{cart.some((item) => item.isPreviewOnly) ? 'Amount' : 'Subtotal'}</span>
+                <span className="text-base font-semibold text-ink">{cart.some((item) => item.isPreviewOnly) ? 'To be confirmed' : formatINR(cartTotal)}</span>
               </div>
               <p className="text-xs text-ink-light">
-                {cart.every((item) => item.isDemo) ? 'Demo preview only. Checkout validates sample details locally; no order or payment is created.' : 'Shipping and payment totals are confirmed securely at checkout.'}
+                {cart.some((item) => item.isPreviewOnly) ? 'Styles still under review cannot be ordered. Remove them before checkout.' : 'Shipping and payment totals are confirmed securely at checkout.'}
               </p>
-              <Link to="/checkout" onClick={closeCart} className="block">
+              {cart.some((item) => item.isPreviewOnly) ? <button type="button" disabled className="w-full rounded-lg bg-ink/30 px-5 py-3.5 text-sm font-medium text-cream">Unavailable to order</button> : <Link to="/checkout" onClick={closeCart} className="block">
                 <Button variant="primary" size="lg" className="w-full group">
                   Proceed to Checkout
                   <ShoppingBag size={16} className="transition-transform group-hover:rotate-12" />
                 </Button>
-              </Link>
+              </Link>}
               <button
                 onClick={closeCart}
                 className="w-full text-center text-sm text-ink-soft hover:text-ink transition-colors"

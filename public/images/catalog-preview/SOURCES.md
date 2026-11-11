@@ -1,6 +1,6 @@
 # Pexels editorial image sources
 
-Recovered from `src/demoData.ts` at commit `98396e17698d76209fdb590fe0cc89045305cb3e` as 26 historical gallery references across 12 legacy groupings, representing 15 unique photographs. These legacy group names are included only to document where the references came from; they are not live product records, listings, metadata, or proof of Little Loom product imagery. The images are used on the storefront as editorial photography only. They must not be used as actual product galleries or to imply endorsement by the depicted people.
+Recovered from the Version B source at commit `98396e17698d76209fdb590fe0cc89045305cb3e` as 26 historical gallery references across 12 legacy groupings, representing 15 unique photographs. These legacy group names are included only to document where the references came from; they are not live product records, listings, metadata, or proof of Little Loom product imagery. The images are used on the storefront as editorial photography only. They must not be used as actual product galleries or to imply endorsement by the depicted people.
 
 Pexels states that its photos may be used commercially under the [Pexels License](https://www.pexels.com/license/). Do not redistribute these images as standalone stock downloads or imply that depicted people endorse Little Loom. Source URLs and local optimized files are listed below.
 
