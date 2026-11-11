@@ -84,7 +84,10 @@ export default function ShopPage() {
   const filtered = useMemo(() => {
     const collection = searchParams.get('collection');
     const search = (searchParams.get('search') || '').trim().toLowerCase();
-    let result = products.filter((product) => !collection || product.collections?.includes(collection));
+    const newArrivalsOnly = searchParams.get('filter') === 'new';
+    let result = products.filter((product) =>
+      (!collection || product.collections?.includes(collection)) && (!newArrivalsOnly || product.isNew)
+    );
 
     if (selectedAges.size > 0) {
       result = result.filter((product) => product.ages.some((productAge) => [...selectedAges].some((selectedAge) => {
@@ -110,7 +113,12 @@ export default function ShopPage() {
     if (inStockOnly) {
       result = result.filter((product) => product.inStock === true);
     }
-    if (search) result = result.filter((product) => product.name.toLowerCase().includes(search) || product.category.toLowerCase().includes(search) || product.tags?.some((tag) => tag.toLowerCase().includes(search)));
+    if (search) result = result.filter((product) =>
+      product.name.toLowerCase().includes(search) ||
+      product.category.toLowerCase().includes(search) ||
+      product.ages.some((age) => age.toLowerCase().includes(search)) ||
+      product.tags?.some((tag) => tag.toLowerCase().includes(search))
+    );
 
     switch (sort) {
       case 'price-low':
@@ -131,6 +139,7 @@ export default function ShopPage() {
 
   const activeFilterCount =
     selectedAges.size + selectedCategories.size + selectedSizes.size + selectedColors.size + (searchParams.get('collection') ? 1 : 0) +
+    (searchParams.get('filter') === 'new' ? 1 : 0) +
     (priceRange[0] > 0 || priceRange[1] < Number.MAX_SAFE_INTEGER ? 1 : 0) + (inStockOnly ? 1 : 0) + (searchQuery ? 1 : 0);
 
   const activeAge = selectedLaunchAge || resolveLaunchAge(actualAge?.label);

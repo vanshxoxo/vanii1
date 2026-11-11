@@ -61,7 +61,10 @@ export default function ProductPage() {
   const wished = isWishlisted(product.id);
   const related = products.filter((item) => item.id !== product.id && item.category === product.category).concat(products.filter((item) => item.id !== product.id && item.category !== product.category)).slice(0, 4);
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
-  const chosenColor = selectedColor || product.colors[0]?.name;
+  const availableDefaultColor = product.colors.find((color) =>
+    product.variants?.some((variant) => variant.colour === color.name && variant.available)
+  )?.name;
+  const chosenColor = selectedColor || availableDefaultColor || product.colors[0]?.name;
   const chosenSize = selectedSize || product.sizes[0];
   const selectedVariant = product.variants?.find((variant) => variant.colour === chosenColor && variant.size === chosenSize);
   const displayPrice = selectedVariant?.price ?? product.price;
@@ -203,7 +206,7 @@ export default function ProductPage() {
                     }}
                     aria-label={color.name}
                     className={`relative h-9 w-9 rounded-full border-2 transition-all duration-200 ${
-                      selectedColor === color.name
+                      chosenColor === color.name
                         ? 'border-ink ring-2 ring-ink/15 scale-110'
                         : 'border-ink/10 hover:border-ink/30 hover:scale-105'
                     } ${disabled ? 'cursor-not-allowed opacity-30' : ''}`}
@@ -271,6 +274,7 @@ export default function ProductPage() {
                   onClick={() => setQuantity((q) => q + 1)}
                   aria-label="Increase quantity"
                   className="p-2.5 text-ink hover:text-peach transition-all active:scale-90"
+                  disabled={quantity >= 99}
                 >
                   <Plus size={16} />
                 </button>
