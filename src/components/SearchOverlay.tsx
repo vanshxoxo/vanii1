@@ -2,14 +2,17 @@ import { X, Search as SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../useStore';
 import { formatINR } from '../data';
+import { launchAssortment, formatProposedPrice } from '../data/launchAssortment';
+import { ageNavigation } from '../data/storeNavigation';
 import { useCatalog } from '../lib/catalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function SearchOverlay() {
-  const { products } = useCatalog();
+  const { products, hasPublishedRecords, loading, error } = useCatalog();
   const { isSearchOpen, closeSearch } = useStore();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const isPreviewMode = !loading && !error && !hasPublishedRecords;
 
   useEffect(() => {
     if (isSearchOpen) {
@@ -45,6 +48,14 @@ export default function SearchOverlay() {
       .slice(0, 6);
   }, [query, products]);
 
+  const previewResults = useMemo(() => {
+    if (!isPreviewMode || !query.trim()) return [];
+    const term = query.trim().toLowerCase();
+    return launchAssortment.filter((item) => item.name.toLowerCase().includes(term) || item.category.toLowerCase().includes(term) || item.ageSuggestions.some((ageKey) => ageNavigation.find((age) => age.key === ageKey)?.label.toLowerCase().includes(term))).slice(0, 6);
+  }, [isPreviewMode, query]);
+
+  const hasResults = isPreviewMode ? previewResults.length > 0 : results.length > 0;
+
   if (!isSearchOpen) return null;
 
   return (
@@ -73,17 +84,32 @@ export default function SearchOverlay() {
 
           {query.trim() && (
             <div className="mt-6">
-              {results.length === 0 ? (
+              {!hasResults ? (
                 <p className="text-sm text-ink-soft py-8 text-center">
                   No results for "{query}". Try searching for "romper", "dress", or "sleep".
                 </p>
               ) : (
                 <>
                   <p className="text-xs text-ink-light mb-3">
-                    {results.length} result{results.length > 1 ? 's' : ''}
+                    {isPreviewMode ? previewResults.length : results.length} result{(isPreviewMode ? previewResults.length : results.length) > 1 ? 's' : ''}
                   </p>
                   <ul className="flex flex-col gap-1">
-                    {results.map((product) => (
+                    {isPreviewMode ? previewResults.map((item) => (
+                      <li key={item.key}>
+                        <Link
+                          to={`/shop?search=${encodeURIComponent(item.name)}`}
+                          onClick={closeSearch}
+                          className="flex items-center gap-4 rounded-lg p-2 transition-colors hover:bg-ink/5"
+                        >
+                          <img src={item.image} alt="Editorial inspiration, not a product photograph" className="h-16 w-14 rounded-md object-cover" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-ink">{item.name}</p>
+                            <p className="text-xs text-ink-light">{item.category} · Preview</p>
+                          </div>
+                          <span className="text-right text-sm font-semibold text-ink">{formatProposedPrice(item.price)}<span className="block text-[9px] font-normal uppercase tracking-wide text-ink-light">Proposed</span></span>
+                        </Link>
+                      </li>
+                    )) : results.map((product) => (
                       <li key={product.id}>
                         <Link
                           to={`/product/${product.slug}`}

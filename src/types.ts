@@ -65,5 +65,6 @@ export interface CategoryInfo {
   id: Category;
   name: string;
   image: string;
+  description?: string;
   span: 'tall' | 'wide' | 'normal';
 }

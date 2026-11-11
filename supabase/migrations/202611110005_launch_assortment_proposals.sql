@@ -62,36 +62,41 @@ begin
 
   for item in
     select * from (values
-      ('soft-play-romper','rompers',1,'Soft Play Romper',799::numeric,'baby','A relaxed everyday silhouette for little moments.'),
-      ('little-sun-romper','rompers',2,'Little Sun Romper',999::numeric,'toddler','A bright, easygoing look for the first assortment.'),
-      ('everyday-snap-romper','rompers',3,'Everyday Snap Romper',899::numeric,'newborn','A simple one-piece concept with a familiar feel.'),
-      ('sunday-cotton-coord','co-ord-sets',1,'Sunday Cotton Co-ord',1499::numeric,'toddler','An easy two-piece idea for unhurried days.'),
-      ('playday-tee-shorts-set','co-ord-sets',2,'Playday Tee & Shorts Set',1299::numeric,'little-kids','A playful pairing proposed for everyday dressing.'),
-      ('weekend-lounge-set','co-ord-sets',3,'Weekend Lounge Set',1599::numeric,'baby','A laid-back set concept for slower weekends.'),
-      ('everyday-cotton-tee','tees-tops',1,'Everyday Cotton Tee',499::numeric,'toddler','A considered staple for a small everyday wardrobe.'),
-      ('little-bloom-tee','tees-tops',2,'Little Bloom Tee',599::numeric,'toddler','A cheerful top concept with a gentle point of view.'),
-      ('peter-pan-collar-top','tees-tops',3,'Peter Pan Collar Top',699::numeric,'baby','A classic collar idea for a more dressed-up day.'),
-      ('daisy-day-dress','dresses',1,'Daisy Day Dress',1199::numeric,'toddler','A bright dress concept for days out and about.'),
-      ('gathered-cotton-dress','dresses',2,'Gathered Cotton Dress',1399::numeric,'baby','A softly gathered silhouette proposed for the range.'),
-      ('occasion-smock-dress','dresses',3,'Occasion Smock Dress',1699::numeric,'little-kids','A special-day dress concept with a timeless shape.'),
-      ('easy-pull-on-pants','bottoms',1,'Easy Pull-on Pants',699::numeric,'toddler','A straightforward bottomwear idea for little wardrobes.'),
-      ('everyday-cotton-shorts','bottoms',2,'Everyday Cotton Shorts',599::numeric,'little-kids','A simple shorts concept for warm-weather outfits.'),
-      ('relaxed-joggers','bottoms',3,'Relaxed Joggers',899::numeric,'toddler','An easy jogger silhouette proposed for everyday wear.'),
-      ('cloud-cotton-pj-set','sleepwear',1,'Cloud Cotton PJ Set',1199::numeric,'baby','A two-piece sleepwear idea for a quieter end to the day.'),
-      ('little-moon-sleepsuit','sleepwear',2,'Little Moon Sleepsuit',899::numeric,'newborn','A one-piece sleepwear concept for the proposed range.'),
-      ('bedtime-two-piece-set','sleepwear',3,'Bedtime Two-Piece Set',1099::numeric,'little-kids','A calm two-piece idea for a little bedtime routine.')
-    ) as assortment(proposal_key,category_slug,slot,product_name,proposed_price,suggested_age,proposed_description)
+      ('soft-play-romper','rompers',1,'Soft Play Romper',799::numeric,'baby,toddler'),
+      ('little-sun-romper','rompers',2,'Little Sun Romper',999::numeric,'baby,toddler'),
+      ('everyday-snap-romper','rompers',3,'Everyday Snap Romper',899::numeric,'newborn,baby'),
+      ('sunday-cotton-coord','co-ord-sets',1,'Sunday Cotton Co-ord',1499::numeric,'toddler,little-kids'),
+      ('playday-tee-shorts-set','co-ord-sets',2,'Playday Tee & Shorts Set',1299::numeric,'toddler,little-kids'),
+      ('weekend-lounge-set','co-ord-sets',3,'Weekend Lounge Set',1599::numeric,'baby,toddler'),
+      ('everyday-cotton-tee','tees-tops',1,'Everyday Cotton Tee',499::numeric,'toddler,little-kids'),
+      ('little-bloom-tee','tees-tops',2,'Little Bloom Tee',599::numeric,'toddler,little-kids'),
+      ('peter-pan-collar-top','tees-tops',3,'Peter Pan Collar Top',699::numeric,'baby,toddler'),
+      ('daisy-day-dress','dresses',1,'Daisy Day Dress',1199::numeric,'baby,toddler'),
+      ('gathered-cotton-dress','dresses',2,'Gathered Cotton Dress',1399::numeric,'toddler,little-kids'),
+      ('occasion-smock-dress','dresses',3,'Occasion Smock Dress',1699::numeric,'toddler,little-kids'),
+      ('easy-pull-on-pants','bottoms',1,'Easy Pull-on Pants',699::numeric,'baby,toddler'),
+      ('everyday-cotton-shorts','bottoms',2,'Everyday Cotton Shorts',599::numeric,'toddler,little-kids'),
+      ('relaxed-joggers','bottoms',3,'Relaxed Joggers',899::numeric,'baby,toddler,little-kids'),
+      ('cloud-cotton-pj-set','sleepwear',1,'Cloud Cotton PJ Set',1199::numeric,'baby,toddler'),
+      ('little-moon-sleepsuit','sleepwear',2,'Little Moon Sleepsuit',899::numeric,'newborn,baby'),
+      ('bedtime-two-piece-set','sleepwear',3,'Bedtime Two-Piece Set',1099::numeric,'toddler,little-kids')
+    ) as assortment(proposal_key,category_slug,slot,product_name,proposed_price,suggested_ages)
   loop
     select id into v_category_id from public.categories where kind='product' and slug=item.category_slug and is_active;
     if v_category_id is null then
       raise exception 'Required active product category % is missing', item.category_slug;
     end if;
 
-    -- A previous run is recognized and left untouched so later owner edits survive.
+    -- A previous proposal keeps any owner edits; refresh only review-only age suggestions.
     select id into v_product_id from public.products
       where tags @> array['launch-proposal:' || item.proposal_key]
       limit 1;
     if v_product_id is not null then
+      update public.products p
+      set tags =
+        coalesce((select array_agg(existing_tag) from unnest(coalesce(p.tags, '{}'::text[])) existing_tag where existing_tag not like 'suggested-age-group:%'), '{}'::text[])
+        || array(select 'suggested-age-group:' || suggested_age from unnest(string_to_array(item.suggested_ages, ',')) suggested_age)
+      where p.id = v_product_id;
       continue;
     end if;
 
@@ -111,14 +116,15 @@ begin
 
     v_tags := array[
       'owner-intake','approval-required','owner-review-required','proposed-name','proposed-price',
-      'launch-proposal:' || item.proposal_key,'suggested-age-group:' || item.suggested_age,
+      'launch-proposal:' || item.proposal_key
+    ] || array(select 'suggested-age-group:' || suggested_age from unnest(string_to_array(item.suggested_ages, ',')) suggested_age) || array[
       'missing:verified-material','missing:verified-measurements','missing:verified-sizes',
       'missing:verified-colours','missing:sku','missing:stock','missing:authorized-product-photos','missing:verified-care'
     ];
 
     if v_product_id is not null then
       update public.products set
-        name=item.product_name, slug=v_slug, description=item.proposed_description,
+        name=item.product_name, slug=v_slug, description='',
         material='', fabric_composition='', care_instructions='', size_measurements='',
         price=item.proposed_price, compare_at_price=null, currency='INR', status='draft',
         published_at=null, tags=(select array(select distinct unnest(coalesce(tags,'{}') || v_tags)))
@@ -131,7 +137,7 @@ begin
         v_slug := v_base_slug || '-launch-' || v_attempt::text;
       end loop;
       insert into public.products(name,slug,description,material,fabric_composition,care_instructions,size_measurements,price,compare_at_price,currency,status,tags)
-      values(item.product_name,v_slug,item.proposed_description,'','','', '',item.proposed_price,null,'INR','draft',v_tags)
+      values(item.product_name,v_slug,'','','','', '',item.proposed_price,null,'INR','draft',v_tags)
       returning id into v_product_id;
     end if;
 

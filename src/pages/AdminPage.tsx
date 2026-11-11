@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured, publicMediaUrl } from '../lib/supabase'
 import Button from '../components/Button';
 import AdminContentPage from './AdminContentPage';
 import { formatINR } from '../data';
+import { ageNavigation } from '../data/storeNavigation';
 
 type Tab = 'overview' | 'products' | 'categories' | 'media' | 'homepage' | 'collections' | 'content' | 'customers' | 'roles' | 'orders' | 'settings';
 type Status = 'loading' | 'signed-out' | 'denied' | 'ready' | 'unconfigured';
@@ -59,6 +60,7 @@ export default function AdminPage() {
   const [galleryAssetId, setGalleryAssetId] = useState('');
   const [categoryForm, setCategoryForm] = useState<any>({ kind: 'product', name: '', slug: '', description: '', display_order: 0, is_active: true, image_asset_id: '' });
   const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [showProductPreview, setShowProductPreview] = useState(false);
   const [productForm, setProductForm] = useState<ProductForm>(emptyProduct);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variantForm, setVariantForm] = useState({ size: '', colour: '', colour_hex: '', sku: '', stock: '', price_override: '' });
@@ -71,6 +73,17 @@ export default function AdminPage() {
   const [collections, setCollections] = useState<any[]>([]);
   const [collectionForm, setCollectionForm] = useState<{ id?: string; name: string; slug: string; description: string; product_id: string; cover_asset_id: string; display_order: number; status: string }>({ name: '', slug: '', description: '', product_id: '', cover_asset_id: '', display_order: 0, status: 'draft' });
   const [settings, setSettings] = useState<Record<string, any>>({});
+
+  const suggestedAgeLabels = useMemo(() => productForm.tags
+    .filter((tag) => tag.startsWith('suggested-age-group:'))
+    .map((tag) => tag.slice('suggested-age-group:'.length))
+    .map((key) => ageNavigation.find((age) => age.key === key)?.label || key.replace(/-/g, ' ')), [productForm.tags]);
+  const productPreviewImages = useMemo(() => gallery.flatMap((link) => {
+    const asset = Array.isArray(link.media_assets) ? link.media_assets[0] : link.media_assets;
+    if (!asset || asset.provider !== 'imagekit' || asset.purpose !== 'product' || asset.lifecycle_status !== 'active') return [];
+    const url = publicMediaUrl(asset, 900);
+    return url ? [{ url, alt: link.alt_text || productForm.name || 'Product photograph' }] : [];
+  }), [gallery, productForm.name]);
 
   const report = (message: string) => { setNotice(message); setError(''); };
   const fail = (message: string) => { setError(message); setNotice(''); };
@@ -119,6 +132,7 @@ export default function AdminPage() {
 
   async function selectProduct(id: string) {
     setSelectedProduct(id);
+    setShowProductPreview(false);
     if (!id || !supabase) { setProductForm(emptyProduct); setVariants([]); setCategoryIds([]); setGallery([]); return; }
     const [product, variantRows, categoryRows, productGallery] = await Promise.all([
       supabase.from('products').select('*').eq('id', id).single(),
@@ -420,7 +434,7 @@ export default function AdminPage() {
         <aside><p className="text-xs leading-5 text-ink-soft">Proposed launch assortment entries are drafts. The suggested names and prices are not verified supplier products and cannot be published until every real product fact and image is reviewed.</p><label className="mt-3 block text-xs uppercase tracking-wider text-ink-soft">Products<select value={selectedProduct} onChange={(e) => void selectProduct(e.target.value)} className="mt-2 w-full border border-ink/15 bg-transparent p-3"><option value="">Create a product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} · {product.status}{product.tags?.includes('owner-intake') ? ' · proposed' : ''}</option>)}</select></label><div className="mt-4 space-y-1">{products.map((product) => { const missing = pendingProductApprovals(product); return <button key={product.id} onClick={() => void selectProduct(product.id)} className="block w-full border-b border-ink/5 py-2 text-left hover:underline"><span className="block truncate text-sm">{product.name}{product.tags?.includes('owner-intake') && <span className="ml-2 text-[9px] uppercase tracking-wider text-amber-800">proposed</span>}</span><span className="text-[10px] text-ink-light">{product.status} · {missing.length ? `${missing.length} approvals needed` : 'ready for review'}</span></button>; })}</div><p className="mt-4 text-[10px] leading-4 text-ink-light">Before publication, enter the owner-approved name and price; verified fabric, garment measurements by size and care; confirmed product and age categories; size, colour, SKU and stock details; and authorized product photographs uploaded to ImageKit.</p></aside>
         <div className="space-y-8">
           <form onSubmit={(e) => void saveProduct(e)} className="grid gap-4 sm:grid-cols-2">
-            {(productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')) && <div className="sm:col-span-2 border border-amber-700/20 bg-amber-50 p-3"><p className="text-sm font-medium">Proposed launch entry · unpublished</p><p className="mt-1 text-xs leading-5">The assortment name and indicative price below are owner-approved proposals, not verified product facts. Editorial preview photographs are not product photos. Suggested age group: {productForm.tags.find((tag) => tag.startsWith('suggested-age-group:'))?.slice('suggested-age-group:'.length).replace(/-/g, ' ') || 'none'} (review only; not linked to the product).</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-name')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-name') : [...new Set([...productForm.tags, 'proposed-name'])] })} />I verified or replaced the proposed product name.</label><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-price')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-price') : [...new Set([...productForm.tags, 'proposed-price'])] })} />I verified or replaced the proposed price.</label></div><label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" checked={productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? [...new Set([...productForm.tags, 'owner-intake', 'owner-review-required'])] : productForm.tags.filter((tag) => !['owner-intake', 'owner-review-required', 'approval-required'].includes(tag)) })} />Keep this item marked as owner-review draft until its actual details and authorized product photo are complete.</label></div>}
+            {(productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')) && <div className="sm:col-span-2 border border-amber-700/20 bg-amber-50 p-3"><p className="text-sm font-medium">Proposed launch entry · unpublished</p><p className="mt-1 text-xs leading-5">The name and indicative price are proposals, not verified supplier product facts. Editorial images are not product photos. Suggested ages: {suggestedAgeLabels.length ? suggestedAgeLabels.join(', ') : 'none'} (merchandising review only; these are not linked as confirmed fit).</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-name')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-name') : [...new Set([...productForm.tags, 'proposed-name'])] })} />I verified or replaced the proposed product name.</label><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={!productForm.tags.includes('proposed-price')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? productForm.tags.filter((tag) => tag !== 'proposed-price') : [...new Set([...productForm.tags, 'proposed-price'])] })} />I verified or replaced the proposed price.</label></div><label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" checked={productForm.tags.includes('owner-intake') || productForm.tags.includes('owner-review-required')} onChange={(e) => setProductForm({ ...productForm, tags: e.target.checked ? [...new Set([...productForm.tags, 'owner-intake', 'owner-review-required'])] : productForm.tags.filter((tag) => !['owner-intake', 'owner-review-required', 'approval-required'].includes(tag)) })} />Keep this item marked as owner-review draft until its actual details and authorized product photo are complete.</label></div>}
             <label className="text-sm">{productForm.tags.includes('proposed-name') ? 'Proposed product name' : 'Product name'}<input required value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">Slug<input required value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">{productForm.tags.includes('proposed-price') ? 'Suggested price (INR)' : 'Price (INR)'}<input type="number" min="0.01" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="admin-input" />{productForm.tags.includes('proposed-price') && <span className="mt-1 block text-[10px] text-amber-800">Indicative only; confirm with the owner before publication.</span>}</label>
@@ -434,8 +448,25 @@ export default function AdminPage() {
             <label className="text-sm">SEO title<input value={productForm.seo_title} onChange={(e) => setProductForm({ ...productForm, seo_title: e.target.value })} className="admin-input" /></label>
             <label className="text-sm">SEO description<input value={productForm.seo_description} onChange={(e) => setProductForm({ ...productForm, seo_description: e.target.value })} className="admin-input" /></label>
             <fieldset className="sm:col-span-2"><legend className="text-sm">Categories and age groups</legend><div className="mt-2 flex flex-wrap gap-3">{categories.filter((category) => category.is_active).map((category) => <label key={category.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={categoryIds.includes(category.id)} onChange={(e) => setCategoryIds(e.target.checked ? [...categoryIds, category.id] : categoryIds.filter((id) => id !== category.id))} />{category.name} <span className="text-xs text-ink-light">{category.kind}</span></label>)}</div></fieldset>
-            <div className="sm:col-span-2"><Button type="submit">{productForm.id ? 'Save product' : 'Create product'}</Button></div>
+            <div className="sm:col-span-2 flex flex-wrap gap-3"><Button type="submit">{productForm.id ? 'Save product' : 'Create product'}</Button><button type="button" onClick={() => setShowProductPreview((value) => !value)} className="min-h-10 border border-ink/20 px-4 text-sm text-ink hover:bg-ink/5">{showProductPreview ? 'Hide product page preview' : 'Preview product page'}</button></div>
           </form>
+
+          {showProductPreview && <section aria-label="Admin-only product page preview" className="overflow-hidden rounded-2xl border border-ink/15 bg-white">
+            <div className="border-b border-ink/10 bg-[#f8f4f0] px-4 py-3"><p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink">Admin-only product page preview</p><p className="mt-1 text-[11px] text-ink-light">Shows the current form values; it does not save, publish, or enable purchasing.</p></div>
+            <div className="grid gap-0 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2 bg-cream p-3 sm:p-4">
+                {productPreviewImages.length ? productPreviewImages.map((image, index) => <img key={`${image.url}-${index}`} src={image.url} alt={image.alt} className={`aspect-[4/5] w-full rounded-lg object-cover ${index === 0 ? 'col-span-2 max-h-[560px]' : ''}`} loading="lazy" />) : <div className="col-span-2 flex aspect-[4/5] items-center justify-center rounded-lg bg-[#f4eee8] p-6 text-center text-sm text-ink-light">No active ImageKit product photograph is linked yet.</div>}
+              </div>
+              <div className="flex flex-col justify-center p-5 sm:p-8">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-ink-light">{categories.filter((category) => categoryIds.includes(category.id) && category.kind === 'product').map((category) => category.name).join(' · ') || 'Category not selected'}</p>
+                <h2 className="mt-3 font-serif text-2xl text-ink sm:text-3xl">{productForm.name || 'Product name'}</h2>
+                {productForm.price && <p className="mt-3 text-lg font-medium">{formatINR(Number(productForm.price))}{productForm.tags.includes('proposed-price') && <span className="ml-2 text-xs font-normal text-amber-800">proposed</span>}</p>}
+                {productForm.description.trim() && <p className="mt-4 text-sm leading-6 text-ink-soft">{productForm.description}</p>}
+                {variants.length > 0 && <div className="mt-5"><p className="text-xs text-ink-light">Saved variant options</p><div className="mt-2 flex flex-wrap gap-2">{[...new Set(variants.filter((variant) => variant.is_active).map((variant) => variant.size))].map((size) => <span key={size} className="border border-ink/15 px-3 py-1.5 text-xs">{size}</span>)}</div><p className="mt-2 text-xs text-ink-soft">{[...new Set(variants.filter((variant) => variant.is_active).map((variant) => variant.colour))].join(' · ')}</p></div>}
+                <p className="mt-6 border-t border-ink/10 pt-4 text-xs text-ink-light">No cart, payment or inventory claim is shown in this admin preview.</p>
+              </div>
+            </div>
+          </section>}
 
           {selectedProduct && <section className="border-t border-ink/10 pt-6"><h2 className="font-serif text-xl">Sizes, colours and stock</h2><form onSubmit={(e) => void addVariant(e)} className="mt-4 grid gap-3 sm:grid-cols-3">
             <label className="text-xs">Size<input required value={variantForm.size} onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })} className="admin-input" placeholder="2-3Y" /></label>
