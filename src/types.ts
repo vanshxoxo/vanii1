@@ -22,12 +22,16 @@ export interface Product {
   description: string;
   fabric: string;
   care: string;
+  sizeMeasurements?: string;
   isNew?: boolean;
   isBestseller?: boolean;
   tags?: string[];
+  collections?: string[];
   variants?: ProductVariant[];
   inStock?: boolean;
   imageAltTexts?: string[];
+  /** Local-only catalogue preview product. Never persist as a database product. */
+  isDemo?: boolean;
 }
 
 export interface ProductVariant {
@@ -49,6 +53,8 @@ export interface CartItem {
   size: string;
   quantity: number;
   variantId?: string;
+  /** Demo items stay in the browser and must never reach checkout APIs. */
+  isDemo?: boolean;
 }
 
 export interface AgeInfo {
@@ -63,5 +69,6 @@ export interface CategoryInfo {
   id: Category;
   name: string;
   image: string;
+  description?: string;
   span: 'tall' | 'wide' | 'normal';
 }

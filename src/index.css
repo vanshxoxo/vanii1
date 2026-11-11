@@ -116,7 +116,11 @@
 }
 .hero-line + .hero-line { transition-delay: 120ms; }
 .hero-line.is-visible { opacity: 1; transform: translateY(0); }
-.hero-image img { animation: hero-image-reveal 900ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.hero-image img {
+  animation: hero-image-reveal 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 1400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero-image:hover img { transform: scale(1.035); }
 @keyframes hero-image-reveal {
   from { opacity: 0.72; clip-path: inset(3% 0 0); }
   to { opacity: 1; clip-path: inset(0); }

@@ -58,6 +58,12 @@ Roles are additive. A catalog manager who also needs to upload/delete media must
 
 ## Preview configuration
 
+### Launch proposal migration
+
+The first-assortment proposal migration is `supabase/migrations/202611110005_launch_assortment_proposals.sql`. It is idempotent and intentionally leaves all proposed items unpublished. Before applying it, confirm the target Supabase project is isolated Preview and check which migrations have actually been applied. If this is a fresh Preview database, apply migrations 001, 002, 003, 004, then 005 in filename order. If migrations 001–004 are already recorded as applied, apply only 005. Do not run this proposal seed against Production. Migration 005 does not create variants, inventory, product media, orders, payments or customer records.
+
+After applying it, sign in as the verified owner and confirm the items are tagged for owner review and have `draft` status. Add verified supplier data, complete variants and inventory, attach authorized ImageKit product photos, then publish. Editorial preview photos are not product photos and must not be attached to these records.
+
 Configure these in the **Preview** environment of the existing Vercel project, without replacing valid values in other environments:
 
 - Config: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`

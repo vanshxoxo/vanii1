@@ -16,12 +16,13 @@ import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 import ProductCard from '../components/ProductCard';
 import Reveal from '../components/Reveal';
+import { findLaunchDemoProduct, launchDemoProducts } from '../data/launchAssortment';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { products, loading: catalogLoading } = useCatalog();
-  const product = products.find((item) => item.slug === slug);
+  const product = products.find((item) => item.slug === slug) || findLaunchDemoProduct(slug);
 
   const { addToCart, toggleWishlist, isWishlisted } = useStore();
 
@@ -59,7 +60,8 @@ export default function ProductPage() {
   }
 
   const wished = isWishlisted(product.id);
-  const related = products.filter((item) => item.id !== product.id && item.category === product.category).concat(products.filter((item) => item.id !== product.id && item.category !== product.category)).slice(0, 4);
+  const relatedSource = product.isDemo ? launchDemoProducts : products;
+  const related = relatedSource.filter((item) => item.id !== product.id && item.category === product.category).concat(relatedSource.filter((item) => item.id !== product.id && item.category !== product.category)).slice(0, 4);
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
   const chosenColor = selectedColor || product.colors[0]?.name;
   const chosenSize = selectedSize || product.sizes[0];
@@ -92,6 +94,7 @@ export default function ProductPage() {
       size: chosenSize,
       quantity,
       variantId: selectedVariant?.id,
+      isDemo: product.isDemo,
     });
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2000);
@@ -149,6 +152,7 @@ export default function ProductPage() {
                   />
                 ))}
               </div>
+              {product.isDemo && <span className="absolute bottom-3 left-3 rounded-full bg-ivory/95 px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:bottom-4 sm:left-4 sm:text-[10px]">Editorial inspiration · not exact product photography</span>}
               {hasDiscount && (
                 <span className="absolute top-4 left-4 bg-peach px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-white rounded animate-slide-down">
                   Sale
@@ -185,7 +189,7 @@ export default function ProductPage() {
             <div style={fadeInStyle(0.15)}>
               <div className="flex items-center justify-between mb-2.5">
                 <label className="text-sm font-medium text-ink">
-                  Color {selectedColor && <span className="text-ink-light font-normal">· {selectedColor}</span>}
+                  {product.isDemo ? 'Sample colour' : 'Color'} {selectedColor && <span className="text-ink-light font-normal">· {selectedColor}</span>}
                 </label>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -221,12 +225,11 @@ export default function ProductPage() {
             <div style={fadeInStyle(0.2)}>
               <div className="flex items-center justify-between mb-2.5">
                 <label className="text-sm font-medium text-ink">
-                  Size {selectedSize && <span className="text-ink-light font-normal">· {selectedSize}</span>}
+                  {product.isDemo ? 'Sample size' : 'Size'} {selectedSize && <span className="text-ink-light font-normal">· {selectedSize}</span>}
                 </label>
-                <Link to="/size-guide" className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors">
-                  <Ruler size={14} />
-                  Size Guide
-                </Link>
+                {product.isDemo ? <span className="text-[10px] text-ink-light">Choices are not verified sizing</span> : <Link to="/size-guide" className="flex items-center gap-1.5 text-xs text-ink-soft hover:text-ink transition-colors">
+                  <Ruler size={14} /> Size Guide
+                </Link>}
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
@@ -288,7 +291,7 @@ export default function ProductPage() {
                 disabled={Boolean(product.variants?.length) && !product.inStock}
               >
                 <ShoppingBag size={18} className={addedFeedback ? 'animate-wiggle' : ''} />
-                {addedFeedback ? 'Added to Bag!' : 'Add to Bag'}
+                {addedFeedback ? 'Added to Bag!' : product.isDemo ? 'Add demo item' : 'Add to Bag'}
               </Button>
               <button
                 onClick={() => toggleWishlist(product.id, product.name)}
@@ -306,6 +309,8 @@ export default function ProductPage() {
                 />
               </button>
             </div>
+
+            {product.isDemo && <p role="note" className="text-xs leading-5 text-ink-light">No inventory is reserved for this sample selection. Use fictional details at demo checkout; nothing is sent or saved.</p>}
 
             {/* Accordions */}
             <div className="mt-2 border-t border-ink/8" style={fadeInStyle(0.4)}>
@@ -332,6 +337,13 @@ export default function ProductPage() {
                   </div>
                 </div>
               </Accordion>
+              {product.sizeMeasurements?.trim() && <Accordion
+                title="Garment measurements"
+                isOpen={openSection === 'measurements'}
+                onToggle={() => setOpenSection(openSection === 'measurements' ? null : 'measurements')}
+              >
+                <p className="whitespace-pre-line text-sm leading-relaxed text-ink-soft">{product.sizeMeasurements}</p>
+              </Accordion>}
             </div>
           </div>
         </div>

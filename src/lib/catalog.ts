@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import type { AgeInfo, CategoryInfo, Product } from '../types';
 import { isSupabaseConfigured, publicMediaUrl, responsiveMediaSrcSet, supabase } from './supabase';
+import { resolveLaunchAge, resolveLaunchCategory } from '../data/storeNavigation';
 
 type RawAsset = { provider: 'cloudinary' | 'imagekit' | 'external' | 'supabase'; delivery_url: string | null; external_url: string | null; resource_type?: string };
 export type StoreHero = { heading: string; body: string; image: string; mobileImage: string; ctaLabel: string; ctaHref: string };
 export type StoreCollection = { id: string; name: string; slug: string; description: string; image: string };
-type CatalogResult = { products: Product[]; ages: AgeInfo[]; categories: CategoryInfo[]; collections: StoreCollection[]; hero: StoreHero | null; loading: boolean; error: string | null };
+type CatalogResult = { products: Product[]; hasPublishedRecords: boolean; ages: AgeInfo[]; categories: CategoryInfo[]; collections: StoreCollection[]; hero: StoreHero | null; loading: boolean; error: string | null };
 
 const unavailable = !isSupabaseConfigured ? 'The store catalogue is unavailable because the Supabase connection is not configured.' : null;
 
 export function useCatalog(): CatalogResult {
-  const [result, setResult] = useState<CatalogResult>({ products: [], ages: [], categories: [], collections: [], hero: null, loading: Boolean(supabase), error: unavailable });
+  const [result, setResult] = useState<CatalogResult>({ products: [], hasPublishedRecords: false, ages: [], categories: [], collections: [], hero: null, loading: Boolean(supabase), error: unavailable });
 
   useEffect(() => {
     if (!supabase) return;
@@ -29,7 +30,7 @@ export function useCatalog(): CatalogResult {
       const availabilityResponse = variantIds.length ? await supabase!.from('variant_availability').select('variant_id,is_available').in('variant_id', variantIds) : { data: [], error: null };
       const catalogError = queryError || availabilityResponse.error;
       if (catalogError) {
-        setResult({ products: [], ages: [], categories: [], collections: [], hero: null, loading: false, error: catalogError.message });
+        setResult({ products: [], hasPublishedRecords: Boolean(productResponse.data?.length), ages: [], categories: [], collections: [], hero: null, loading: false, error: catalogError.message });
         return;
       }
 
@@ -59,18 +60,29 @@ export function useCatalog(): CatalogResult {
           category: mainCategory, ages: ageNames, sizes, colors,
           images: images.map((image) => image.url), imageSrcSets: images.map((image) => image.srcSet), imageAltTexts: images.map((image) => image.alt),
           fabric: row.fabric_composition || row.material || '', care: row.care_instructions || '',
+          sizeMeasurements: row.size_measurements || '',
           tags: row.tags || [], isNew: collections.includes('new-arrivals'), isBestseller: collections.includes('bestsellers'),
+          collections,
           variants: variants.map((variant: any) => ({ id: variant.id, sku: variant.sku, size: variant.size, colour: variant.colour, price: Number(variant.price_override ?? row.price), available: availability.get(variant.id) === true })),
           inStock: variants.some((variant: any) => availability.get(variant.id) === true),
         } as Product;
       }).filter((product: Product) => product.price > 0 && product.category && product.ages.length > 0 && product.images.length > 0 && product.variants?.length && product.variants.every((variant) => variant.sku.trim() && variant.size.trim() && variant.colour.trim()) && product.description.trim() && product.fabric.trim() && product.care.trim());
 
       const allCategories = categoryResponse.data || [];
-      const ages = allCategories.filter((category: any) => category.kind === 'age').map((category: any) => ({
-        id: category.name, label: category.name, range: '', image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 600) : '', description: category.description,
-      })) as AgeInfo[];
+      const ages = allCategories.filter((category: any) => category.kind === 'age').map((category: any) => {
+        const launchAge = resolveLaunchAge(category.name);
+        return {
+          id: category.name, label: launchAge?.label || category.name, range: launchAge?.range || '',
+          image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 600) : launchAge?.image || '',
+          description: category.description || launchAge?.introduction || '',
+        };
+      }) as AgeInfo[];
       const categories = allCategories.filter((category: any) => category.kind === 'product').map((category: any) => ({
-        id: category.name, name: category.name, image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : '', span: 'normal',
+        id: category.name,
+        name: resolveLaunchCategory(category.name)?.label || category.name,
+        image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : resolveLaunchCategory(category.name)?.image || '',
+        description: category.description || resolveLaunchCategory(category.name)?.introduction || '',
+        span: 'normal',
       })) as CategoryInfo[];
       const heroData = heroResponse.data;
       const desktopAsset = Array.isArray(heroData?.desktop) ? heroData.desktop[0] : heroData?.desktop;
@@ -85,10 +97,10 @@ export function useCatalog(): CatalogResult {
         const cover = Array.isArray(row.cover) ? row.cover[0] : row.cover;
         return { id: row.id, name: row.name, slug: row.slug, description: row.description, image: cover ? publicMediaUrl(cover as RawAsset, 800) : '' };
       });
-      setResult({ products, ages, categories, collections, hero, loading: false, error: null });
+      setResult({ products, hasPublishedRecords: rows.length > 0, ages, categories, collections, hero, loading: false, error: null });
     }
     void load().catch((cause) => {
-      if (!cancelled) setResult({ products: [], ages: [], categories: [], collections: [], hero: null, loading: false, error: cause instanceof Error ? cause.message : 'The store catalogue could not be loaded.' });
+      if (!cancelled) setResult({ products: [], hasPublishedRecords: false, ages: [], categories: [], collections: [], hero: null, loading: false, error: cause instanceof Error ? cause.message : 'The store catalogue could not be loaded.' });
     });
     return () => { cancelled = true; };
   }, []);

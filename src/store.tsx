@@ -36,9 +36,40 @@ export const StoreContext = createContext<StoreContextValue | undefined>(undefin
 
 let toastId = 0;
 
+const demoCartStorageKey = 'little-loom:demo-cart:v1';
+const demoWishlistStorageKey = 'little-loom:demo-wishlist:v1';
+
+function readDemoCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(demoCartStorageKey) || 'null');
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is CartItem => Boolean(
+      item && typeof item === 'object' && item.isDemo === true &&
+      typeof item.productId === 'string' && item.productId.startsWith('demo:') &&
+      typeof item.slug === 'string' && typeof item.name === 'string' &&
+      Number.isFinite(item.price) && Number(item.price) >= 0 &&
+      typeof item.image === 'string' && typeof item.color === 'string' &&
+      typeof item.size === 'string' && Number.isFinite(item.quantity) && Number(item.quantity) > 0
+    )).map((item) => ({ ...item, quantity: Math.min(99, Math.max(1, Math.floor(item.quantity))) }));
+  } catch {
+    return [];
+  }
+}
+
+function readDemoWishlist(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(demoWishlistStorageKey) || 'null');
+    return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && /^demo:[a-z0-9-]+$/.test(id)))] : [];
+  } catch {
+    return [];
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(readDemoCart);
+  const [wishlist, setWishlist] = useState<string[]>(readDemoWishlist);
   const cartRef = useRef(cart);
   const wishlistRef = useRef(wishlist);
   cartRef.current = cart;
@@ -52,6 +83,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const userIdRef = useRef<string | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
   const activeCartId = useRef<string | null>(null);
+  const skipDemoClearSync = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (cart.length > 0 && cart.every((item) => item.isDemo)) {
+        window.localStorage.setItem(demoCartStorageKey, JSON.stringify(cart));
+      } else {
+        window.localStorage.removeItem(demoCartStorageKey);
+      }
+    } catch {
+      // The preview cart still works in memory when browser storage is disabled.
+    }
+  }, [cart]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const demoItems = wishlist.filter((id) => id.startsWith('demo:'));
+      if (demoItems.length) window.localStorage.setItem(demoWishlistStorageKey, JSON.stringify(demoItems));
+      else window.localStorage.removeItem(demoWishlistStorageKey);
+    } catch {
+      // The preview wishlist still works in memory when browser storage is disabled.
+    }
+  }, [wishlist]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -96,17 +152,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const image = imageRow?.media_assets ? publicMediaUrl(imageRow.media_assets, 600) : '';
           return [{ productId: product.id, slug: product.slug, name: product.name, price: Number(product.price), image, color: variant.colour, size: variant.size, quantity: row.quantity, variantId: row.variant_id }];
         });
-        setCart(merged);
+        const localDemoItems = cartRef.current.filter((item) => item.isDemo);
+        // A demo preview never replaces or mixes with the customer's saved database cart.
+        setCart(localDemoItems.length ? localDemoItems : merged);
       }
 
       const { data: wishlistRow } = await supabase!.from('wishlists').upsert({ customer_id: customerId }, { onConflict: 'customer_id' }).select('id').single();
       if (wishlistRow?.id) {
         const { data: saved } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', wishlistRow.id);
         let ids = (saved || []).map((row: any) => row.product_id as string);
+        const localDemoWishlist = wishlistRef.current.filter((id) => id.startsWith('demo:'));
         if (wishlistRef.current.length) {
-          const toAdd = wishlistRef.current.filter((id) => !ids.includes(id));
+          const toAdd = wishlistRef.current.filter((id) => !id.startsWith('demo:') && !ids.includes(id));
           if (toAdd.length) await supabase!.from('wishlist_items').upsert(toAdd.map((product_id) => ({ wishlist_id: wishlistRow.id, product_id })), { onConflict: 'wishlist_id,product_id' });
-          ids = [...new Set([...ids, ...wishlistRef.current])];
+          ids = [...new Set([...ids, ...wishlistRef.current.filter((id) => !id.startsWith('demo:')), ...localDemoWishlist])];
         }
         if (alive) setWishlist(ids);
       }
@@ -118,6 +177,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !userId || !remoteReady) return;
+    if (cart.some((item) => item.isDemo)) return;
+    if (cart.length === 0 && skipDemoClearSync.current) {
+      skipDemoClearSync.current = false;
+      return;
+    }
+    if (cart.length > 0) skipDemoClearSync.current = false;
     let alive = true;
     void (async () => {
       let cartId = activeCartId.current;
@@ -144,7 +209,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const { data: row } = await supabase!.from('wishlists').upsert({ customer_id: userId }, { onConflict: 'customer_id' }).select('id').single();
       if (!row?.id) return;
-      const persistentWishlist = wishlist;
+      const persistentWishlist = wishlist.filter((id) => !id.startsWith('demo:'));
       if (persistentWishlist.length) await supabase!.from('wishlist_items').upsert(persistentWishlist.map((product_id) => ({ wishlist_id: row.id, product_id })), { onConflict: 'wishlist_id,product_id' });
       const { data: existing } = await supabase!.from('wishlist_items').select('product_id').eq('wishlist_id', row.id);
       const remove = (existing || []).map((item: any) => item.product_id).filter((id: string) => !persistentWishlist.includes(id));
@@ -165,6 +230,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useCallback((item: CartItem) => {
+    const isMixedCart = cartRef.current.some((current) => Boolean(current.isDemo) !== Boolean(item.isDemo));
+    if (isMixedCart) {
+      pushToast('Demo preview items and published products use separate bags. Remove the current items before switching.', 'info');
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find(
         (i) => i.variantId && item.variantId ? i.variantId === item.variantId : i.productId === item.productId && i.color === item.color && i.size === item.size
@@ -201,7 +271,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCart((prev) => prev.filter((i) => !(i.productId === productId && i.color === color && i.size === size)));
   }, []);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(() => {
+    if (cartRef.current.some((item) => item.isDemo)) skipDemoClearSync.current = true;
+    setCart([]);
+  }, []);
 
   const toggleWishlist = useCallback((productId: string, productName?: string) => {
     setWishlist((prev) => {

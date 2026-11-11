@@ -93,6 +93,7 @@ export default function CartDrawer() {
                       <p className="text-xs text-ink-light mt-0.5">
                         {item.color} · Size {item.size}
                       </p>
+                      {item.isDemo && <p className="mt-1 text-[9px] font-medium uppercase tracking-wide text-amber-800">Demo only · no real inventory</p>}
                       <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center border border-ink/15 rounded-md">
                           <button
@@ -132,7 +133,7 @@ export default function CartDrawer() {
                 <span className="text-base font-semibold text-ink">{formatINR(cartTotal)}</span>
               </div>
               <p className="text-xs text-ink-light">
-                Shipping and payment totals are confirmed securely at checkout.
+                {cart.every((item) => item.isDemo) ? 'Demo preview only. Checkout validates sample details locally; no order or payment is created.' : 'Shipping and payment totals are confirmed securely at checkout.'}
               </p>
               <Link to="/checkout" onClick={closeCart} className="block">
                 <Button variant="primary" size="lg" className="w-full group">

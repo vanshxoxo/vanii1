@@ -6,28 +6,15 @@ import { useCmsSection } from '../lib/cms';
 import { useStore } from '../useStore';
 import type { Product } from '../types';
 import ProductCard from '../components/ProductCard';
+import LaunchPreviewGrid from '../components/LaunchPreviewGrid';
 import Button from '../components/Button';
 import { SectionHeading } from '../components/ui';
 import Reveal from '../components/Reveal';
+import { ageNavigation, categoryNavigation, resolveLaunchAge } from '../data/storeNavigation';
 
 const editorial = '/images/editorial/version-b/';
 
-function agePhoto(label: string) {
-  const value = label.toLowerCase();
-  if (value.includes('newborn')) return `${editorial}newborn.webp`;
-  if (value.includes('baby') || value.includes('infant')) return `${editorial}baby.webp`;
-  if (value.includes('toddler')) return `${editorial}toddler.webp`;
-  return `${editorial}little-kids.webp`;
-}
-
-const homeCategories = [
-  { name: 'Rompers', photo: `${editorial}category-rompers.webp` },
-  { name: 'Co-ord Sets', photo: `${editorial}category-coords.webp` },
-  { name: 'Tees & Tops', photo: `${editorial}category-tops.webp` },
-  { name: 'Dresses', photo: `${editorial}category-dresses.webp` },
-  { name: 'Bottoms', photo: `${editorial}category-bottoms.webp` },
-  { name: 'Sleepwear', photo: `${editorial}category-sleepwear.webp` },
-];
+const homeCategories = categoryNavigation.map((item) => ({ name: item.label, photo: item.image }));
 
 const pexelsEditorialPhotos = [
   'pexels-kidswear-editorial-29562273.webp', 'pexels-kidswear-editorial-32234111.webp',
@@ -42,7 +29,7 @@ const pexelsEditorialPhotos = [
 
 export default function HomePage() {
   const { addToCart } = useStore();
-  const { products, ages, categories, collections, hero, error } = useCatalog();
+  const { products, hasPublishedRecords, ages, categories, collections, hero, loading: catalogLoading, error } = useCatalog();
   const campaign = useCmsSection('featured-campaign');
   const brandStory = useCmsSection('brand-story');
   const fabricDetail = useCmsSection('fabric-detail');
@@ -51,17 +38,15 @@ export default function HomePage() {
 
   useEffect(() => setMounted(true), []);
 
-  const ageCards = ages.length > 0 ? ages : [
-    { id: 'Newborn', label: 'Newborn', range: '', image: '', description: '' },
-    { id: 'Baby', label: 'Baby', range: '', image: '', description: '' },
-    { id: 'Toddler', label: 'Toddler', range: '', image: '', description: '' },
-    { id: 'Little Kids', label: 'Little Kids', range: '', image: '', description: '' },
-  ];
+  const ageCards = ageNavigation.map((age) => {
+    const actual = ages.find((item) => resolveLaunchAge(item.label)?.key === age.key);
+    return { ...age, id: actual?.id || age.value, image: actual?.image || age.image };
+  });
   const newArrivals = products.filter((product) => product.isNew).slice(0, 6);
   const featuredProducts = products.filter((product) => product.isBestseller).slice(0, 4);
   const heroLines = (hero?.heading || 'Small humans.\nBig outfits.').split('\n');
   const hasProducts = products.length > 0;
-  const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/shop?filter=new';
+  const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/products?filter=new';
   const heroDesktopImage = hero?.image || `${editorial}hero-desktop.webp`;
   const heroMobileImage = hero?.mobileImage || `${editorial}hero-mobile.webp`;
 
@@ -100,8 +85,8 @@ export default function HomePage() {
                 {hero?.body || 'Clothing and details shared by Little Loom.'}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link to={hasProducts ? heroHref : '#shop-by-age'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore by age')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
-                <a href="#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
+                <Link to={hasProducts ? heroHref : '/#shop-by-age'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore by age')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
+                <a href="/#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
               </div>
               {error && <p role="status" className="mt-4 text-xs text-ink-soft">The published catalogue is temporarily unavailable.</p>}
             </div>
@@ -121,7 +106,7 @@ export default function HomePage() {
           <div className="mt-8 grid grid-cols-2 gap-3 lg:mt-12 lg:grid-cols-4 lg:gap-5">
             {ageCards.map((age, index) => <Reveal key={age.id} delay={index * 90}>
               <Link to={`/shop?age=${encodeURIComponent(age.id)}`} className="group relative block aspect-[3/4] overflow-hidden rounded-xl lg:rounded-2xl">
-                <img src={age.image || agePhoto(age.label)} alt={`${age.label} clothing collection`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                <img src={age.image} alt={`${age.label} clothing collection`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent transition-opacity duration-300 group-hover:from-ink/80" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-5">{age.range && <p className="mb-0.5 text-xs text-cream/70">{age.range}</p>}<h2 className="font-serif text-xl font-medium text-cream lg:text-2xl">{age.label}</h2><span className="mt-1 inline-flex items-center gap-1 text-xs text-cream/70 transition-all group-hover:gap-2">Browse age group <ArrowRight size={12} /></span></div>
               </Link>
@@ -133,18 +118,18 @@ export default function HomePage() {
       <section className="bg-cream py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><div className="mb-8 flex items-end justify-between gap-4 lg:mb-12">
-            <SectionHeading eyebrow={newArrivals.length ? 'Just published' : 'Little Loom catalogue'} title={newArrivals.length ? <>New <span className="italic">arrivals</span></> : <>The published <span className="italic">collection</span></>} />
+            <SectionHeading eyebrow={newArrivals.length ? 'Just published' : hasProducts ? 'Little Loom catalogue' : 'Little Loom'} title={newArrivals.length ? <>New <span className="italic">arrivals</span></> : hasProducts ? <>The published <span className="italic">collection</span></> : catalogLoading || error || hasPublishedRecords ? <>The Little Loom <span className="italic">wardrobe</span></> : <>The first <span className="italic">edit</span></>} />
             {hasProducts && <div className="hidden items-center gap-2 sm:flex"><button onClick={() => scrollRail('left')} aria-label="Scroll products left" className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 text-ink transition-all hover:scale-110 hover:bg-ink hover:text-cream"><ArrowLeft size={18} /></button><button onClick={() => scrollRail('right')} aria-label="Scroll products right" className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 text-ink transition-all hover:scale-110 hover:bg-ink hover:text-cream"><ArrowRight size={18} /></button></div>}
           </div></Reveal>
           {hasProducts ? <>
             <div ref={railRef} className="no-scrollbar snap-x-mandatory -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 lg:gap-6">
               {(newArrivals.length ? newArrivals : products.slice(0, 6)).map((product, index) => <Reveal key={product.id} delay={index * 65} className="w-[260px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}
             </div>
-            <div className="mt-7 text-center"><Link to={newArrivals.length ? '/shop?filter=new' : '/shop'}><Button variant="outline" size="md">View published products</Button></Link></div>
-          </> : <div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
-            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">No products are currently published</h2><p className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Product listings and prices will appear here when they are published in the Little Loom catalogue.</p>{error && <p role="status" className="mt-3 text-sm text-ink-soft">The catalogue could not be reached just now.</p>}</div>
+            <div className="mt-7 text-center"><Link to={newArrivals.length ? '/products?filter=new' : '/products'}><Button variant="outline" size="md">View published products</Button></Link></div>
+          </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
+            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the editorial categories below while the catalogue connection is restored.</p></div>
             <img src={`${editorial}category-rompers.webp`} alt="Children in relaxed everyday clothing" loading="lazy" className="min-h-64 w-full object-cover sm:min-h-80" />
-          </div>}
+          </div><div className="mt-7"><LaunchPreviewGrid /></div></> : <LaunchPreviewGrid />}
         </div>
       </section>
 
@@ -192,12 +177,12 @@ export default function HomePage() {
         </div>
       </section>}
 
-      {featuredProducts.length > 0 && <section className="bg-cream py-16 lg:py-24"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published collection" title={<>Featured <span className="italic">pieces</span></>} link={{ label: 'Shop all published products', href: '/shop' }} /></Reveal><div className="mt-8 grid grid-cols-2 gap-4 lg:mt-12 lg:grid-cols-4 lg:gap-6">{featuredProducts.map((product, index) => <Reveal key={product.id} delay={index * 80}><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}</div></div></section>}
+      {featuredProducts.length > 0 && <section className="bg-cream py-16 lg:py-24"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published collection" title={<>Featured <span className="italic">pieces</span></>} link={{ label: 'Shop all published products', href: '/products' }} /></Reveal><div className="mt-8 grid grid-cols-2 gap-4 lg:mt-12 lg:grid-cols-4 lg:gap-6">{featuredProducts.map((product, index) => <Reveal key={product.id} delay={index * 80}><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}</div></div></section>}
 
       <section id="brand-story" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
           <Reveal y={40} className="lg:col-span-5"><div className="relative"><div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl"><picture className="block h-full w-full"><source media="(max-width: 639px)" srcSet={brandStory?.mobileImage || `${editorial}brand-story.webp`} /><img src={brandStory?.desktopImage || `${editorial}brand-story.webp`} alt="A child in comfortable everyday clothing" loading="lazy" className="h-full w-full object-cover" /></picture></div></div></Reveal>
-          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/shop' : '#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
+          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/products' : '/#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
         </div></div>
       </section>
 
