@@ -7,9 +7,7 @@ import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
 import { useStore } from '../useStore';
-import LaunchPreviewGrid from '../components/LaunchPreviewGrid';
 import StoreNavigationTiles from '../components/StoreNavigationTiles';
-import { launchAssortment } from '../data/launchAssortment';
 import { categoryNavigation, resolveLaunchAge, resolveLaunchCategory } from '../data/storeNavigation';
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest';
@@ -83,13 +81,6 @@ export default function ShopPage() {
     setSearchParams({});
   };
 
-  const updateQueryParam = (key: string, value: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    setSearchParams(next, { replace: true });
-  };
-
   const filtered = useMemo(() => {
     const collection = searchParams.get('collection');
     const search = (searchParams.get('search') || '').trim().toLowerCase();
@@ -153,19 +144,19 @@ export default function ShopPage() {
   const pageIntroduction = collectionParam
     ? selectedCollection?.description || 'Browse the published pieces in this collection.'
     : categoryLabel && ageLabel
-      ? `A ${categoryLabel.toLowerCase()} preview with styles suggested for ${ageLabel} (${activeAge?.range || actualAge?.range || 'the selected age group'}). Final fit will follow actual garment measurements.`
+      ? `Browse published ${categoryLabel.toLowerCase()} for ${ageLabel}.`
       : categoryLabel
         ? actualCategory?.description || selectedLaunchCategory?.introduction || 'Browse the published pieces in this category.'
         : ageLabel
-          ? activeAge?.introduction || actualAge?.description || `Browse published styles for ${ageLabel}. Final fit will follow actual garment measurements.`
-          : 'A considered edit of Little Loom styles. Preview imagery is editorial, and proposed pieces are not available to buy.';
+          ? activeAge?.introduction || actualAge?.description || `Browse published styles for ${ageLabel}.`
+          : 'Browse the styles currently available from Little Loom.';
   const ageSuggestedCategories = activeAge
-    ? [...new Set(launchAssortment.filter((item) => item.ageSuggestions.includes(activeAge.key)).map((item) => item.categorySlug))]
-        .map((slug) => categoryNavigation.find((category) => category.slug === slug))
-        .filter((category): category is (typeof categoryNavigation)[number] => Boolean(category))
+    ? categoryNavigation.filter((category) => products.some((product) =>
+        product.ages.some((age) => resolveLaunchAge(age)?.key === activeAge.key) &&
+        resolveLaunchCategory(product.category)?.slug === category.slug
+      ))
     : [];
 
-  const setPreviewSearch = (value: string) => updateQueryParam('search', value);
   if (catalogLoading || catalogError || products.length === 0) {
     const unavailable = Boolean(catalogError);
     const catalogueNeedsReview = !catalogLoading && !unavailable && hasPublishedRecords;
@@ -175,12 +166,9 @@ export default function ShopPage() {
         <ShopPageBanner
           eyebrow="Little Loom · Shop"
           title={catalogLoading ? 'Loading the collection' : unavailable ? 'The catalogue is temporarily unavailable' : 'The published catalogue needs attention'}
-          introduction={catalogLoading ? 'Published styles will appear here once the catalogue has loaded.' : unavailable ? 'Published products could not be retrieved. Browse the age and category edits below while the connection is restored.' : 'Published product records exist, but none currently meet the storefront requirements. Styles under review remain unavailable until their details are verified.'}
+          introduction={catalogLoading ? 'Products will appear here once the catalogue has loaded.' : unavailable ? 'Products could not be retrieved. Please try again shortly.' : 'No products are currently available to order.'}
         />
         <StoreNavigationTiles ages={ages} categories={categories} />
-        {!catalogLoading && <div className="mt-10">
-          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} onSearchChange={setPreviewSearch} />
-        </div>}
       </> : collectionParam ? <>
         <ShopPageBanner eyebrow="Published collection" title={pageTitle} introduction={pageIntroduction} />
         <p role="status" className="mt-8 rounded-xl bg-[#f8f4f0] p-5 text-sm text-ink-soft">{selectedCollection ? 'No published products are currently assigned to this collection.' : 'This collection could not be found.'}</p>
@@ -201,9 +189,7 @@ export default function ShopPage() {
             return <Link key={category.slug} to={`/shop?age=${encodeURIComponent(actualAge?.id || activeAge?.value || ageLabel || '')}&category=${encodeURIComponent(databaseCategory?.id || category.value)}`} className={`rounded-full border px-3 py-1.5 text-xs ${isSelected ? 'border-ink bg-ink text-cream' : 'border-ink/15 text-ink-soft hover:border-ink/40'}`}>{category.label}</Link>;
           })}
         </nav>}
-        <div className="mt-8">
-          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} onSearchChange={setPreviewSearch} />
-        </div>
+        <p role="status" className="mt-8 rounded-xl border border-ink/10 bg-[#f8f4f0] p-5 text-sm text-ink-soft">No products are currently available in this selection.</p>
         {!categoryLabel && !ageLabel && !searchQuery && <div id="shop-categories" className="scroll-mt-24"><StoreNavigationTiles ages={ages} categories={categories} /></div>}
         {categoryLabel && <div id="shop-categories" className="mt-16 scroll-mt-24"><StoreNavigationTiles ages={ages} categories={categories} showAges={false} /></div>}
       </> : null}

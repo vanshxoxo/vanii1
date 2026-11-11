@@ -5,15 +5,11 @@ import { useCatalog } from '../lib/catalog';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
-import { launchPreviewProducts } from '../data/launchAssortment';
 
 export default function WishlistPage() {
   const { products } = useCatalog();
   const { wishlist } = useStore();
-  const wishlistedProducts = [
-    ...products.filter((product) => wishlist.includes(product.id)),
-    ...launchPreviewProducts.filter((product) => wishlist.includes(product.id)),
-  ];
+  const wishlistedProducts = products.filter((product) => wishlist.includes(product.id));
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">

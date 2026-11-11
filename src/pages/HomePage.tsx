@@ -6,7 +6,6 @@ import { useCmsSection } from '../lib/cms';
 import { useStore } from '../useStore';
 import type { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import LaunchPreviewGrid from '../components/LaunchPreviewGrid';
 import Button from '../components/Button';
 import { SectionHeading } from '../components/ui';
 import Reveal from '../components/Reveal';
@@ -115,7 +114,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-cream py-16 lg:py-24">
+      {(hasProducts || catalogLoading || error || hasPublishedRecords) && <section className="bg-cream py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><div className="mb-8 flex items-end justify-between gap-4 lg:mb-12">
             <SectionHeading eyebrow={newArrivals.length ? 'Just published' : hasProducts ? 'Little Loom catalogue' : 'Little Loom'} title={newArrivals.length ? <>New <span className="italic">arrivals</span></> : hasProducts ? <>The published <span className="italic">collection</span></> : catalogLoading || error || hasPublishedRecords ? <>The Little Loom <span className="italic">wardrobe</span></> : <>The first <span className="italic">edit</span></>} />
@@ -129,9 +128,9 @@ export default function HomePage() {
           </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
             <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the editorial categories below while the catalogue connection is restored.</p></div>
             <img src={`${editorial}category-rompers.webp`} alt="Children in relaxed everyday clothing" loading="lazy" className="min-h-64 w-full object-cover sm:min-h-80" />
-          </div><div className="mt-7"><LaunchPreviewGrid /></div></> : <LaunchPreviewGrid />}
+          </div></> : null}
         </div>
-      </section>
+      </section>}
 
       <section id="editorial-campaign" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -207,7 +206,7 @@ export default function HomePage() {
           <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5 lg:gap-5">
             {pexelsEditorialPhotos.map((filename, index) => <Reveal key={filename} delay={(index % 5) * 45}>
               <figure className="group overflow-hidden rounded-xl bg-cream lg:rounded-2xl">
-                <img src={`/images/catalog-preview/${filename}`} alt="Children in everyday clothing" loading="lazy" decoding="async" className="aspect-[4/5] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src={`/images/editorial/lifestyle/${filename}`} alt="Children in everyday clothing" loading="lazy" decoding="async" className="aspect-[4/5] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
               </figure>
             </Reveal>)}
           </div>
