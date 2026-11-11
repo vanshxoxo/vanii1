@@ -46,7 +46,7 @@ export default function HomePage() {
   const featuredProducts = products.filter((product) => product.isBestseller).slice(0, 4);
   const heroLines = (hero?.heading || 'Small humans.\nBig outfits.').split('\n');
   const hasProducts = products.length > 0;
-  const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/shop?filter=new';
+  const heroHref = hero?.ctaHref?.startsWith('/') ? hero.ctaHref : '/products?filter=new';
   const heroDesktopImage = hero?.image || `${editorial}hero-desktop.webp`;
   const heroMobileImage = hero?.mobileImage || `${editorial}hero-mobile.webp`;
 
@@ -85,8 +85,8 @@ export default function HomePage() {
                 {hero?.body || 'Clothing and details shared by Little Loom.'}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link to={hasProducts ? heroHref : '#shop-by-age'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore by age')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
-                <a href="#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
+                <Link to={hasProducts ? heroHref : '/#shop-by-age'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore by age')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
+                <a href="/#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
               </div>
               {error && <p role="status" className="mt-4 text-xs text-ink-soft">The published catalogue is temporarily unavailable.</p>}
             </div>
@@ -125,7 +125,7 @@ export default function HomePage() {
             <div ref={railRef} className="no-scrollbar snap-x-mandatory -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 lg:gap-6">
               {(newArrivals.length ? newArrivals : products.slice(0, 6)).map((product, index) => <Reveal key={product.id} delay={index * 65} className="w-[260px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}
             </div>
-            <div className="mt-7 text-center"><Link to={newArrivals.length ? '/shop?filter=new' : '/shop'}><Button variant="outline" size="md">View published products</Button></Link></div>
+            <div className="mt-7 text-center"><Link to={newArrivals.length ? '/products?filter=new' : '/products'}><Button variant="outline" size="md">View published products</Button></Link></div>
           </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
             <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the editorial categories below while the catalogue connection is restored.</p></div>
             <img src={`${editorial}category-rompers.webp`} alt="Children in relaxed everyday clothing" loading="lazy" className="min-h-64 w-full object-cover sm:min-h-80" />
@@ -177,12 +177,12 @@ export default function HomePage() {
         </div>
       </section>}
 
-      {featuredProducts.length > 0 && <section className="bg-cream py-16 lg:py-24"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published collection" title={<>Featured <span className="italic">pieces</span></>} link={{ label: 'Shop all published products', href: '/shop' }} /></Reveal><div className="mt-8 grid grid-cols-2 gap-4 lg:mt-12 lg:grid-cols-4 lg:gap-6">{featuredProducts.map((product, index) => <Reveal key={product.id} delay={index * 80}><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}</div></div></section>}
+      {featuredProducts.length > 0 && <section className="bg-cream py-16 lg:py-24"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published collection" title={<>Featured <span className="italic">pieces</span></>} link={{ label: 'Shop all published products', href: '/products' }} /></Reveal><div className="mt-8 grid grid-cols-2 gap-4 lg:mt-12 lg:grid-cols-4 lg:gap-6">{featuredProducts.map((product, index) => <Reveal key={product.id} delay={index * 80}><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}</div></div></section>}
 
       <section id="brand-story" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
           <Reveal y={40} className="lg:col-span-5"><div className="relative"><div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl"><picture className="block h-full w-full"><source media="(max-width: 639px)" srcSet={brandStory?.mobileImage || `${editorial}brand-story.webp`} /><img src={brandStory?.desktopImage || `${editorial}brand-story.webp`} alt="A child in comfortable everyday clothing" loading="lazy" className="h-full w-full object-cover" /></picture></div></div></Reveal>
-          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/shop' : '#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
+          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/products' : '/#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
         </div></div>
       </section>
 

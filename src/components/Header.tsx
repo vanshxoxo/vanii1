@@ -18,7 +18,7 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Latest', href: '/shop?filter=new' },
-    { label: 'Shop', href: '/shop' },
+    { label: 'Products', href: '/products' },
     { label: 'By Age', href: '/#shop-by-age' },
     { label: 'Collections', href: '/shop' },
     { label: 'Our World', href: '/#brand-story' },
@@ -26,7 +26,8 @@ export default function Header() {
 
   const isActive = (href: string) => {
     if (href.includes('#')) return false;
-    return location.pathname === href.split('?')[0];
+    const target = href.split('?')[0];
+    return location.pathname === target || (target === '/products' && location.pathname === '/shop');
   };
 
   return (

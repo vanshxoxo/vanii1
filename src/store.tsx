@@ -36,9 +36,40 @@ export const StoreContext = createContext<StoreContextValue | undefined>(undefin
 
 let toastId = 0;
 
+const demoCartStorageKey = 'little-loom:demo-cart:v1';
+const demoWishlistStorageKey = 'little-loom:demo-wishlist:v1';
+
+function readDemoCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(demoCartStorageKey) || 'null');
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is CartItem => Boolean(
+      item && typeof item === 'object' && item.isDemo === true &&
+      typeof item.productId === 'string' && item.productId.startsWith('demo:') &&
+      typeof item.slug === 'string' && typeof item.name === 'string' &&
+      Number.isFinite(item.price) && Number(item.price) >= 0 &&
+      typeof item.image === 'string' && typeof item.color === 'string' &&
+      typeof item.size === 'string' && Number.isFinite(item.quantity) && Number(item.quantity) > 0
+    )).map((item) => ({ ...item, quantity: Math.min(99, Math.max(1, Math.floor(item.quantity))) }));
+  } catch {
+    return [];
+  }
+}
+
+function readDemoWishlist(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(demoWishlistStorageKey) || 'null');
+    return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && /^demo:[a-z0-9-]+$/.test(id)))] : [];
+  } catch {
+    return [];
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(readDemoCart);
+  const [wishlist, setWishlist] = useState<string[]>(readDemoWishlist);
   const cartRef = useRef(cart);
   const wishlistRef = useRef(wishlist);
   cartRef.current = cart;
@@ -53,6 +84,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [remoteReady, setRemoteReady] = useState(false);
   const activeCartId = useRef<string | null>(null);
   const skipDemoClearSync = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (cart.length > 0 && cart.every((item) => item.isDemo)) {
+        window.localStorage.setItem(demoCartStorageKey, JSON.stringify(cart));
+      } else {
+        window.localStorage.removeItem(demoCartStorageKey);
+      }
+    } catch {
+      // The preview cart still works in memory when browser storage is disabled.
+    }
+  }, [cart]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const demoItems = wishlist.filter((id) => id.startsWith('demo:'));
+      if (demoItems.length) window.localStorage.setItem(demoWishlistStorageKey, JSON.stringify(demoItems));
+      else window.localStorage.removeItem(demoWishlistStorageKey);
+    } catch {
+      // The preview wishlist still works in memory when browser storage is disabled.
+    }
+  }, [wishlist]);
 
   useEffect(() => {
     if (!supabase) return;

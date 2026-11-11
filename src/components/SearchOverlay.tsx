@@ -8,11 +8,13 @@ import { useCatalog } from '../lib/catalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function SearchOverlay() {
-  const { products, hasPublishedRecords, loading, error } = useCatalog();
+  const { products, loading } = useCatalog();
   const { isSearchOpen, closeSearch } = useStore();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const isPreviewMode = !loading && !error && !hasPublishedRecords;
+  // Match ShopPage's fallback: keep catalogue search usable when there are no
+  // published, complete products or the public catalogue is temporarily unavailable.
+  const isPreviewMode = !loading && products.length === 0;
 
   useEffect(() => {
     if (isSearchOpen) {

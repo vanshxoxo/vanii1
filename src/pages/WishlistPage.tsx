@@ -5,11 +5,15 @@ import { useCatalog } from '../lib/catalog';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
+import { launchDemoProducts } from '../data/launchAssortment';
 
 export default function WishlistPage() {
   const { products } = useCatalog();
   const { wishlist } = useStore();
-  const wishlistedProducts = products.filter((p) => wishlist.includes(p.id));
+  const wishlistedProducts = [
+    ...products.filter((product) => wishlist.includes(product.id)),
+    ...launchDemoProducts.filter((product) => wishlist.includes(product.id)),
+  ];
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
@@ -27,7 +31,7 @@ export default function WishlistPage() {
           <p className="text-sm text-ink-soft mb-6">
             Tap the heart on any product to save it here.
           </p>
-          <Link to="/shop">
+          <Link to="/products">
             <Button variant="primary" size="md">Browse the Collection</Button>
           </Link>
         </div>

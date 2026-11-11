@@ -23,7 +23,7 @@ export default function MobileNav() {
 
   const navLinks = [
     { label: 'Latest', href: '/shop?filter=new' },
-    { label: 'Shop', href: '/shop' },
+    { label: 'Products', href: '/products' },
     { label: 'Collections', href: '/shop' },
     { label: 'Our World', href: '/#brand-story' },
   ];
