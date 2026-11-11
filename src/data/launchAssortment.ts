@@ -1,5 +1,6 @@
 import { formatINR } from '../data';
-import type { LaunchAgeKey } from './storeNavigation';
+import type { Product } from '../types';
+import { ageNavigation, categoryNavigation, type LaunchAgeKey } from './storeNavigation';
 
 export type LaunchProposal = {
   key: string;
@@ -38,3 +39,56 @@ export const launchAssortment: LaunchProposal[] = [
 ];
 
 export const formatProposedPrice = (amount: number) => formatINR(amount);
+
+const sampleSizesByAge: Record<LaunchAgeKey, string[]> = {
+  newborn: ['NB', '0–3M', '3–6M'],
+  baby: ['3–6M', '6–12M', '12–18M'],
+  toddler: ['1–2Y', '2–3Y', '3–4Y'],
+  'little-kids': ['2–3Y', '3–4Y', '4–5Y'],
+};
+
+/**
+ * Creates a browser-only demo product from an owner-intake style. These
+ * values are deliberately not database records, variants, or stock claims.
+ */
+export function toLaunchDemoProduct(item: LaunchProposal): Product {
+  const category = categoryNavigation.find((entry) => entry.slug === item.categorySlug);
+  const gallery = [...new Set([
+    item.image,
+    category?.image,
+    '/images/editorial/version-b/brand-story.webp',
+  ].filter((value): value is string => Boolean(value)))];
+  const sizes = [...new Set(item.ageSuggestions.flatMap((age) => sampleSizesByAge[age]))];
+  const ages = item.ageSuggestions.flatMap((key) => {
+    const label = ageNavigation.find((age) => age.key === key)?.label;
+    return label ? [label] : [];
+  });
+
+  return {
+    id: `demo:${item.key}`,
+    slug: `demo-${item.slug}`,
+    name: item.name,
+    price: item.price,
+    category: item.category,
+    ages,
+    sizes,
+    colors: [
+      { name: 'Natural', hex: '#e9dfd1' },
+      { name: 'Sage', hex: '#aab29b' },
+      { name: 'Blush', hex: '#d7aaa1' },
+    ],
+    images: gallery,
+    imageAltTexts: gallery.map(() => `Editorial clothing inspiration for ${item.name}; not a photograph of this exact product`),
+    description: 'Temporary storefront preview for layout and shopping-flow review. Supplier details have not been verified.',
+    fabric: 'Not verified. This temporary preview does not state a garment material.',
+    care: 'Not verified. Please replace this preview with supplier-confirmed care instructions.',
+    isDemo: true,
+    tags: ['temporary-demo', 'owner-intake'],
+  };
+}
+
+export const launchDemoProducts = launchAssortment.map(toLaunchDemoProduct);
+
+export function findLaunchDemoProduct(slug?: string) {
+  return launchDemoProducts.find((product) => product.slug === slug);
+}

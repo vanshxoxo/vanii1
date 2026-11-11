@@ -126,10 +126,10 @@ export default function HomePage() {
               {(newArrivals.length ? newArrivals : products.slice(0, 6)).map((product, index) => <Reveal key={product.id} delay={index * 65} className="w-[260px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}
             </div>
             <div className="mt-7 text-center"><Link to={newArrivals.length ? '/shop?filter=new' : '/shop'}><Button variant="outline" size="md">View published products</Button></Link></div>
-          </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
+          </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
             <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the editorial categories below while the catalogue connection is restored.</p></div>
             <img src={`${editorial}category-rompers.webp`} alt="Children in relaxed everyday clothing" loading="lazy" className="min-h-64 w-full object-cover sm:min-h-80" />
-          </div> : <><p className="mb-5 max-w-2xl text-sm leading-6 text-ink-soft">Proposed prices · editorial imagery · not yet available to buy.</p><LaunchPreviewGrid /></>}
+          </div><div className="mt-7"><LaunchPreviewGrid /></div></> : <LaunchPreviewGrid />}
         </div>
       </section>
 

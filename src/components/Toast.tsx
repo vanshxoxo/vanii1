@@ -5,7 +5,7 @@ export default function ToastContainer() {
   const { toasts, dismissToast } = useStore();
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 items-center pointer-events-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col gap-2 items-center pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}

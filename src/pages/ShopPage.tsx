@@ -190,6 +190,9 @@ export default function ShopPage() {
           image="/images/editorial/version-b/brand-story.webp"
         />
         <StoreNavigationTiles ages={ages} categories={categories} />
+        {!catalogLoading && <div className="mt-10">
+          <LaunchPreviewGrid category={categoryParam || undefined} age={ageParam || undefined} search={searchQuery} sort={sort === 'price-low' || sort === 'price-high' ? sort : 'featured'} onSearchChange={setPreviewSearch} onSortChange={setPreviewSort} />
+        </div>}
       </> : collectionParam ? <>
         <ShopPageBanner eyebrow="Published collection" title={pageTitle} introduction={pageIntroduction} image={pageImage} />
         <p role="status" className="mt-8 rounded-xl bg-[#f8f4f0] p-5 text-sm text-ink-soft">{selectedCollection ? 'No published products are currently assigned to this collection.' : 'This collection could not be found.'}</p>

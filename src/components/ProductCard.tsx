@@ -49,6 +49,8 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           </span>
         )}
 
+        {product.isDemo && <span className="absolute left-2 top-2 rounded-full bg-ivory/95 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.12em] text-ink sm:left-3 sm:top-3">Demo only</span>}
+
         {/* Wishlist */}
         <button
           onClick={() => toggleWishlist(product.id, product.name)}
@@ -83,6 +85,7 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
         </h3>
         <div className="mt-0.5 flex items-center gap-2">
           <span className="text-[13px] font-medium text-charcoal">{formatINR(product.price)}</span>
+          {product.isDemo && <span className="text-[9px] uppercase tracking-wide text-charcoal-light">Indicative</span>}
           {hasDiscount && (
             <span className="text-xs text-charcoal-light line-through">{formatINR(product.originalPrice!)}</span>
           )}
