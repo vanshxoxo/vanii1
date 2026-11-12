@@ -90,37 +90,37 @@ const PRESET_COLOURS = [
 
 const MEASUREMENT_TEMPLATES = {
   romper: `Size | Chest (in) | Length (in) | Inseam (in)
-0-3M | 17" | 14.0" | 6.0"
-3-6M | 18" | 15.5" | 7.0"
-6-12M | 19" | 17.0" | 8.0"
-1-2Y | 20" | 18.5" | 9.5"
-2-3Y | 21" | 20.0" | 11.0"
-3-4Y | 22" | 21.5" | 12.5"
-(Measurements taken flat across garment)`,
+0-3M | 17 | 14.0 | 6.0
+3-6M | 18 | 15.5 | 7.0
+6-12M | 19 | 17.0 | 8.0
+1-2Y | 20 | 18.5 | 9.5
+2-3Y | 21 | 20.0 | 11.0
+3-4Y | 22 | 21.5 | 12.5
+(Measurements taken flat across garment in inches)`,
   coord: `Size | Chest (in) | Top Length (in) | Waist (in) | Bottom Length (in)
-0-3M | 17" | 10.5" | 15" | 11.0"
-3-6M | 18" | 11.5" | 16" | 12.5"
-6-12M | 19" | 12.5" | 17" | 14.0"
-1-2Y | 20" | 14.0" | 18" | 16.0"
-2-3Y | 21" | 15.0" | 19" | 18.0"
-3-4Y | 22" | 16.0" | 20" | 20.0"
-(Measurements taken flat across garment)`,
+0-3M | 17 | 10.5 | 15 | 11.0
+3-6M | 18 | 11.5 | 16 | 12.5
+6-12M | 19 | 12.5 | 17 | 14.0
+1-2Y | 20 | 14.0 | 18 | 16.0
+2-3Y | 21 | 15.0 | 19 | 18.0
+3-4Y | 22 | 16.0 | 20 | 20.0
+(Measurements taken flat across garment in inches)`,
   dress: `Size | Chest (in) | Dress Length (in) | Shoulder (in)
-0-3M | 17" | 13.5" | 6.5"
-3-6M | 18" | 15.0" | 7.0"
-6-12M | 19" | 16.5" | 7.5"
-1-2Y | 20" | 18.0" | 8.0"
-2-3Y | 21" | 20.0" | 8.5"
-3-4Y | 22" | 22.0" | 9.0"
-(Measurements taken flat across garment)`,
+0-3M | 17 | 13.5 | 6.5
+3-6M | 18 | 15.0 | 7.0
+6-12M | 19 | 16.5 | 7.5
+1-2Y | 20 | 18.0 | 8.0
+2-3Y | 21 | 20.0 | 8.5
+3-4Y | 22 | 22.0 | 9.0
+(Measurements taken flat across garment in inches)`,
   tee: `Size | Chest (in) | Tee Length (in) | Shoulder (in)
-0-3M | 17" | 10.5" | 6.5"
-3-6M | 18" | 11.5" | 7.0"
-6-12M | 19" | 12.5" | 7.5"
-1-2Y | 20" | 14.0" | 8.0"
-2-3Y | 21" | 15.0" | 8.5"
-3-4Y | 22" | 16.0" | 9.0"
-(Measurements taken flat across garment)`,
+0-3M | 17 | 10.5 | 6.5
+3-6M | 18 | 11.5 | 7.0
+6-12M | 19 | 12.5 | 7.5
+1-2Y | 20 | 14.0 | 8.0
+2-3Y | 21 | 15.0 | 8.5
+3-4Y | 22 | 16.0 | 9.0
+(Measurements taken flat across garment in inches)`,
 };
 
 function fileSha256(file: File) {
@@ -458,7 +458,6 @@ export default function AdminPage() {
     setCollectionIds((collectionRows.data || []).map((row: any) => row.collection_id));
     setGallery(productGallery.data || []);
 
-    // Set initial SKU prefix suggestion for matrix generator
     const prefix = `LL-${p.slug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)}`;
     setMatrixSkuPrefix(prefix);
   }
@@ -600,120 +599,182 @@ export default function AdminPage() {
 
   async function duplicateProduct(sourceId: string) {
     if (!supabase || !sourceId) return;
+    let newProductId: string | null = null;
     try {
       const source = products.find((p) => p.id === sourceId);
-      if (!source) return;
-      const copySuffix = Math.random().toString(36).slice(2, 6);
-      const copyName = `${source.name} (Copy)`;
-      const copySlug = `${source.slug}-copy-${copySuffix}`;
-      const payload = {
-        name: copyName,
-        slug: copySlug,
-        description: source.description || '',
-        material: source.material || '',
-        fabric_composition: source.fabric_composition || '',
-        care_instructions: source.care_instructions || '',
-        size_measurements: source.size_measurements || '',
-        price: source.price,
-        compare_at_price: source.compare_at_price,
-        status: 'draft',
-        seo_title: source.seo_title || null,
-        seo_description: source.seo_description || null,
-        tags: [...(source.tags || []), 'duplicate-draft'],
-      };
+      if (!source) throw new Error('Source product not found.');
+
+      report(`Duplicating "${source.name}"...`);
+
+      // 1. Fetch fresh, complete source data
+      const [prodRes, catRes, colRes, varRes, medRes] = await Promise.all([
+        supabase.from('products').select('*').eq('id', sourceId).single(),
+        supabase.from('product_categories').select('category_id').eq('product_id', sourceId),
+        supabase.from('collection_products').select('collection_id').eq('product_id', sourceId),
+        supabase.from('product_variants').select('*').eq('product_id', sourceId),
+        supabase.from('product_media').select('*').eq('product_id', sourceId),
+      ]);
+
+      if (prodRes.error) throw new Error(`Could not fetch source product: ${prodRes.error.message}`);
+      const fullSource = prodRes.data;
+
+      const copySuffix = Math.random().toString(36).slice(2, 6).toLowerCase();
+      const copyName = `${fullSource.name} (Copy)`;
+      const copySlug = `${fullSource.slug}-copy-${copySuffix}`;
+
+      // 2. Insert new draft product (status always starts as 'draft')
       const { data: newProd, error: insertError } = await supabase
         .from('products')
-        .insert(payload)
+        .insert({
+          name: copyName,
+          slug: copySlug,
+          description: fullSource.description || '',
+          material: fullSource.material || '',
+          fabric_composition: fullSource.fabric_composition || '',
+          care_instructions: fullSource.care_instructions || '',
+          size_measurements: fullSource.size_measurements || '',
+          price: fullSource.price,
+          compare_at_price: fullSource.compare_at_price,
+          status: 'draft',
+          seo_title: fullSource.seo_title || null,
+          seo_description: fullSource.seo_description || null,
+          tags: [...(fullSource.tags || []), 'duplicate-draft'],
+          published_at: null,
+        })
         .select('id')
         .single();
-      if (insertError) throw insertError;
 
-      // Copy categories
-      const { data: catLinks } = await supabase
-        .from('product_categories')
-        .select('category_id')
-        .eq('product_id', sourceId);
-      if (catLinks && catLinks.length > 0) {
-        await supabase
+      if (insertError || !newProd) throw new Error(`Product creation failed: ${insertError?.message || 'Unknown'}`);
+      newProductId = newProd.id;
+
+      // 3. Clone category assignments
+      const catLinks = catRes.data || [];
+      if (catLinks.length > 0) {
+        const { error: catErr } = await supabase
           .from('product_categories')
-          .insert(catLinks.map((c: any) => ({ product_id: newProd.id, category_id: c.category_id })));
+          .insert(catLinks.map((c: any) => ({ product_id: newProductId, category_id: c.category_id })));
+        if (catErr) throw new Error(`Category assignment failed: ${catErr.message}`);
       }
 
-      // Copy collections
-      const { data: colLinks } = await supabase
-        .from('collection_products')
-        .select('collection_id')
-        .eq('product_id', sourceId);
-      if (colLinks && colLinks.length > 0) {
-        await supabase
+      // 4. Clone collection assignments
+      const colLinks = colRes.data || [];
+      if (colLinks.length > 0) {
+        const { error: colErr } = await supabase
           .from('collection_products')
-          .insert(colLinks.map((c: any) => ({ product_id: newProd.id, collection_id: c.collection_id, display_order: 0 })));
+          .insert(colLinks.map((c: any) => ({ product_id: newProductId, collection_id: c.collection_id, display_order: 0 })));
+        if (colErr) throw new Error(`Collection assignment failed: ${colErr.message}`);
       }
 
-      // Copy variants
-      const { data: sourceVariants } = await supabase
-        .from('product_variants')
-        .select('*,inventory(quantity_on_hand)')
-        .eq('product_id', sourceId);
-      if (sourceVariants && sourceVariants.length > 0) {
-        for (const v of sourceVariants) {
-          const newSku = `${v.sku}-CPY-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
-          const { data: newV } = await supabase
-            .from('product_variants')
-            .insert({
-              product_id: newProd.id,
-              size: v.size,
-              colour: v.colour,
-              colour_hex: v.colour_hex,
-              sku: newSku,
-              price_override: v.price_override,
-              is_active: v.is_active,
-            })
-            .select('id')
-            .single();
-          if (newV) {
-            const qty = v.inventory?.quantity_on_hand ?? 0;
-            await supabase.rpc('set_variant_stock', { p_variant_id: newV.id, p_quantity: qty });
-          }
-        }
+      // 5. Clone variants with ZERO stock & map old variant_id -> new variant_id
+      const sourceVariants = varRes.data || [];
+      const oldToNewVariantMap = new Map<string, string>();
+
+      for (const v of sourceVariants) {
+        const cleanSkuBase = v.sku.replace(/-CPY-[A-Za-z0-9]+$/i, '');
+        const newSku = `${cleanSkuBase}-CPY-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+        const { data: newV, error: vErr } = await supabase
+          .from('product_variants')
+          .insert({
+            product_id: newProductId,
+            size: v.size,
+            colour: v.colour,
+            colour_hex: v.colour_hex,
+            sku: newSku,
+            price_override: v.price_override,
+            is_active: v.is_active,
+          })
+          .select('id')
+          .single();
+
+        if (vErr || !newV) throw new Error(`Variant creation failed for ${v.sku}: ${vErr?.message || 'Unknown'}`);
+        oldToNewVariantMap.set(v.id, newV.id);
+
+        // Explicitly set opening stock to 0 for duplicated variants (Never clone physical inventory)
+        const { error: stockErr } = await supabase.rpc('set_variant_stock', {
+          p_variant_id: newV.id,
+          p_quantity: 0,
+        });
+        if (stockErr) throw new Error(`Zero stock initialization failed for ${newSku}: ${stockErr.message}`);
       }
 
-      // Copy media links
-      const { data: sourceMedia } = await supabase.from('product_media').select('*').eq('product_id', sourceId);
-      if (sourceMedia && sourceMedia.length > 0) {
-        await supabase.from('product_media').insert(
-          sourceMedia.map((m: any) => ({
-            product_id: newProd.id,
-            asset_id: m.asset_id,
-            display_order: m.display_order,
-            is_primary: m.is_primary,
-            alt_text: m.alt_text,
-            view_label: m.view_label,
-            variant_id: null,
-          }))
-        );
+      // 6. Clone product media and remap variant_id to the new variant
+      const sourceMedia = medRes.data || [];
+      if (sourceMedia.length > 0) {
+        const remappedMedia = sourceMedia.map((m: any) => ({
+          product_id: newProductId,
+          asset_id: m.asset_id,
+          display_order: m.display_order,
+          is_primary: m.is_primary,
+          alt_text: m.alt_text || '',
+          view_label: m.view_label || 'additional',
+          variant_id: m.variant_id ? oldToNewVariantMap.get(m.variant_id) || null : null,
+        }));
+
+        const { error: medErr } = await supabase.from('product_media').insert(remappedMedia);
+        if (medErr) throw new Error(`Media gallery linking failed: ${medErr.message}`);
       }
 
-      report(`Duplicated "${source.name}" as new draft.`);
+      report(`Successfully duplicated "${fullSource.name}" as draft with 0 stock and remapped variant images.`);
       await loadAdminData();
-      await selectProduct(newProd.id);
+      if (newProductId) {
+        await selectProduct(newProductId);
+      }
     } catch (err: any) {
-      fail(err.message || 'Product duplication failed.');
+      // Safe rollback on failure: delete partial product if created
+      if (newProductId) {
+        await supabase.from('products').delete().eq('id', newProductId);
+      }
+      fail(`Duplication aborted: ${err.message}. Any partial product data was cleanly rolled back.`);
     }
   }
 
   async function deleteProduct(productId: string) {
     if (!supabase || !productId) return;
     const prod = products.find((p) => p.id === productId);
+
+    // Safety check 1: Are there historical orders referencing this product?
+    const { data: orderLines, error: orderCheckErr } = await supabase
+      .from('order_items')
+      .select('id')
+      .eq('product_id', productId)
+      .limit(1);
+
+    if (orderCheckErr) {
+      fail(`Could not verify product order history: ${orderCheckErr.message}`);
+      return;
+    }
+
+    if (orderLines && orderLines.length > 0) {
+      fail(
+        `Product "${prod?.name || 'this item'}" cannot be deleted because it is referenced in past customer orders. Set its status to "Archived" instead to preserve accounting and customer order history.`
+      );
+      return;
+    }
+
+    // Safety check 2: Check for variant inventory ledger movements
+    const { data: prodVariants } = await supabase.from('product_variants').select('id').eq('product_id', productId);
+    if (prodVariants && prodVariants.length > 0) {
+      const vIds = prodVariants.map((v) => v.id);
+      const { data: movements } = await supabase.from('inventory_movements').select('id').in('variant_id', vIds).limit(1);
+      if (movements && movements.length > 0) {
+        fail(
+          `Product "${prod?.name || 'this item'}" has variant inventory ledger movements on record. Set its status to "Archived" instead of deleting to maintain inventory audit trails.`
+        );
+        return;
+      }
+    }
+
     if (
       !window.confirm(
-        `Permanently delete "${prod?.name || 'this product'}"? This removes all variants, category mappings, and gallery links. Media files in library will remain safe.`
+        `Permanently delete "${prod?.name || 'this product'}"? This removes its draft variants, category mappings, and gallery links. Media files in library will remain safe.`
       )
     )
       return;
+
     const { error: deleteError } = await supabase.from('products').delete().eq('id', productId);
     if (deleteError) {
-      fail(deleteError.message);
+      fail(`Could not delete product: ${deleteError.message}`);
       return;
     }
     report(`Deleted "${prod?.name || 'Product'}".`);
@@ -859,10 +920,32 @@ export default function AdminPage() {
 
   async function deleteVariant(variantId: string, sku: string) {
     if (!supabase || !variantId) return;
-    if (!window.confirm(`Delete variant ${sku}? This also unlinks its inventory.`)) return;
+
+    // Safety checks: order lines, ledger movements, or reservations
+    const [orderCheck, movementCheck, reservationCheck] = await Promise.all([
+      supabase.from('order_items').select('id').eq('variant_id', variantId).limit(1),
+      supabase.from('inventory_movements').select('id').eq('variant_id', variantId).limit(1),
+      supabase.from('stock_reservations').select('order_id').eq('variant_id', variantId).limit(1),
+    ]);
+
+    const hasOrders = (orderCheck.data?.length ?? 0) > 0;
+    const hasMovements = (movementCheck.data?.length ?? 0) > 0;
+    const hasReservations = (reservationCheck.data?.length ?? 0) > 0;
+
+    if (hasOrders || hasMovements || hasReservations) {
+      fail(
+        `Variant "${sku}" cannot be deleted because it has historical audit records (${
+          hasOrders ? 'customer order line' : hasMovements ? 'inventory ledger movement' : 'active reservation'
+        }). To remove it from the storefront safely, uncheck "Active" and click Save.`
+      );
+      return;
+    }
+
+    if (!window.confirm(`Delete variant ${sku}? This action cannot be undone.`)) return;
+
     const { error: delError } = await supabase.from('product_variants').delete().eq('id', variantId);
     if (delError) {
-      fail(delError.message);
+      fail(`Could not delete variant: ${delError.message}`);
       return;
     }
     report(`Deleted variant ${sku}.`);
@@ -1002,7 +1085,7 @@ export default function AdminPage() {
     const list = Array.from(files);
     for (let i = 0; i < list.length; i++) {
       const file = list[i];
-      setUploadState(`Checking ${file.name} (${i + 1}/${list.length})…`);
+      setUploadState(`Checking ${file.name} (${i + 1}/${list.length})...`);
       const isVideo = file.type.startsWith('video/');
       if (
         !/^(image\/(jpeg|png|webp|avif|gif)|video\/(mp4|webm))$/.test(file.type) ||
@@ -1035,7 +1118,7 @@ export default function AdminPage() {
           const auth = await authorization.json();
           if (!authorization.ok)
             throw new Error(auth.error || 'ImageKit upload could not be authorized.');
-          setUploadState(`Uploading ${file.name} to ImageKit (${i + 1}/${list.length})…`);
+          setUploadState(`Uploading ${file.name} to ImageKit (${i + 1}/${list.length})...`);
           const extension = file.name.includes('.')
             ? file.name.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g, '')
             : 'bin';
@@ -1304,7 +1387,6 @@ export default function AdminPage() {
   // Filtered Products for Catalog Sidebar
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      // Search filter
       if (productSearch.trim()) {
         const query = productSearch.toLowerCase();
         const matchesName = p.name?.toLowerCase().includes(query);
@@ -1313,7 +1395,6 @@ export default function AdminPage() {
         const matchesSku = (p.product_variants || []).some((v: any) => v.sku?.toLowerCase().includes(query));
         if (!matchesName && !matchesSlug && !matchesTag && !matchesSku) return false;
       }
-      // Status filter
       if (productStatusFilter === 'published' && p.status !== 'published') return false;
       if (productStatusFilter === 'draft' && p.status !== 'draft') return false;
       if (productStatusFilter === 'archived' && p.status !== 'archived') return false;
@@ -1321,7 +1402,6 @@ export default function AdminPage() {
         const missing = pendingProductApprovals(p);
         if (missing.length === 0 && p.status === 'published') return false;
       }
-      // Category filter
       if (productCategoryFilter) {
         const inCat = (p.product_categories || []).some(
           (c: any) => (Array.isArray(c.categories) ? c.categories[0] : c.categories)?.id === productCategoryFilter
@@ -1384,7 +1464,7 @@ export default function AdminPage() {
       />
     );
   if (access === 'loading')
-    return <AdminMessage title="Checking access" body="Verifying your administrator session…" />;
+    return <AdminMessage title="Checking access" body="Verifying your administrator session..." />;
   if (access === 'signed-out')
     return (
       <AdminMessage
@@ -1498,7 +1578,7 @@ export default function AdminPage() {
             ].map(([label, value]) => (
               <article key={String(label)} className="border border-ink/10 p-4 bg-white/50 rounded">
                 <p className="text-xs uppercase tracking-wider text-ink-light">{label}</p>
-                <p className="mt-2 font-serif text-2xl font-normal">{value == null ? '—' : value}</p>
+                <p className="mt-2 font-serif text-2xl font-normal">{value == null ? '-' : value}</p>
               </article>
             ))}
           </div>
@@ -1531,7 +1611,7 @@ export default function AdminPage() {
               <ul className="mt-3 divide-y divide-ink/10">
                 {(dashboard?.recent_activity || []).map((item: any, index: number) => (
                   <li key={`${item.record_id}-${index}`} className="py-2 text-xs">
-                    <span className="font-medium text-ink">{item.operation}</span> · {item.table_name} ·{' '}
+                    <span className="font-medium text-ink">{item.operation}</span> | {item.table_name} |{' '}
                     {new Date(item.created_at).toLocaleString()}
                   </li>
                 ))}
@@ -1566,7 +1646,7 @@ export default function AdminPage() {
                   <tr key={customer.id} className="border-b border-ink/10">
                     <td className="py-3 pr-3">{customer.full_name || 'Name not provided'}</td>
                     <td className="py-3 pr-3">{customer.email || 'Email unavailable'}</td>
-                    <td className="py-3 pr-3">{customer.phone || '—'}</td>
+                    <td className="py-3 pr-3">{customer.phone || '-'}</td>
                     <td className="py-3">{new Date(customer.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
@@ -1593,7 +1673,7 @@ export default function AdminPage() {
                 onChange={(e) => setRoleAssignment({ ...roleAssignment, user_id: e.target.value })}
                 className="admin-input"
               >
-                <option value="">Choose account…</option>
+                <option value="">Choose account...</option>
                 {customers.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.email || item.full_name || item.id}
@@ -1665,7 +1745,7 @@ export default function AdminPage() {
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-ink-light" />
               <input
                 type="text"
-                placeholder="Search name, SKU, tag…"
+                placeholder="Search name, SKU, tag..."
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 className="admin-input !pl-8 text-xs"
@@ -1676,7 +1756,7 @@ export default function AdminPage() {
                   onClick={() => setProductSearch('')}
                   className="absolute right-2.5 top-2.5 text-xs text-ink-light hover:text-ink"
                 >
-                  ×
+                  x
                 </button>
               )}
             </div>
@@ -1752,7 +1832,7 @@ export default function AdminPage() {
                     <div className="mt-1 flex items-center justify-between text-[11px] text-ink-light">
                       <span>{product.price ? formatINR(Number(product.price)) : 'No price'}</span>
                       {missing.length > 0 ? (
-                        <span className="text-amber-800 font-medium">⚠️ {missing.length} missing</span>
+                        <span className="text-amber-800 font-medium">! {missing.length} missing</span>
                       ) : (
                         <span className="text-emerald-700 font-medium">Ready</span>
                       )}
@@ -1793,7 +1873,7 @@ export default function AdminPage() {
                     type="button"
                     onClick={() => void duplicateProduct(selectedProduct)}
                     className="inline-flex items-center gap-1 rounded border border-ink/20 bg-white px-2.5 py-1.5 text-xs text-ink hover:bg-ink/5"
-                    title="Duplicate product as draft"
+                    title="Duplicate product as new draft with zero stock"
                   >
                     <Copy className="h-3.5 w-3.5" /> Duplicate
                   </button>
@@ -1804,6 +1884,14 @@ export default function AdminPage() {
                       className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 hover:bg-amber-100"
                     >
                       Unpublish (Draft)
+                    </button>
+                  ) : productForm.status === 'archived' ? (
+                    <button
+                      type="button"
+                      onClick={() => void quickToggleStatus('draft')}
+                      className="inline-flex items-center gap-1 rounded border border-ink/20 bg-white px-2.5 py-1.5 text-xs text-ink hover:bg-ink/5"
+                    >
+                      Restore to Draft
                     </button>
                   ) : (
                     <button
@@ -1900,7 +1988,7 @@ export default function AdminPage() {
               </label>
 
               <label className="text-sm">
-                Selling Price (INR ₹)
+                Selling Price (INR Rs.)
                 <input
                   type="number"
                   min="0.01"
@@ -1913,7 +2001,7 @@ export default function AdminPage() {
               </label>
 
               <label className="text-sm">
-                Compare-at Price (MRP ₹, optional)
+                Compare-at Price (MRP Rs., optional)
                 <input
                   type="number"
                   min="0"
@@ -2479,10 +2567,10 @@ export default function AdminPage() {
                         onChange={(e) => setGalleryAssetId(e.target.value)}
                         className="border border-ink/15 bg-transparent p-2 text-xs rounded max-w-xs"
                       >
-                        <option value="">Reuse from Library…</option>
+                        <option value="">Reuse from Library...</option>
                         {media.map((asset) => (
                           <option key={asset.id} value={asset.id}>
-                            {asset.original_filename} · {asset.purpose}
+                            {asset.original_filename} | {asset.purpose}
                           </option>
                         ))}
                       </select>
@@ -2595,7 +2683,7 @@ export default function AdminPage() {
                   .filter((asset) => asset.mime_type.startsWith('image/'))
                   .map((asset) => (
                     <option key={asset.id} value={asset.id}>
-                      {asset.original_filename} · {asset.purpose}
+                      {asset.original_filename} | {asset.purpose}
                     </option>
                   ))}
               </select>
@@ -2635,7 +2723,7 @@ export default function AdminPage() {
                   <span>
                     {category.name}{' '}
                     <span className="text-xs text-ink-light">
-                      {category.kind} · {category.slug}
+                      {category.kind} | {category.slug}
                     </span>
                   </span>
                   <button
@@ -2708,7 +2796,7 @@ export default function AdminPage() {
             {uploadState && <p role="status" className="mt-3 text-xs font-mono">{uploadState}</p>}
           </div>
           <p className="mt-5 text-sm text-ink-soft">
-            {filteredMedia.length} assets ·{' '}
+            {filteredMedia.length} assets |{' '}
             {media.reduce((sum, row) => sum + Number(row.file_size_bytes || 0), 0).toLocaleString()} bytes total metadata
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -2757,7 +2845,7 @@ export default function AdminPage() {
                 }
                 className="block w-full border-b border-ink/10 py-2 text-left text-sm"
               >
-                {item.section_key} · {item.is_published ? 'published' : 'draft'}
+                {item.section_key} | {item.is_published ? 'published' : 'draft'}
               </button>
             ))}
             <button
@@ -2860,7 +2948,7 @@ export default function AdminPage() {
                 <option value="">No asset selected</option>
                 {media.map((asset) => (
                   <option key={asset.id} value={asset.id}>
-                    {asset.original_filename} · {asset.purpose}
+                    {asset.original_filename} | {asset.purpose}
                   </option>
                 ))}
               </select>
@@ -2875,7 +2963,7 @@ export default function AdminPage() {
                 <option value="">Use desktop asset</option>
                 {media.map((asset) => (
                   <option key={asset.id} value={asset.id}>
-                    {asset.original_filename} · {asset.purpose}
+                    {asset.original_filename} | {asset.purpose}
                   </option>
                 ))}
               </select>
@@ -2972,7 +3060,7 @@ export default function AdminPage() {
                 onChange={(e) => setCollectionForm({ ...collectionForm, product_id: e.target.value })}
                 className="admin-input"
               >
-                <option value="">Choose product…</option>
+                <option value="">Choose product...</option>
                 {products
                   .filter((item) => item.status === 'published')
                   .map((item) => (
@@ -3028,7 +3116,7 @@ export default function AdminPage() {
                   >
                     {item.name}{' '}
                     <span className="text-ink-light">
-                      /{item.slug} · {item.status}
+                      /{item.slug} | {item.status}
                     </span>
                   </button>
                 </li>
@@ -3061,17 +3149,17 @@ export default function AdminPage() {
               <article key={order.id} className="flex flex-wrap items-center justify-between gap-4 border border-ink/10 p-4 rounded bg-white">
                 <div>
                   <h2 className="text-sm font-medium">
-                    Order #{order.order_number} · {formatINR(Number(order.total))}
+                    Order #{order.order_number} | {formatINR(Number(order.total))}
                   </h2>
                   <p className="mt-1 text-xs text-ink-light">
-                    {order.payment_method} · {paymentStatus || 'unpaid'} · {order.order_items?.length || 0} items ·{' '}
+                    {order.payment_method} | {paymentStatus || 'unpaid'} | {order.order_items?.length || 0} items |{' '}
                     {new Date(order.placed_at).toLocaleString()}
                   </p>
                   {shipment && (
                     <p className="mt-1 text-xs text-ink-soft">
                       Shipment: {shipment.status}
-                      {shipment.awb_code ? ` · AWB ${shipment.awb_code}` : ''}
-                      {shipment.courier_name ? ` · ${shipment.courier_name}` : ''}
+                      {shipment.awb_code ? ` | AWB ${shipment.awb_code}` : ''}
+                      {shipment.courier_name ? ` | ${shipment.courier_name}` : ''}
                     </p>
                   )}
                 </div>
@@ -3138,7 +3226,7 @@ export default function AdminPage() {
               Shipping fees are calculated by the database when an order is placed. COD is disabled until enabled here. Razorpay remains unavailable until server credentials and a verified webhook are configured.
             </p>
             <label className="block text-sm">
-              Free shipping threshold (₹)
+              Free shipping threshold (Rs.)
               <input
                 type="number"
                 min="0"
@@ -3150,7 +3238,7 @@ export default function AdminPage() {
               />
             </label>
             <label className="block text-sm">
-              Standard shipping fee (₹)
+              Standard shipping fee (Rs.)
               <input
                 type="number"
                 min="0"
@@ -3170,7 +3258,7 @@ export default function AdminPage() {
               Enable COD (Cash on Delivery)
             </label>
             <label className="block text-sm">
-              Additional COD surcharge (₹)
+              Additional COD surcharge (Rs.)
               <input
                 type="number"
                 min="0"
@@ -3182,7 +3270,7 @@ export default function AdminPage() {
               />
             </label>
             <label className="block text-sm">
-              Maximum COD order limit (₹)
+              Maximum COD order limit (Rs.)
               <input
                 type="number"
                 min="0"
@@ -3260,10 +3348,9 @@ function GalleryEditor({
 }) {
   const image = asset ? publicMediaUrl(asset, 400) : '';
   const variantOptions = useMemo(() => {
-    // Unique colours or variant labels
     return variants.map((v) => ({
       id: v.id,
-      label: `${v.colour} (${v.size}) · ${v.sku}`,
+      label: `${v.colour} (${v.size}) | ${v.sku}`,
     }));
   }, [variants]);
 
@@ -3300,7 +3387,7 @@ function GalleryEditor({
           onChange={(e) => onReplace(e.target.value)}
           className="admin-input !text-xs !py-1"
         >
-          <option value="">Choose an image…</option>
+          <option value="">Choose an image...</option>
           {media
             .filter((row) => row.id !== asset?.id)
             .map((row) => (
@@ -3336,7 +3423,7 @@ function GalleryEditor({
 
       <div className="mt-3 flex items-center justify-between text-xs pt-1 border-t border-ink/10">
         <span className="font-medium text-ink-soft">
-          {index === 0 ? '★ Primary image' : `Image ${index + 1}`}
+          {index === 0 ? '* Primary image' : `Image ${index + 1}`}
         </span>
         <span className="flex items-center gap-2">
           <button
@@ -3455,7 +3542,7 @@ function VariantEditor({
           type="button"
           onClick={onDelete}
           className="w-full rounded border border-red-200 bg-red-50 py-1.5 text-xs text-red-800 hover:bg-red-100 flex items-center justify-center gap-1"
-          title="Delete variant"
+          title="Delete variant (requires no order history)"
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -3499,8 +3586,8 @@ function MediaCard({
           {asset.original_filename}
         </p>
         <p className="text-[11px] text-ink-light">
-          {asset.provider} · {asset.resource_type} {asset.format ? `· ${asset.format}` : ''} · {asset.purpose} ·{' '}
-          {asset.width || '—'} × {asset.height || '—'} · {(Number(asset.file_size_bytes) / 1024).toFixed(0)} KB
+          {asset.provider} | {asset.resource_type} {asset.format ? `| ${asset.format}` : ''} | {asset.purpose} |{' '}
+          {asset.width || '-'} x {asset.height || '-'} | {(Number(asset.file_size_bytes) / 1024).toFixed(0)} KB
         </p>
         <label className="block text-xs">
           Alt text
@@ -3510,7 +3597,7 @@ function MediaCard({
           Save alt text
         </button>
         <p className="text-xs text-ink-light">
-          {refs === null ? 'Checking references…' : `${refs} references`}
+          {refs === null ? 'Checking references...' : `${refs} references`}
         </p>
         {refs === 0 && (
           <button onClick={onCleanup} className="text-xs text-red-800 underline hover:text-red-950 font-medium">
