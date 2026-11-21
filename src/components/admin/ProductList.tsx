@@ -10,20 +10,57 @@ import {
   CheckCircle2,
   LayoutGrid,
   List as ListIcon,
+  X,
 } from 'lucide-react';
 import { formatINR } from '../../data';
 import { publicMediaUrl } from '../../lib/supabase';
+import type { Department } from '../../types';
 
 interface ProductListProps {
   products: any[];
   categories: any[];
   selectedProductId: string;
   onSelectProduct: (id: string) => Promise<void> | void;
-  onNewProduct: () => void;
+  onNewProduct: (department?: Department) => void;
   onDuplicateProduct: (id: string) => Promise<void> | void;
   onDeleteProduct: (id: string) => Promise<void> | void;
   onQuickToggleStatus?: (status: 'draft' | 'archived') => Promise<void> | void;
 }
+
+const DEPARTMENT_OPTIONS: { id: Department; label: string; desc: string; icon: string; brand: string; badgeClass: string }[] = [
+  {
+    id: 'jewellery',
+    label: 'Jewellery',
+    desc: 'Necklace sets, earrings & rings with fine metal and stone finishes',
+    icon: '💎',
+    brand: 'VJ Jewellery',
+    badgeClass: 'bg-amber-50 text-amber-900 border-amber-200',
+  },
+  {
+    id: 'women_suits',
+    label: "Women's suits and fabrics",
+    desc: 'Unstitched suit fabrics in pure cotton, silk, organza, Banarasi, rayon & wool',
+    icon: '👗',
+    brand: 'VJ Suits & Fabrics',
+    badgeClass: 'bg-rose-50 text-rose-900 border-rose-200',
+  },
+  {
+    id: 'home_textiles',
+    label: 'Home textiles',
+    desc: 'Cotton bedsheets, single top sheets / chaddars (60×90), pillow covers',
+    icon: '🛏️',
+    brand: 'VJ Living',
+    badgeClass: 'bg-sky-50 text-sky-900 border-sky-200',
+  },
+  {
+    id: 'kids',
+    label: "Children's clothing",
+    desc: 'Handcrafted rompers, co-ords, dresses & sleepwear for ages 0–6',
+    icon: '🧸',
+    brand: 'Little Loom',
+    badgeClass: 'bg-orange-50 text-orange-900 border-orange-200',
+  },
+];
 
 export default function ProductList({
   products,
@@ -36,10 +73,12 @@ export default function ProductList({
 }: ProductListProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'review' | 'archived'>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<'all' | Department>('all');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isDuplicatingId, setIsDuplicatingId] = useState<string | null>(null);
+  const [showTypeModal, setShowTypeModal] = useState(false);
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
@@ -54,7 +93,13 @@ export default function ProductList({
         if (!matchesName && !matchesSlug && !matchesTags && !matchesSku) return false;
       }
 
-      // 2. Status Filter
+      // 2. Department Filter
+      if (departmentFilter !== 'all') {
+        const pDept = p.product_type || 'kids';
+        if (pDept !== departmentFilter) return false;
+      }
+
+      // 3. Status Filter
       if (statusFilter === 'published' && p.status !== 'published') return false;
       if (statusFilter === 'draft' && p.status !== 'draft') return false;
       if (statusFilter === 'archived' && p.status !== 'archived') return false;
@@ -66,7 +111,7 @@ export default function ProductList({
         if (!needsReview) return false;
       }
 
-      // 3. Category Filter
+      // 4. Category Filter
       if (categoryFilter) {
         const hasCategory = p.product_categories?.some(
           (pc: any) =>
@@ -76,7 +121,7 @@ export default function ProductList({
         if (!hasCategory) return false;
       }
 
-      // 4. Stock Filter
+      // 5. Stock Filter
       if (stockFilter !== 'all') {
         const variants = p.product_variants || [];
         const totalStock = variants.reduce((sum: number, v: any) => {
@@ -91,7 +136,7 @@ export default function ProductList({
 
       return true;
     });
-  }, [products, search, statusFilter, categoryFilter, stockFilter]);
+  }, [products, search, departmentFilter, statusFilter, categoryFilter, stockFilter]);
 
   const handleDuplicate = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -118,18 +163,85 @@ export default function ProductList({
     return null;
   };
 
+  const getDepartmentMeta = (p: any) => {
+    const dept = p.product_type || 'kids';
+    return (
+      DEPARTMENT_OPTIONS.find((d) => d.id === dept) ||
+      DEPARTMENT_OPTIONS.find((d) => d.id === 'kids')!
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* "WHAT WOULD YOU LIKE TO ADD?" MODAL */}
+      {showTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl border border-[#E8E2D9] max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-4">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-clay block">
+                  Catalog Expansion
+                </span>
+                <h2 className="font-serif text-2xl font-bold text-ink">What would you like to add?</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTypeModal(false)}
+                className="p-2 text-ink-muted hover:text-ink rounded-xl border border-[#E8E2D9] transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-ink-muted">
+              Select a product type. The wizard will dynamically present tailored specifications, measurements, and variant generators.
+            </p>
+
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              {DEPARTMENT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setShowTypeModal(false);
+                    onNewProduct(opt.id);
+                  }}
+                  className="p-4 rounded-2xl border border-[#E8E2D9] hover:border-clay hover:bg-cream/40 text-left transition space-y-2 group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl">{opt.icon}</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${opt.badgeClass}`}>
+                        {opt.brand}
+                      </span>
+                    </div>
+                    <h3 className="font-serif font-bold text-base text-ink group-hover:text-clay transition">
+                      {opt.label}
+                    </h3>
+                    <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                      {opt.desc}
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold text-clay inline-flex items-center gap-1 pt-2">
+                    Create item →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TOP HEADER & ACTION */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h2 className="font-serif text-2xl font-bold text-ink">All Products</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Manage, publish, duplicate, and monitor inventory for your kidswear catalog
+            Manage, publish, duplicate, and monitor inventory across Jewellery, Suits, Textiles & Kidswear
           </p>
         </div>
         <button
-          onClick={onNewProduct}
+          onClick={() => setShowTypeModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-clay text-white text-xs font-semibold hover:bg-[#b56e57] transition shadow-xs shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
@@ -177,7 +289,7 @@ export default function ProductList({
           </div>
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Pills & Selectors */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E8E2D9]/60">
           <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
             {(
@@ -205,6 +317,19 @@ export default function ProductList({
 
           <div className="h-4 w-[1px] bg-[#E8E2D9] hidden sm:block" />
 
+          {/* Department Filter */}
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value as any)}
+            className="px-2.5 py-1.5 rounded-lg text-xs bg-[#FAF7F0] border border-[#E8E2D9] text-ink focus:outline-none focus:border-clay font-medium"
+          >
+            <option value="all">All Departments</option>
+            <option value="jewellery">💎 Jewellery (VJ)</option>
+            <option value="women_suits">👗 Women's Suits (VJ)</option>
+            <option value="home_textiles">🛏️ Home Textiles (VJ)</option>
+            <option value="kids">🧸 Children's (Little Loom)</option>
+          </select>
+
           {/* Category Dropdown */}
           <select
             value={categoryFilter}
@@ -214,7 +339,7 @@ export default function ProductList({
             <option value="">All Categories</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} ({c.kind})
+                {c.name} {c.department ? `(${c.department})` : ''}
               </option>
             ))}
           </select>
@@ -244,10 +369,10 @@ export default function ProductList({
           <Package className="w-10 h-10 mx-auto text-ink-muted/40" />
           <h3 className="font-serif text-lg font-bold text-ink">No matching products found</h3>
           <p className="text-xs text-ink-muted max-w-sm mx-auto">
-            Try adjusting your search criteria or filters, or add a brand new handcrafted garment.
+            Try adjusting your search criteria or filters, or add a new piece to your catalogue.
           </p>
           <button
-            onClick={onNewProduct}
+            onClick={() => setShowTypeModal(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-clay text-white text-xs font-semibold hover:bg-[#b56e57] transition shadow-xs"
           >
             <PlusCircle className="w-4 h-4" />
@@ -260,7 +385,7 @@ export default function ProductList({
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FAF7F0] border-b border-[#E8E2D9] text-ink-muted uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Garment</th>
+                  <th className="py-3 px-4">Item & Department</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Price</th>
                   <th className="py-3 px-4">Inventory & Variants</th>
@@ -270,6 +395,7 @@ export default function ProductList({
               <tbody className="divide-y divide-[#E8E2D9]">
                 {filteredProducts.map((p) => {
                   const imgUrl = getProductImage(p);
+                  const deptMeta = getDepartmentMeta(p);
                   const variants = p.product_variants || [];
                   const totalStock = variants.reduce((sum: number, v: any) => {
                     const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
@@ -301,6 +427,11 @@ export default function ProductList({
                             )}
                           </div>
                           <div>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${deptMeta.badgeClass}`}>
+                                {deptMeta.icon} {deptMeta.brand}
+                              </span>
+                            </div>
                             <span className="font-serif font-bold text-sm text-ink block leading-tight">
                               {p.name}
                             </span>
@@ -416,6 +547,7 @@ export default function ProductList({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredProducts.map((p) => {
             const imgUrl = getProductImage(p);
+            const deptMeta = getDepartmentMeta(p);
             const variants = p.product_variants || [];
             const totalStock = variants.reduce((sum: number, v: any) => {
               const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
@@ -446,7 +578,10 @@ export default function ProductList({
                       </div>
                     )}
 
-                    <div className="absolute top-2.5 left-2.5">
+                    <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border shadow-xs backdrop-blur-md ${deptMeta.badgeClass}`}>
+                        {deptMeta.icon} {deptMeta.brand}
+                      </span>
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider backdrop-blur-md shadow-xs ${
                           p.status === 'published'

@@ -14,6 +14,7 @@ import DiscountsView from '../components/admin/DiscountsView';
 import SupportView from '../components/admin/SupportView';
 import PoliciesFaqsView from '../components/admin/PoliciesFaqsView';
 import AnalyticsView from '../components/admin/AnalyticsView';
+import type { Department, ProductSpecifications } from '../types';
 
 type Status = 'loading' | 'signed-out' | 'denied' | 'ready' | 'unconfigured';
 type ProductForm = {
@@ -31,6 +32,8 @@ type ProductForm = {
   seo_title: string;
   seo_description: string;
   tags: string[];
+  product_type: Department;
+  specifications: ProductSpecifications;
 };
 
 const emptyProduct: ProductForm = {
@@ -47,6 +50,8 @@ const emptyProduct: ProductForm = {
   seo_title: '',
   seo_description: '',
   tags: [],
+  product_type: 'kids',
+  specifications: {},
 };
 
 function fileSha256(file: File) {
@@ -60,6 +65,8 @@ function fileSha256(file: File) {
 
 function pendingProductApprovals(product: any): string[] {
   const missing: string[] = [];
+  const prodType: Department = product.product_type || 'kids';
+
   if (
     product.tags?.includes('owner-intake') ||
     product.tags?.includes('owner-review-required') ||
@@ -70,16 +77,21 @@ function pendingProductApprovals(product: any): string[] {
   if (product.tags?.includes('proposed-price')) missing.push('verified price');
   if (product.price == null || Number(product.price) <= 0) missing.push('price');
   if (!product.description?.trim()) missing.push('description');
-  if (!(product.material?.trim() || product.fabric_composition?.trim()))
-    missing.push('fabric details');
-  if (!product.care_instructions?.trim()) missing.push('care instructions');
-  if (!product.size_measurements?.trim()) missing.push('garment measurements by size');
+
   const links = product.product_categories || [];
   const kinds = links.map(
     (link: any) => (Array.isArray(link.categories) ? link.categories[0] : link.categories)?.kind
   );
   if (!kinds.includes('product')) missing.push('product category');
-  if (!kinds.includes('age')) missing.push('age group');
+
+  if (prodType === 'kids') {
+    if (!(product.material?.trim() || product.fabric_composition?.trim()))
+      missing.push('fabric details');
+    if (!product.care_instructions?.trim()) missing.push('care instructions');
+    if (!product.size_measurements?.trim()) missing.push('garment measurements by size');
+    if (!kinds.includes('age')) missing.push('age group');
+  }
+
   const variants = product.product_variants || [];
   const hasInventory =
     variants.length > 0 &&
@@ -328,6 +340,8 @@ export default function AdminPage() {
       seo_title: p.seo_title || '',
       seo_description: p.seo_description || '',
       tags: p.tags || [],
+      product_type: (p.product_type || 'kids') as Department,
+      specifications: p.specifications || {},
     });
     setVariants(
       (variantRows.data || []).map((row: any) => ({
@@ -352,6 +366,7 @@ export default function AdminPage() {
       fail('A compare-at price needs a verified base price and must be at least as high.');
       return;
     }
+    const prodType: Department = productForm.product_type || 'kids';
     if (productForm.status === 'published') {
       const hasProductCategory = categoryIds.some((id) =>
         categories.some((category) => category.id === id && category.kind === 'product')
@@ -392,18 +407,22 @@ export default function AdminPage() {
         /intake draft/i.test(productForm.name) ||
         !productForm.name.trim() ||
         !productForm.description.trim() ||
-        !(productForm.material.trim() || productForm.fabric_composition.trim()) ||
-        !productForm.care_instructions.trim() ||
-        !productForm.size_measurements.trim() ||
         !productForm.price.trim() ||
         Number(productForm.price) <= 0 ||
         !hasProductCategory ||
-        !hasAgeCategory ||
         !hasCompleteVariants ||
-        !hasAuthorizedProductImage
+        !hasAuthorizedProductImage ||
+        (prodType === 'kids' && (
+          !(productForm.material.trim() || productForm.fabric_composition.trim()) ||
+          !productForm.care_instructions.trim() ||
+          !productForm.size_measurements.trim() ||
+          !hasAgeCategory
+        ))
       ) {
         fail(
-          'Keep this product as a draft until its name, price, description, fabric, care, measurements, product and age categories, size and colour variants, SKUs, stock, and authorized ImageKit product photos are verified.'
+          prodType === 'kids'
+            ? 'Keep this product as a draft until its name, price, description, fabric, care, measurements, product and age categories, size and colour variants, SKUs, stock, and authorized ImageKit product photos are verified.'
+            : 'Keep this product as a draft until its name, price, description, category, size and colour variants, SKUs, stock, and authorized ImageKit product photos are verified.'
         );
         return;
       }
@@ -423,6 +442,8 @@ export default function AdminPage() {
       seo_title: productForm.seo_title || null,
       seo_description: productForm.seo_description || null,
       tags: productForm.tags,
+      product_type: prodType,
+      specifications: productForm.specifications || {},
       published_at: null,
     };
     const result = productForm.id
@@ -532,6 +553,8 @@ export default function AdminPage() {
           seo_title: fullSource.seo_title || null,
           seo_description: fullSource.seo_description || null,
           tags: [...(fullSource.tags || []), 'duplicate-draft'],
+          product_type: fullSource.product_type || 'kids',
+          specifications: fullSource.specifications || {},
           published_at: null,
         })
         .select('id')
@@ -785,16 +808,28 @@ export default function AdminPage() {
   ) {
     if (!supabase || !selectedProduct) return;
     const existingCombos = new Set(variants.map((v) => `${v.size}:::${v.colour}`));
-    const prefix = `LL-${productForm.slug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)}`;
+    const prodType = productForm.product_type || 'kids';
+    const prefixMap: Record<Department, string> = {
+      kids: 'LL',
+      jewellery: 'VJ-JEW',
+      women_suits: 'VJ-SUT',
+      home_textiles: 'VJ-TXT',
+    };
+    const deptCode = prefixMap[prodType] || 'VJ';
+    const slugCode = (productForm.slug || 'ITEM').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'ITEM';
+    const prefix = `${deptCode}-${slugCode}`;
     let created = 0;
     for (const col of colours) {
       for (const sz of sizes) {
         const comboKey = `${sz}:::${col.name}`;
         if (existingCombos.has(comboKey)) continue;
 
-        const sizeCode = sz.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        const colourCode = col.name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 3);
-        const generatedSku = `${prefix}-${colourCode}-${sizeCode}`;
+        const sizeCode = sz.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 5) || 'STD';
+        const colourCode = col.name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4) || 'COL';
+        let generatedSku = `${prefix}-${colourCode}-${sizeCode}`;
+        if (variants.some((v) => v.sku === generatedSku)) {
+          generatedSku = `${generatedSku}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+        }
 
         const { data: newV, error: vError } = await supabase
           .from('product_variants')
@@ -819,7 +854,7 @@ export default function AdminPage() {
         }
       }
     }
-    report(`Generated ${created} new size/colour variants with ${defaultStock} units opening stock.`);
+    report(`Generated ${created} new variants with ${defaultStock} units opening stock.`);
     await selectProduct(selectedProduct);
   }
 
@@ -1279,9 +1314,9 @@ export default function AdminPage() {
           media={media}
           categories={categories}
           onNavigate={(sec) => setTab(sec)}
-          onNewProduct={() => {
+          onNewProduct={(dept?: Department) => {
             setSelectedProduct('');
-            setProductForm(emptyProduct);
+            setProductForm({ ...emptyProduct, product_type: dept || 'kids' });
             setVariants([]);
             setGallery([]);
             setCategoryIds([]);
@@ -1301,9 +1336,9 @@ export default function AdminPage() {
             await selectProduct(id);
             setTab('add-product');
           }}
-          onNewProduct={() => {
+          onNewProduct={(dept?: Department) => {
             setSelectedProduct('');
-            setProductForm(emptyProduct);
+            setProductForm({ ...emptyProduct, product_type: dept || 'kids' });
             setVariants([]);
             setGallery([]);
             setCategoryIds([]);

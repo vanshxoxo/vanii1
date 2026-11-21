@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AgeInfo, CategoryInfo, Product } from '../types';
+import type { AgeInfo, CategoryInfo, Department, Product } from '../types';
 import { isSupabaseConfigured, publicMediaUrl, responsiveMediaSrcSet, supabase } from './supabase';
 import { resolveLaunchAge, resolveLaunchCategory } from '../data/storeNavigation';
 
@@ -19,8 +19,8 @@ export function useCatalog(): CatalogResult {
     async function load() {
       const client = supabase!;
       const [productResponse, categoryResponse, heroResponse, collectionResponse] = await Promise.all([
-        client.from('products').select('*,product_variants(id,sku,size,colour,colour_hex,price_override),product_media(id,asset_id,variant_id,display_order,is_primary,alt_text,view_label,media_assets(provider,delivery_url,external_url,resource_type)),product_categories(categories:categories(id,kind,name,slug,display_order,image_asset:media_assets(provider,delivery_url,external_url,resource_type))),collection_products(collections:collections(slug))').eq('status', 'published').order('published_at', { ascending: false }),
-        client.from('categories').select('id,kind,name,slug,description,display_order,image_asset:media_assets(provider,delivery_url,external_url,resource_type)').eq('is_active', true).order('display_order'),
+        client.from('products').select('*,product_variants(id,sku,size,colour,colour_hex,price_override),product_media(id,asset_id,variant_id,display_order,is_primary,alt_text,view_label,media_assets(provider,delivery_url,external_url,resource_type)),product_categories(categories:categories(id,kind,name,slug,display_order,department,image_asset:media_assets(provider,delivery_url,external_url,resource_type))),collection_products(collections:collections(slug))').eq('status', 'published').order('published_at', { ascending: false }),
+        client.from('categories').select('id,kind,name,slug,description,display_order,department,image_asset:media_assets(provider,delivery_url,external_url,resource_type)').eq('is_active', true).order('display_order'),
         client.from('homepage_sections').select('heading,body,cta_label,cta_href,desktop:media_assets!homepage_sections_desktop_asset_id_fkey(provider,delivery_url,external_url,resource_type),mobile:media_assets!homepage_sections_mobile_asset_id_fkey(provider,delivery_url,external_url,resource_type)').eq('section_key', 'hero').eq('is_published', true).maybeSingle(),
         client.from('collections').select('id,name,slug,description,cover:media_assets!collections_cover_asset_id_fkey(provider,delivery_url,external_url,resource_type)').eq('status', 'published').order('display_order'),
       ]);
@@ -41,6 +41,8 @@ export function useCatalog(): CatalogResult {
         const productCats = relations.map((item: any) => item.categories).filter(Boolean);
         const ageNames = productCats.filter((category: any) => category.kind === 'age').map((category: any) => category.name);
         const mainCategory = productCats.find((category: any) => category.kind === 'product')?.name || '';
+        const catDepartment = productCats.find((c: any) => c.department && c.department !== 'kids')?.department as Department | undefined;
+        const resolvedDepartment: Department = row.product_type || catDepartment || (ageNames.length > 0 ? 'kids' : 'kids');
         const variants = row.product_variants || [];
         const gallery = (row.product_media || []).sort((a: any, b: any) => a.display_order - b.display_order);
         const imagePairsByUrl = new Map<string, { url: string; srcSet: string; alt: string }>();
@@ -57,16 +59,33 @@ export function useCatalog(): CatalogResult {
         return {
           id: row.id, slug: row.slug, name: row.name, description: row.description,
           price: Number(row.price), originalPrice: row.compare_at_price ? Number(row.compare_at_price) : undefined,
-          category: mainCategory, ages: ageNames, sizes, colors,
+          category: mainCategory, department: resolvedDepartment, productType: resolvedDepartment,
+          specifications: row.specifications || {},
+          ages: ageNames, sizes, colors,
           images: images.map((image) => image.url), imageSrcSets: images.map((image) => image.srcSet), imageAltTexts: images.map((image) => image.alt),
-          fabric: row.fabric_composition || row.material || '', care: row.care_instructions || '',
+          fabric: row.fabric_composition || row.material || '', material: row.material || '', care: row.care_instructions || '',
           sizeMeasurements: row.size_measurements || '',
           tags: row.tags || [], isNew: collections.includes('new-arrivals'), isBestseller: collections.includes('bestsellers'),
           collections,
           variants: variants.map((variant: any) => ({ id: variant.id, sku: variant.sku, size: variant.size, colour: variant.colour, price: Number(variant.price_override ?? row.price), available: availability.get(variant.id) === true })),
           inStock: variants.some((variant: any) => availability.get(variant.id) === true),
         } as Product;
-      }).filter((product: Product) => product.price > 0 && product.category && product.ages.length > 0 && product.images.length > 0 && product.variants?.length && product.variants.every((variant) => variant.sku.trim() && variant.size.trim() && variant.colour.trim()) && product.description.trim() && product.fabric.trim() && product.care.trim());
+      }).filter((product: Product) => {
+        const isKids = (product.department || product.productType || 'kids') === 'kids';
+        const hasBaseValidations =
+          product.price > 0 &&
+          product.category &&
+          product.images.length > 0 &&
+          product.variants?.length &&
+          product.variants.every((variant) => variant.sku.trim() && variant.size.trim() && variant.colour.trim()) &&
+          product.description.trim();
+
+        if (!hasBaseValidations) return false;
+        if (isKids) {
+          return product.ages.length > 0 && product.fabric.trim() && product.care.trim();
+        }
+        return true;
+      });
 
       const allCategories = categoryResponse.data || [];
       const ages = allCategories.filter((category: any) => category.kind === 'age').map((category: any) => {
@@ -80,9 +99,11 @@ export function useCatalog(): CatalogResult {
       const categories = allCategories.filter((category: any) => category.kind === 'product').map((category: any) => ({
         id: category.name,
         name: resolveLaunchCategory(category.name)?.label || category.name,
-        image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : resolveLaunchCategory(category.name)?.image || '',
+        image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : ((resolveLaunchCategory(category.name) as any)?.image || ''),
         description: category.description || resolveLaunchCategory(category.name)?.introduction || '',
         span: 'normal',
+        department: (category.department || 'kids') as Department,
+        kind: 'product' as const,
       })) as CategoryInfo[];
       const heroData = heroResponse.data;
       const desktopAsset = Array.isArray(heroData?.desktop) ? heroData.desktop[0] : heroData?.desktop;

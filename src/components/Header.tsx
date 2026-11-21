@@ -17,27 +17,31 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Latest', href: '/shop?filter=new' },
-    { label: 'Products', href: '/products' },
-    { label: 'By Age', href: '/#shop-by-age' },
-    { label: 'Collections', href: '/shop' },
+    { label: 'Shop All', href: '/shop' },
+    { label: 'Jewellery', href: '/shop?department=jewellery' },
+    { label: "Women's Suits", href: '/shop?department=women_suits' },
+    { label: 'Home Textiles', href: '/shop?department=home_textiles' },
+    { label: "Kids", href: '/shop?department=kids' },
     { label: 'Our World', href: '/#brand-story' },
   ];
 
   const isActive = (href: string) => {
     if (href.includes('#')) return false;
-    const target = href.split('?')[0];
-    return location.pathname === target || (target === '/products' && location.pathname === '/shop');
+    const [targetPath, targetQuery] = href.split('?');
+    if (targetQuery) {
+      return location.pathname === targetPath && location.search.includes(targetQuery);
+    }
+    return location.pathname === targetPath && !location.search;
   };
 
   return (
     <>
       {/* Announcement bar — slim, dark, centered */}
-      <div role="region" aria-label="Little Loom announcement" className="announcement-bar bg-charcoal text-ivory">
+      <div role="region" aria-label="Little Loom & VJ Collection announcement" className="announcement-bar bg-charcoal text-ivory">
         <div className="announcement-track" aria-hidden="true">
           {[0, 1].map((copy) => (
             <span key={copy} className="announcement-message">
-              {announcement?.heading || 'LITTLE LOOM · CHILDREN’S CLOTHING'}
+              {announcement?.heading || 'VJ COLLECTION · JEWELLERY · SUITS & FABRICS · HOME TEXTILES · LITTLE LOOM'}
             </span>
           ))}
         </div>
@@ -60,9 +64,12 @@ export default function Header() {
               >
                 <Menu size={22} />
               </button>
-              <Link to="/" className="group">
+              <Link to="/" className="group flex items-baseline gap-2">
                 <span className="font-serif text-xl lg:text-2xl font-medium tracking-tight text-charcoal transition-colors group-hover:text-clay">
                   Little Loom
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-clay font-bold hidden sm:inline">
+                  · VJ Collection
                 </span>
               </Link>
             </div>

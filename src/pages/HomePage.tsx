@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Gem, Shirt, Home, Baby } from 'lucide-react';
 import { useCatalog } from '../lib/catalog';
 import { useCmsSection } from '../lib/cms';
 import { useStore } from '../useStore';
@@ -9,7 +9,7 @@ import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import { SectionHeading } from '../components/ui';
 import Reveal from '../components/Reveal';
-import { ageNavigation, categoryNavigation, resolveLaunchAge } from '../data/storeNavigation';
+import { ageNavigation, categoryNavigation, resolveLaunchAge, departments } from '../data/storeNavigation';
 
 const editorial = '/images/editorial/version-b/';
 
@@ -71,34 +71,95 @@ export default function HomePage() {
 
   return (
     <div>
+      {/* Hero Banner */}
       <section className="relative overflow-hidden bg-[#f5f0e9]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
           <div className="grid items-stretch gap-4 sm:gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
             <div className="order-2 flex flex-col justify-center rounded-2xl bg-ivory px-6 py-8 sm:px-10 sm:py-10 lg:order-1 lg:rounded-3xl lg:px-12 lg:py-14" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(18px)', transition: 'opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-peach sm:text-xs"><Sparkles size={14} /> Little Loom</span>
+              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-peach sm:text-xs"><Sparkles size={14} /> Little Loom · VJ Collection</span>
               <h1 className="hero-headline mt-5 font-serif font-light leading-[0.98] text-ink text-balance">
                 <span className={`hero-line ${mounted ? 'is-visible' : ''}`}>{heroLines[0]}</span>
                 {heroLines[1] && <span className={`hero-line italic ${mounted ? 'is-visible' : ''}`}>{heroLines[1]}</span>}
               </h1>
               <p className="mt-5 max-w-md text-sm leading-relaxed text-ink-soft sm:text-base lg:text-lg">
-                {hero?.body || 'Clothing and details shared by Little Loom.'}
+                {hero?.body || 'Mindful clothing, festive jewellery, fine unstitched fabrics, and home living.'}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link to={hasProducts ? heroHref : '/#shop-by-age'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore by age')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
-                <a href="/#shop-by-category"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse categories</Button></a>
+                <Link to={hasProducts ? heroHref : '/#departments'}><Button variant="primary" size="lg" className="group w-full sm:w-auto">{hero?.ctaLabel || (hasProducts ? 'Shop the collection' : 'Explore departments')}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link>
+                <a href="#departments"><Button variant="outline" size="lg" className="w-full sm:w-auto">Browse all departments</Button></a>
               </div>
               {error && <p role="status" className="mt-4 text-xs text-ink-soft">The published catalogue is temporarily unavailable.</p>}
             </div>
             <div className="hero-image order-1 overflow-hidden rounded-2xl bg-cream lg:order-2 lg:rounded-3xl" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity 0.8s ease-out 0.12s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.12s' }}>
               <picture className="block aspect-[4/3] w-full sm:aspect-[16/10] lg:aspect-auto lg:h-full lg:min-h-[580px]">
                 <source media="(max-width: 639px)" srcSet={heroMobileImage} />
-                <img src={heroDesktopImage} alt="Children outdoors in everyday clothing" className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
+                <img src={heroDesktopImage} alt="Little Loom lifestyle photography" className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
               </picture>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Multi-Department Showcase */}
+      <section id="departments" className="border-y border-ink/8 bg-white/60 py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Reveal>
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-peach">
+                <Sparkles size={14} /> Multi-Department Catalogue
+              </span>
+              <h2 className="mt-3 font-serif text-3xl font-light text-ink sm:text-4xl">
+                The Little Loom & <span className="italic">VJ Collection</span>
+              </h2>
+              <p className="mt-3 text-sm text-ink-soft leading-relaxed">
+                Discover our curated offerings across fine handcrafted jewellery, unstitched salwar suits, breathable home textiles, and mindful childrenswear.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {departments.map((dept, index) => (
+              <Reveal key={dept.id} delay={index * 80}>
+                <Link
+                  to={dept.path}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-ink/10 bg-ivory p-6 transition-all duration-300 hover:-translate-y-1 hover:border-ink/25 hover:shadow-lg"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink/5 text-ink transition-colors group-hover:bg-ink group-hover:text-cream">
+                        {dept.id === 'jewellery' && <Gem size={20} />}
+                        {dept.id === 'women_suits' && <Shirt size={20} />}
+                        {dept.id === 'home_textiles' && <Home size={20} />}
+                        {dept.id === 'kids' && <Baby size={20} />}
+                      </span>
+                      <span className="text-[11px] font-semibold uppercase tracking-widest text-ink-light">
+                        0{index + 1}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-5 font-serif text-2xl font-light text-ink group-hover:text-peach transition-colors">
+                      {dept.brand}
+                    </h3>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-wider text-peach">
+                      {dept.label.replace('Shop ', '')}
+                    </p>
+                    <p className="mt-3 text-sm text-ink-soft leading-relaxed">
+                      {dept.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-ink/8 flex items-center justify-between text-xs font-medium text-ink group-hover:text-peach transition-colors">
+                    <span>Explore Department</span>
+                    <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Children's Shop by Age (Preserved) */}
       <section id="shop-by-age" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><SectionHeading eyebrow="Find their fit" title={<>Shop by <span className="italic">age</span></>} /></Reveal>
@@ -114,10 +175,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* New Arrivals Rail */}
       {(hasProducts || catalogLoading || error || hasPublishedRecords) && <section className="bg-cream py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><div className="mb-8 flex items-end justify-between gap-4 lg:mb-12">
-            <SectionHeading eyebrow={newArrivals.length ? 'Just published' : hasProducts ? 'Little Loom catalogue' : 'Little Loom'} title={newArrivals.length ? <>New <span className="italic">arrivals</span></> : hasProducts ? <>The published <span className="italic">collection</span></> : catalogLoading || error || hasPublishedRecords ? <>The Little Loom <span className="italic">wardrobe</span></> : <>The first <span className="italic">edit</span></>} />
+            <SectionHeading eyebrow={newArrivals.length ? 'Just published' : hasProducts ? 'Curated catalogue' : 'Little Loom · VJ Collection'} title={newArrivals.length ? <>New <span className="italic">arrivals</span></> : hasProducts ? <>The published <span className="italic">collection</span></> : catalogLoading || error || hasPublishedRecords ? <>The published <span className="italic">wardrobe</span></> : <>The first <span className="italic">edit</span></>} />
             {hasProducts && <div className="hidden items-center gap-2 sm:flex"><button onClick={() => scrollRail('left')} aria-label="Scroll products left" className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 text-ink transition-all hover:scale-110 hover:bg-ink hover:text-cream"><ArrowLeft size={18} /></button><button onClick={() => scrollRail('right')} aria-label="Scroll products right" className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 text-ink transition-all hover:scale-110 hover:bg-ink hover:text-cream"><ArrowRight size={18} /></button></div>}
           </div></Reveal>
           {hasProducts ? <>
@@ -125,13 +187,14 @@ export default function HomePage() {
               {(newArrivals.length ? newArrivals : products.slice(0, 6)).map((product, index) => <Reveal key={product.id} delay={index * 65} className="w-[260px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}
             </div>
             <div className="mt-7 text-center"><Link to={newArrivals.length ? '/products?filter=new' : '/products'}><Button variant="outline" size="md">View published products</Button></Link></div>
-          </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published Little Loom catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
-            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the editorial categories below while the catalogue connection is restored.</p></div>
+          </> : catalogLoading ? <div role="status" className="rounded-2xl bg-[#f4eee8] p-7 text-sm text-ink-soft sm:p-10">Loading the published catalogue…</div> : error || hasPublishedRecords ? <><div className="grid overflow-hidden rounded-2xl bg-[#f4eee8] lg:grid-cols-2">
+            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14"><p className="text-xs uppercase tracking-[0.2em] text-peach">Little Loom · VJ Collection</p><h2 className="mt-3 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">The catalogue is temporarily unavailable</h2><p role="status" className="mt-4 max-w-md text-sm leading-7 text-ink-soft">Published products could not be loaded. Browse the departments above while the catalogue connection is restored.</p></div>
             <img src={`${editorial}category-rompers.webp`} alt="Children in relaxed everyday clothing" loading="lazy" className="min-h-64 w-full object-cover sm:min-h-80" />
           </div></> : null}
         </div>
       </section>}
 
+      {/* Editorial Campaign */}
       <section id="editorial-campaign" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-stretch gap-6 lg:grid-cols-2 lg:gap-10">
@@ -147,6 +210,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Children's Categories (Preserved) */}
       <section id="shop-by-category" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><SectionHeading eyebrow="Browse the wardrobe" title={<>Shop by <span className="italic">category</span></>} align="center" /></Reveal>
@@ -165,6 +229,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Collections (Preserved) */}
       {collections.length > 0 && <section id="collections" className="bg-[#f8f4f0] py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published by Little Loom" title={<>The little <span className="italic">edits</span></>} align="center" /></Reveal>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-6">
@@ -176,15 +241,18 @@ export default function HomePage() {
         </div>
       </section>}
 
+      {/* Featured Products */}
       {featuredProducts.length > 0 && <section className="bg-cream py-16 lg:py-24"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><Reveal><SectionHeading eyebrow="Published collection" title={<>Featured <span className="italic">pieces</span></>} link={{ label: 'Shop all published products', href: '/products' }} /></Reveal><div className="mt-8 grid grid-cols-2 gap-4 lg:mt-12 lg:grid-cols-4 lg:gap-6">{featuredProducts.map((product, index) => <Reveal key={product.id} delay={index * 80}><ProductCard product={product} onQuickAdd={handleQuickAdd} /></Reveal>)}</div></div></section>}
 
+      {/* Brand Story */}
       <section id="brand-story" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
           <Reveal y={40} className="lg:col-span-5"><div className="relative"><div className="aspect-[4/5] overflow-hidden rounded-2xl lg:rounded-3xl"><picture className="block h-full w-full"><source media="(max-width: 639px)" srcSet={brandStory?.mobileImage || `${editorial}brand-story.webp`} /><img src={brandStory?.desktopImage || `${editorial}brand-story.webp`} alt="A child in comfortable everyday clothing" loading="lazy" className="h-full w-full object-cover" /></picture></div></div></Reveal>
-          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/products' : '/#shop-by-age'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Browse by age'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
+          <Reveal y={40} delay={150} className="lg:col-span-6 lg:col-start-7"><div className="flex flex-col gap-5"><span className="text-xs font-semibold uppercase tracking-[0.25em] text-peach">{(brandStory?.content?.eyebrow as string) || 'Our world'}</span><h2 className="font-serif text-3xl font-light leading-[1.1] text-ink text-balance sm:text-4xl lg:text-5xl">{brandStory?.heading || 'A closer look at Little Loom.'}</h2><div className="space-y-4 text-sm leading-relaxed text-ink-soft lg:text-base"><p>{brandStory?.body || 'A thoughtful little world of clothing, details and everyday moments.'}</p></div><Link to={hasProducts ? '/products' : '/#departments'} className="mt-2"><Button variant="outline" size="lg" className="group">{hasProducts ? 'View published products' : 'Explore departments'}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></Button></Link></div></Reveal>
         </div></div>
       </section>
 
+      {/* Fabric Detail */}
       <section id="fabric-detail" className="bg-[#efe9e1] py-16 lg:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
           <Reveal className="order-2 lg:order-1">
@@ -200,6 +268,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Editorial Archive */}
       <section id="editorial-image-archive" className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal><SectionHeading eyebrow="Little Loom" title={<>A little visual <span className="italic">world</span></>} align="center" /></Reveal>

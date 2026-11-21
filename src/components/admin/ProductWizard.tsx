@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Sparkles,
   ArrowLeft,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatINR } from '../../data';
 import { publicMediaUrl } from '../../lib/supabase';
+import type { Department } from '../../types';
 
 interface ProductWizardProps {
   productForm: any;
@@ -45,17 +46,60 @@ interface ProductWizardProps {
   pendingApprovals: (prod: any) => string[];
 }
 
-const STANDARD_KIDS_SIZES = ['0-3M', '3-6M', '6-12M', '1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y'];
-const PRESET_COLOURS = [
-  { name: 'Ivory', hex: '#FFFFF0' },
-  { name: 'Oatmeal', hex: '#E3DAC9' },
-  { name: 'Sage', hex: '#9CAF88' },
-  { name: 'Terracotta', hex: '#E2725B' },
-  { name: 'Dusty Rose', hex: '#DCAE96' },
-  { name: 'Sky Blue', hex: '#87CEEB' },
-  { name: 'Olive', hex: '#808000' },
-  { name: 'Mustard', hex: '#FFDB58' },
+// DEPARTMENT CONFIGURATIONS & PRESETS
+const DEPARTMENTS: { id: Department; label: string; icon: string; brand: string }[] = [
+  { id: 'kids', label: "Children's Clothing", icon: '🧸', brand: 'Little Loom' },
+  { id: 'jewellery', label: 'Jewellery', icon: '💎', brand: 'VJ Jewellery' },
+  { id: 'women_suits', label: "Women's Suits", icon: '👗', brand: 'VJ Suits & Fabrics' },
+  { id: 'home_textiles', label: 'Home Textiles', icon: '🛏️', brand: 'VJ Living' },
 ];
+
+const PRESET_SIZES_BY_DEPT: Record<Department, string[]> = {
+  kids: ['0-3M', '3-6M', '6-12M', '1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y'],
+  jewellery: ['Standard Set', 'One Size', 'Size 6', 'Size 7', 'Size 8', 'Size 9', 'Adjustable'],
+  women_suits: ['Unstitched Fabric Set', 'Standard (2.5m+2.5m)', '3-Piece Set'],
+  home_textiles: ['Single Bed (60×90 in)', 'Double Bed (90×100 in)', 'Queen Bed', 'King Bed', 'Pack of 2', 'Pack of 4'],
+};
+
+const PRESET_COLOURS_BY_DEPT: Record<Department, { name: string; hex: string }[]> = {
+  kids: [
+    { name: 'Ivory', hex: '#FFFFF0' },
+    { name: 'Oatmeal', hex: '#E3DAC9' },
+    { name: 'Sage', hex: '#9CAF88' },
+    { name: 'Terracotta', hex: '#E2725B' },
+    { name: 'Dusty Rose', hex: '#DCAE96' },
+    { name: 'Sky Blue', hex: '#87CEEB' },
+    { name: 'Olive', hex: '#808000' },
+    { name: 'Mustard', hex: '#FFDB58' },
+  ],
+  jewellery: [
+    { name: 'Gold Plated', hex: '#D4AF37' },
+    { name: 'Silver Plated', hex: '#C0C0C0' },
+    { name: 'Rose Gold', hex: '#B76E79' },
+    { name: 'Antique Gold', hex: '#996515' },
+    { name: 'Oxidised Silver', hex: '#696969' },
+    { name: 'Kundan Green', hex: '#2E8B57' },
+    { name: 'Ruby Maroon', hex: '#800020' },
+    { name: 'Pearl White', hex: '#FDFBF7' },
+  ],
+  women_suits: [
+    { name: 'Mustard Yellow', hex: '#E1AD01' },
+    { name: 'Rani Pink', hex: '#E0115F' },
+    { name: 'Royal Blue', hex: '#4169E1' },
+    { name: 'Bottle Green', hex: '#006A4E' },
+    { name: 'Wine Maroon', hex: '#722F37' },
+    { name: 'Pastel Peach', hex: '#FFDAB9' },
+    { name: 'Ivory Cream', hex: '#FFFFF0' },
+  ],
+  home_textiles: [
+    { name: 'Classic White', hex: '#FFFFFF' },
+    { name: 'Natural Oatmeal', hex: '#E3DAC9' },
+    { name: 'Indigo Blue', hex: '#264348' },
+    { name: 'Sage Green', hex: '#9CAF88' },
+    { name: 'Dusty Terracotta', hex: '#C9826B' },
+    { name: 'Charcoal Grey', hex: '#36454F' },
+  ],
+};
 
 const MEASUREMENT_TEMPLATES: Record<string, string> = {
   romper: `Size | Chest (in) | Length (in) | Inseam (in)
@@ -120,26 +164,56 @@ export default function ProductWizard({
   const [uploadProgress, setUploadProgress] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Active department
+  const currentDept: Department = productForm.product_type || 'kids';
+
   // Matrix Generator Local State
-  const [matrixSizes, setMatrixSizes] = useState<string[]>(['0-3M', '3-6M', '6-12M', '1-2Y', '2-3Y']);
-  const [matrixColours, setMatrixColours] = useState<{ name: string; hex: string }[]>([
-    { name: 'Ivory', hex: '#FFFFF0' },
-    { name: 'Sage', hex: '#9CAF88' },
-  ]);
+  const defaultSizes = PRESET_SIZES_BY_DEPT[currentDept] || PRESET_SIZES_BY_DEPT.kids;
+  const defaultColours = PRESET_COLOURS_BY_DEPT[currentDept] || PRESET_COLOURS_BY_DEPT.kids;
+
+  const [matrixSizes, setMatrixSizes] = useState<string[]>(defaultSizes.slice(0, 3));
+  const [matrixColours, setMatrixColours] = useState<{ name: string; hex: string }[]>(defaultColours.slice(0, 2));
+  const [customSizeInput, setCustomSizeInput] = useState('');
   const [customColorName, setCustomColorName] = useState('');
-  const [customColorHex, setCustomColorHex] = useState('#C9826B');
+  const [customColorHex, setCustomColorHex] = useState('#D4AF37');
   const [matrixStockInput, setMatrixStockInput] = useState('10');
   const [isGeneratingMatrix, setIsGeneratingMatrix] = useState(false);
   const [bulkStockValue, setBulkStockValue] = useState('15');
 
-  const productCategories = useMemo(
-    () => categories.filter((c) => c.kind === 'product'),
-    [categories]
-  );
-  const ageCategories = useMemo(
-    () => categories.filter((c) => c.kind === 'age'),
-    [categories]
-  );
+  // Update matrix options when department changes
+  useEffect(() => {
+    const dSizes = PRESET_SIZES_BY_DEPT[currentDept] || PRESET_SIZES_BY_DEPT.kids;
+    const dColours = PRESET_COLOURS_BY_DEPT[currentDept] || PRESET_COLOURS_BY_DEPT.kids;
+    setMatrixSizes(dSizes.slice(0, 3));
+    setMatrixColours(dColours.slice(0, 2));
+  }, [currentDept]);
+
+  // Specifications helper
+  const specs = productForm.specifications || {};
+  const updateSpec = (key: string, value: any) => {
+    setProductForm((prev: any) => ({
+      ...prev,
+      specifications: {
+        ...(prev.specifications || {}),
+        [key]: value,
+      },
+    }));
+  };
+
+  // Filter categories relevant to the selected department
+  const filteredProductCategories = useMemo(() => {
+    return categories.filter((c) => {
+      if (c.kind !== 'product') return false;
+      if (!c.department || c.department === 'kids') {
+        return currentDept === 'kids';
+      }
+      return c.department === currentDept;
+    });
+  }, [categories, currentDept]);
+
+  const ageCategories = useMemo(() => {
+    return categories.filter((c) => c.kind === 'age');
+  }, [categories]);
 
   // Auto-generate slug when name changes and product has no existing ID
   const handleNameChange = (name: string) => {
@@ -209,6 +283,15 @@ export default function ProductWizard({
     }
   };
 
+  // Add Custom Size to Matrix
+  const handleAddCustomSize = () => {
+    if (!customSizeInput.trim()) return;
+    if (!matrixSizes.includes(customSizeInput.trim())) {
+      setMatrixSizes([...matrixSizes, customSizeInput.trim()]);
+    }
+    setCustomSizeInput('');
+  };
+
   // Add Custom Color to Matrix
   const handleAddCustomColor = () => {
     if (!customColorName.trim()) return;
@@ -268,10 +351,10 @@ export default function ProductWizard({
 
   // Steps definition
   const steps = [
-    { num: 1, label: 'Details', heading: 'Tell us about this clothing item' },
-    { num: 2, label: 'Photos', heading: 'Add beautiful product photos' },
+    { num: 1, label: 'Details & Specs', heading: 'Product specifications and category' },
+    { num: 2, label: 'Photos', heading: 'Add beautiful product photography' },
     { num: 3, label: 'Pricing & Sets', heading: 'Set price & showcase in collections' },
-    { num: 4, label: 'Sizes & Stock', heading: 'Sizes, colours & physical inventory' },
+    { num: 4, label: 'Variants & Stock', heading: 'Options, sizes, colours & inventory' },
     { num: 5, label: 'Publish', heading: 'Review and publish to storefront' },
   ];
 
@@ -288,11 +371,17 @@ export default function ProductWizard({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <span className="text-[11px] font-semibold text-clay uppercase tracking-wider block">
-              {productForm.id ? 'Editing Existing Product' : 'Creating New Product'}
-            </span>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[11px] font-semibold text-clay uppercase tracking-wider block">
+                {productForm.id ? 'Editing Existing Product' : 'Creating New Product'}
+              </span>
+              <span className="text-[11px] font-bold px-2 py-0.2 rounded-full border bg-white border-[#E8E2D9] text-ink">
+                {DEPARTMENTS.find((d) => d.id === currentDept)?.icon}{' '}
+                {DEPARTMENTS.find((d) => d.id === currentDept)?.brand}
+              </span>
+            </div>
             <h2 className="font-serif text-2xl font-bold text-ink leading-tight">
-              {productForm.name || 'Untitled Garment'}
+              {productForm.name || 'Untitled Piece'}
             </h2>
           </div>
         </div>
@@ -319,6 +408,36 @@ export default function ProductWizard({
             <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
             <span>Save Draft</span>
           </button>
+        </div>
+      </div>
+
+      {/* DEPARTMENT SELECTOR SWITCHER PILL */}
+      <div className="bg-[#FAF7F0] p-2 rounded-2xl border border-[#E8E2D9] flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-ink-muted pl-2">Department:</span>
+        <div className="flex flex-wrap gap-1.5">
+          {DEPARTMENTS.map((dept) => {
+            const isSelected = currentDept === dept.id;
+            return (
+              <button
+                key={dept.id}
+                type="button"
+                onClick={() => {
+                  setProductForm((prev: any) => ({
+                    ...prev,
+                    product_type: dept.id,
+                  }));
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-clay text-white shadow-xs'
+                    : 'bg-white text-ink border border-[#E8E2D9] hover:border-clay/50'
+                }`}
+              >
+                <span>{dept.icon}</span>
+                <span>{dept.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -359,16 +478,18 @@ export default function ProductWizard({
         </div>
       </div>
 
-      {/* STEP 1: PRODUCT DETAILS */}
+      {/* STEP 1: DETAILS & CATEGORY-SPECIFIC SPECIFICATIONS */}
       {currentStep === 1 && (
         <section className="bg-white rounded-2xl border border-[#E8E2D9] p-6 lg:p-8 shadow-xs space-y-6">
-          <div className="border-b border-[#E8E2D9] pb-4">
-            <h3 className="font-serif text-xl font-bold text-ink">
-              Step 1: Tell us about this clothing item
-            </h3>
-            <p className="text-xs text-ink-muted mt-1">
-              Give your garment a gentle editorial name, descriptions, category assignments, and accurate measurements.
-            </p>
+          <div className="border-b border-[#E8E2D9] pb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-serif text-xl font-bold text-ink">
+                Step 1: {DEPARTMENTS.find((d) => d.id === currentDept)?.brand} Details
+              </h3>
+              <p className="text-xs text-ink-muted mt-1">
+                Provide editorial name, description, categories, and tailored department specifications.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-5">
@@ -380,15 +501,20 @@ export default function ProductWizard({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Everyday Cotton Romper"
+                  placeholder={
+                    currentDept === 'jewellery'
+                      ? 'e.g. Kundan Choker Necklace Set'
+                      : currentDept === 'women_suits'
+                      ? 'e.g. Chanderi Silk Zari Suit Set'
+                      : currentDept === 'home_textiles'
+                      ? 'e.g. Sanganeri Handblock Cotton Bedsheet'
+                      : 'e.g. Everyday Cotton Romper'
+                  }
                   value={productForm.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
                   required
                 />
-                <span className="text-[11px] text-ink-muted mt-1 block">
-                  Example: <em>Everyday Cotton Romper</em>, <em>Linen Breeze Co-ord</em>
-                </span>
               </div>
 
               <div>
@@ -410,15 +536,28 @@ export default function ProductWizard({
               </div>
             </div>
 
-            {/* Categories & Age Groups */}
-            <div className="grid gap-6 sm:grid-cols-2 pt-2">
-              {/* Product Categories */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
-                  Clothing Category *
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {productCategories.map((c) => {
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+                Product Description *
+              </label>
+              <textarea
+                rows={3}
+                placeholder="A thoughtful editorial description highlighting craftsmanship, materials, silhouette, and finish..."
+                value={productForm.description}
+                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
+              />
+            </div>
+
+            {/* Categories Selection */}
+            <div className="space-y-3 pt-2">
+              <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
+                Select {DEPARTMENTS.find((d) => d.id === currentDept)?.label} Category *
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {filteredProductCategories.length > 0 ? (
+                  filteredProductCategories.map((c) => {
                     const isChecked = categoryIds.includes(c.id);
                     return (
                       <button
@@ -434,14 +573,20 @@ export default function ProductWizard({
                         {c.name}
                       </button>
                     );
-                  })}
-                </div>
+                  })
+                ) : (
+                  <span className="text-xs text-ink-muted">
+                    No categories created yet for this department. Use the Categories tab to create one, or select any active category.
+                  </span>
+                )}
               </div>
+            </div>
 
-              {/* Age Categories */}
-              <div className="space-y-2">
+            {/* AGE GROUPS (ONLY FOR CHILDREN'S CLOTHING) */}
+            {currentDept === 'kids' && (
+              <div className="space-y-2 pt-2 border-t border-[#E8E2D9]">
                 <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
-                  Age Group *
+                  Target Age Group(s) *
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {ageCategories.map((c) => {
@@ -463,86 +608,642 @@ export default function ProductWizard({
                   })}
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Description & Fabric Details */}
-            <div className="grid gap-4 sm:grid-cols-2 pt-2">
-              <div>
-                <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
-                  Product Description *
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="A thoughtful description highlighting the softness, silhouette, and breathability..."
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
-                />
-              </div>
+            {/* ------------------------------------------------------------- */}
+            {/* DEPARTMENT-SPECIFIC SPECIFICATIONS SECTION */}
+            {/* ------------------------------------------------------------- */}
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
-                    Fabric & Material *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 100% GOTS-Certified Organic Cotton"
-                    value={productForm.material}
-                    onChange={(e) => setProductForm({ ...productForm, material: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
-                  />
+            {/* 1. JEWELLERY SPECIFICATIONS */}
+            {currentDept === 'jewellery' && (
+              <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-[#E8E2D9] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
+                  <div className="flex items-center gap-2 text-ink font-serif font-bold text-base">
+                    <span>💎</span>
+                    <span>Jewellery Specifications</span>
+                  </div>
+                  <span className="text-[11px] text-ink-muted">Fields optional if unprovided</span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
-                    Care Instructions *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Machine wash cold, gentle cycle with mild detergent. Tumble dry low."
-                    value={productForm.care_instructions}
-                    onChange={(e) => setProductForm({ ...productForm, care_instructions: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Garment Measurements & Presets */}
-            <div className="pt-2 space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-ink uppercase tracking-wider">
-                  Size & Garment Measurements Table *
-                </label>
-                <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                  <span>Quick Templates:</span>
-                  {Object.keys(MEASUREMENT_TEMPLATES).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() =>
-                        setProductForm({
-                          ...productForm,
-                          size_measurements: MEASUREMENT_TEMPLATES[key],
-                        })
-                      }
-                      className="px-2 py-0.5 rounded-md bg-[#FAF7F0] hover:bg-cream text-clay border border-[#E8E2D9] capitalize font-medium transition"
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {/* Jewellery Subcategory */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Jewellery Type
+                    </label>
+                    <select
+                      value={specs.subcategory || 'necklace_sets'}
+                      onChange={(e) => updateSpec('subcategory', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
                     >
-                      {key}
-                    </button>
-                  ))}
+                      <option value="necklace_sets">Necklace Set</option>
+                      <option value="earrings">Earrings</option>
+                      <option value="rings">Ring</option>
+                    </select>
+                  </div>
+
+                  {/* Material */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Base Material
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Brass, Sterling Silver, Copper"
+                      value={productForm.material || specs.material || ''}
+                      onChange={(e) => {
+                        setProductForm({ ...productForm, material: e.target.value });
+                        updateSpec('material', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+
+                  {/* Plating / Finish */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Plating / Finish
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 18K Gold Plated, Silver, Oxidised"
+                      value={specs.platingFinish || ''}
+                      onChange={(e) => updateSpec('platingFinish', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+
+                  {/* Fields for Necklace Sets */}
+                  {(specs.subcategory === 'necklace_sets' || !specs.subcategory) && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Number of Pieces
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 2 (Necklace + Earrings)"
+                          value={specs.piecesCount || ''}
+                          onChange={(e) => updateSpec('piecesCount', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Set Contents
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 1 Choker Necklace, 1 Pair Dangling Earrings, 1 Maang Tikka"
+                          value={specs.setContents || ''}
+                          onChange={(e) => updateSpec('setContents', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Fields for Earrings */}
+                  {specs.subcategory === 'earrings' && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Earring Type
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Jhumkas, Studs, Chandbalis, Drops"
+                          value={specs.earringType || ''}
+                          onChange={(e) => updateSpec('earringType', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Closure Type
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Push Back, Screw Back, Fish Hook"
+                          value={specs.closureType || ''}
+                          onChange={(e) => updateSpec('closureType', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Fields for Rings */}
+                  {specs.subcategory === 'rings' && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Ring Size
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 7, 8, or Adjustable"
+                          value={specs.ringSize || ''}
+                          onChange={(e) => updateSpec('ringSize', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Sizing Structure
+                        </label>
+                        <select
+                          value={specs.isAdjustable ? 'adjustable' : 'fixed'}
+                          onChange={(e) => updateSpec('isAdjustable', e.target.value === 'adjustable')}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        >
+                          <option value="fixed">Fixed Size</option>
+                          <option value="adjustable">Adjustable Band</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Jewellery Care Instructions */}
+                  <div className="sm:col-span-2 md:col-span-3">
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Jewellery Care Instructions
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Wipe with clean cloth after use. Store in airtight zip lock pouch away from perfume and moisture."
+                      value={productForm.care_instructions || specs.careInstructions || ''}
+                      onChange={(e) => {
+                        setProductForm({ ...productForm, care_instructions: e.target.value });
+                        updateSpec('careInstructions', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
                 </div>
               </div>
+            )}
 
-              <textarea
-                rows={5}
-                value={productForm.size_measurements}
-                onChange={(e) => setProductForm({ ...productForm, size_measurements: e.target.value })}
-                placeholder="Size | Chest | Length..."
-                className="w-full font-mono text-xs px-3.5 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
-              />
-            </div>
+            {/* 2. WOMEN'S UNSTITCHED SUITS SPECIFICATIONS */}
+            {currentDept === 'women_suits' && (
+              <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-[#E8E2D9] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
+                  <div className="flex items-center gap-2 text-ink font-serif font-bold text-base">
+                    <span>👗</span>
+                    <span>Women's Unstitched Suits & Fabrics</span>
+                  </div>
+                  <span className="text-[11px] text-ink-muted">All fabric lengths clearly specified with units</span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {/* Fabric Type */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Fabric Type *
+                    </label>
+                    <select
+                      value={specs.fabricType || 'Cotton'}
+                      onChange={(e) => {
+                        updateSpec('fabricType', e.target.value);
+                        setProductForm({ ...productForm, fabric_composition: e.target.value, material: e.target.value });
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    >
+                      <option value="Cotton">Pure Cotton</option>
+                      <option value="Silk">Silk / Chanderi Silk</option>
+                      <option value="Organza">Organza</option>
+                      <option value="Banarasi">Banarasi Brocade / Zari</option>
+                      <option value="Rayon">Rayon</option>
+                      <option value="Wool">Pure Wool / Pashmina</option>
+                      <option value="Other">Other Handloom</option>
+                    </select>
+                  </div>
+
+                  {/* Pattern */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Pattern / Weave
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Floral Handblock, Zari Border, Bandhani"
+                      value={specs.pattern || ''}
+                      onChange={(e) => updateSpec('pattern', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+
+                  {/* Suit Pieces Included */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Pieces Included
+                    </label>
+                    <select
+                      value={specs.suitPieces || '3-piece'}
+                      onChange={(e) => updateSpec('suitPieces', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    >
+                      <option value="3-piece">3 Piece (Top, Bottom & Dupatta)</option>
+                      <option value="2-piece-bottom">2 Piece (Top & Bottom)</option>
+                      <option value="2-piece-dupatta">2 Piece (Top & Dupatta)</option>
+                    </select>
+                  </div>
+
+                  {/* Top Fabric Length with Unit */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Top (Kurta) Fabric Length
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.05"
+                        placeholder="2.50"
+                        value={specs.topLength ?? ''}
+                        onChange={(e) => updateSpec('topLength', e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                      />
+                      <select
+                        value={specs.topLengthUnit || 'meters'}
+                        onChange={(e) => updateSpec('topLengthUnit', e.target.value)}
+                        className="px-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                      >
+                        <option value="meters">Meters</option>
+                        <option value="yards">Yards</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Bottom Fabric Length with Unit */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Bottom Fabric Length
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.05"
+                        placeholder="2.50"
+                        value={specs.bottomLength ?? ''}
+                        onChange={(e) => updateSpec('bottomLength', e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                      />
+                      <select
+                        value={specs.bottomLengthUnit || 'meters'}
+                        onChange={(e) => updateSpec('bottomLengthUnit', e.target.value)}
+                        className="px-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                      >
+                        <option value="meters">Meters</option>
+                        <option value="yards">Yards</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Dupatta Toggle & Details */}
+                  <div className="flex items-center gap-3 pt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={specs.dupattaIncluded ?? true}
+                        onChange={(e) => updateSpec('dupattaIncluded', e.target.checked)}
+                        className="w-4 h-4 rounded text-clay focus:ring-clay"
+                      />
+                      <span className="text-xs font-semibold text-ink">Dupatta Included</span>
+                    </label>
+                  </div>
+
+                  {(specs.dupattaIncluded ?? true) && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Dupatta Fabric
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Pure Organza, Chiffon, Silk"
+                          value={specs.dupattaFabric || ''}
+                          onChange={(e) => updateSpec('dupattaFabric', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Dupatta Length
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            step="0.05"
+                            placeholder="2.25"
+                            value={specs.dupattaLength ?? ''}
+                            onChange={(e) => updateSpec('dupattaLength', e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                          />
+                          <select
+                            value={specs.dupattaLengthUnit || 'meters'}
+                            onChange={(e) => updateSpec('dupattaLengthUnit', e.target.value)}
+                            className="px-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                          >
+                            <option value="meters">Meters</option>
+                            <option value="yards">Yards</option>
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Wash & Care */}
+                  <div className="sm:col-span-2 md:col-span-3">
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Wash & Care Instructions *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dry clean recommended for silk and organza. Gentle hand wash in cold water for cotton."
+                      value={productForm.care_instructions || specs.washCare || ''}
+                      onChange={(e) => {
+                        setProductForm({ ...productForm, care_instructions: e.target.value });
+                        updateSpec('washCare', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. HOME TEXTILES SPECIFICATIONS */}
+            {currentDept === 'home_textiles' && (
+              <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-[#E8E2D9] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
+                  <div className="flex items-center gap-2 text-ink font-serif font-bold text-base">
+                    <span>🛏️</span>
+                    <span>Home Textiles & Bedding Specifications</span>
+                  </div>
+                  <span className="text-[11px] text-ink-muted">Confirmed dimension units</span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {/* Textile Product Type */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Textile Item Type
+                    </label>
+                    <select
+                      value={specs.textileType || 'bedsheet'}
+                      onChange={(e) => updateSpec('textileType', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    >
+                      <option value="bedsheet">Cotton Bedsheet</option>
+                      <option value="top_sheet">Single Bed Top Sheet / Odhne Wali Chaddar</option>
+                      <option value="pillow_cover">Pillow Covers</option>
+                    </select>
+                  </div>
+
+                  {/* Bed Size */}
+                  {specs.textileType === 'bedsheet' && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                        Bed Size
+                      </label>
+                      <select
+                        value={specs.bedSize || 'Double'}
+                        onChange={(e) => updateSpec('bedSize', e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                      >
+                        <option value="Single">Single Bed</option>
+                        <option value="Double">Double Bed</option>
+                        <option value="Queen">Queen Bed</option>
+                        <option value="King">King Bed</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Fabric Composition */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Fabric Material *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 100% Pure Cotton"
+                      value={productForm.fabric_composition || specs.fabric || '100% Pure Cotton'}
+                      onChange={(e) => {
+                        setProductForm({ ...productForm, fabric_composition: e.target.value, material: e.target.value });
+                        updateSpec('fabric', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+
+                  {/* Dimensions: Length, Width, and Unit (CRITICAL FOR 60 x 90 SINGLE SHEET) */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Product Dimensions (Width × Length & Confirmed Unit) *
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-muted">W:</span>
+                        <input
+                          type="number"
+                          placeholder={specs.textileType === 'top_sheet' ? '60' : '90'}
+                          value={specs.width ?? ''}
+                          onChange={(e) => updateSpec('width', e.target.value)}
+                          className="w-full pl-7 pr-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-muted">L:</span>
+                        <input
+                          type="number"
+                          placeholder={specs.textileType === 'top_sheet' ? '90' : '100'}
+                          value={specs.length ?? ''}
+                          onChange={(e) => updateSpec('length', e.target.value)}
+                          className="w-full pl-7 pr-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                      <select
+                        value={specs.dimensionUnit || 'inches'}
+                        onChange={(e) => updateSpec('dimensionUnit', e.target.value)}
+                        className="px-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] font-medium"
+                      >
+                        <option value="inches">Inches (in)</option>
+                        <option value="cm">Centimeters (cm)</option>
+                        <option value="meters">Meters (m)</option>
+                      </select>
+                    </div>
+
+                    {/* Verified 60x90 Note confirmation badge */}
+                    {specs.textileType === 'top_sheet' && (
+                      <span className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg block mt-2">
+                        ✨ Handwritten spec verified: Single-bed top sheet stored as <strong>{specs.width || '60'} × {specs.length || '90'} {specs.dimensionUnit || 'inches'}</strong> in pure cotton.
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Design / Pattern */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Design / Pattern
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sanganeri Jaipuri Floral, Geometric Border"
+                      value={specs.design || ''}
+                      onChange={(e) => updateSpec('design', e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+
+                  {/* Bedsheet Pillow Covers */}
+                  {specs.textileType === 'bedsheet' && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Pillow Covers Included
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="2"
+                          value={specs.pillowCoversCount ?? ''}
+                          onChange={(e) => updateSpec('pillowCoversCount', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Pillow Cover Dimensions
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 18 × 28 inches (45 × 70 cm)"
+                          value={specs.pillowCoverDimensions || ''}
+                          onChange={(e) => updateSpec('pillowCoverDimensions', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Pillow Cover Specific Fields */}
+                  {specs.textileType === 'pillow_cover' && (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Quantity per Pack
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Pack of 2"
+                          value={specs.packQuantity || ''}
+                          onChange={(e) => updateSpec('packQuantity', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                          Closure Type
+                        </label>
+                        <select
+                          value={specs.closureType || 'Envelope / Flap'}
+                          onChange={(e) => updateSpec('closureType', e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                        >
+                          <option value="Envelope / Flap">Envelope / Flap</option>
+                          <option value="Concealed Zipper">Concealed Zipper</option>
+                          <option value="Button Closure">Button Closure</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Care instructions */}
+                  <div className="sm:col-span-2 md:col-span-3">
+                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
+                      Wash & Care Instructions
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Machine wash cold, gentle cycle. Warm iron if needed. Do not bleach."
+                      value={productForm.care_instructions || ''}
+                      onChange={(e) => setProductForm({ ...productForm, care_instructions: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. KIDSWEAR SPECIFICATIONS (GARMENT MEASUREMENTS TABLE) */}
+            {currentDept === 'kids' && (
+              <div className="space-y-4 pt-2 border-t border-[#E8E2D9]">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+                      Fabric & Material *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 100% GOTS-Certified Organic Cotton"
+                      value={productForm.material || productForm.fabric_composition || ''}
+                      onChange={(e) => setProductForm({ ...productForm, material: e.target.value, fabric_composition: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+                      Care Instructions *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Machine wash cold, gentle cycle with mild detergent. Tumble dry low."
+                      value={productForm.care_instructions}
+                      onChange={(e) => setProductForm({ ...productForm, care_instructions: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
+                    />
+                  </div>
+                </div>
+
+                {/* Garment Measurements & Presets */}
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-ink uppercase tracking-wider">
+                      Size & Garment Measurements Table *
+                    </label>
+                    <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                      <span>Quick Templates:</span>
+                      {Object.keys(MEASUREMENT_TEMPLATES).map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() =>
+                            setProductForm({
+                              ...productForm,
+                              size_measurements: MEASUREMENT_TEMPLATES[key],
+                            })
+                          }
+                          className="px-2 py-0.5 rounded-md bg-[#FAF7F0] hover:bg-cream text-clay border border-[#E8E2D9] capitalize font-medium transition"
+                        >
+                          {key}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={5}
+                    value={productForm.size_measurements}
+                    onChange={(e) => setProductForm({ ...productForm, size_measurements: e.target.value })}
+                    placeholder="Size | Chest | Length..."
+                    className="w-full font-mono text-xs px-3.5 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Collapsed Advanced SEO & Tags */}
             <div className="pt-4 border-t border-[#E8E2D9]">
@@ -551,7 +1252,7 @@ export default function ProductWizard({
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="flex items-center gap-2 text-xs font-semibold text-ink-soft hover:text-ink transition"
               >
-                <span>Optional Advanced SEO & Storefront Tags</span>
+                <span>Optional Advanced SEO & Search Keywords</span>
                 {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
 
@@ -563,7 +1264,7 @@ export default function ProductWizard({
                     </label>
                     <input
                       type="text"
-                      placeholder="Title tag for Google search"
+                      placeholder="Title tag for search engines"
                       value={productForm.seo_title || ''}
                       onChange={(e) => setProductForm({ ...productForm, seo_title: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9]"
@@ -576,7 +1277,7 @@ export default function ProductWizard({
                     </label>
                     <input
                       type="text"
-                      placeholder="Brief snippet for search results"
+                      placeholder="Snippet for search results"
                       value={productForm.seo_description || ''}
                       onChange={(e) => setProductForm({ ...productForm, seo_description: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9]"
@@ -590,7 +1291,7 @@ export default function ProductWizard({
           {/* Step 1 Actions */}
           <div className="flex items-center justify-between pt-6 border-t border-[#E8E2D9]">
             <span className="text-xs text-ink-muted">
-              Next: Upload editorial photos
+              Next: Upload editorial photography
             </span>
             <button
               type="button"
@@ -613,7 +1314,7 @@ export default function ProductWizard({
                 Step 2: Add beautiful product photos
               </h3>
               <p className="text-xs text-ink-muted mt-1">
-                Upload editorial photography via ImageKit. Assign photos to specific colours or set the primary cover shot.
+                Upload photography via ImageKit. Assign photos to specific colours or set the primary storefront cover shot.
               </p>
             </div>
             {!productForm.id && (
@@ -651,7 +1352,7 @@ export default function ProductWizard({
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-ink uppercase tracking-wider">
-                Garment Gallery ({gallery.length} photo{gallery.length === 1 ? '' : 's'})
+                Gallery ({gallery.length} photo{gallery.length === 1 ? '' : 's'})
               </span>
               <span className="text-xs text-ink-muted">
                 Star a photo to set it as the storefront cover
@@ -867,7 +1568,7 @@ export default function ProductWizard({
               </div>
             </div>
 
-            {/* Storefront Badges */}
+            {/* Department-Tailored Editorial Badges */}
             <div className="pt-2 space-y-3">
               <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
                 Editorial Badges & Tags
@@ -876,9 +1577,29 @@ export default function ProductWizard({
                 {[
                   { tag: 'new-arrival', label: '🌱 New Arrival' },
                   { tag: 'bestseller', label: '⭐ Bestseller' },
-                  { tag: 'organic-cotton', label: '🌿 100% Organic' },
-                  { tag: 'limited-edition', label: '✨ Limited Edition' },
-                  { tag: 'seasonal-favourite', label: '☀️ Seasonal Favourite' },
+                  ...(currentDept === 'kids'
+                    ? [
+                        { tag: 'organic-cotton', label: '🌿 100% Organic' },
+                        { tag: 'limited-edition', label: '✨ Limited Edition' },
+                        { tag: 'seasonal-favourite', label: '☀️ Seasonal Favourite' },
+                      ]
+                    : currentDept === 'jewellery'
+                    ? [
+                        { tag: 'heirloom', label: '💎 Heirloom Collection' },
+                        { tag: 'anti-tarnish', label: '✨ Anti-Tarnish Finish' },
+                        { tag: 'festive-kundan', label: '👑 Festive Kundan' },
+                      ]
+                    : currentDept === 'women_suits'
+                    ? [
+                        { tag: 'pure-silk', label: '🪡 Pure Silk' },
+                        { tag: 'organza-zari', label: '✨ Organza Zari' },
+                        { tag: 'handloom-weave', label: '🧵 Handloom Weave' },
+                      ]
+                    : [
+                        { tag: 'pure-cotton', label: '☁️ 100% Pure Cotton' },
+                        { tag: 'hotel-luxury', label: '🏨 Hotel Luxury' },
+                        { tag: 'handblock-print', label: '🎨 Handblock Print' },
+                      ]),
                 ].map(({ tag, label }) => {
                   const hasTag = productForm.tags?.includes(tag);
                   return (
@@ -930,7 +1651,7 @@ export default function ProductWizard({
               Step 4: Sizes, colours & physical inventory
             </h3>
             <p className="text-xs text-ink-muted mt-1">
-              Select colours and baby/toddler sizes to generate full inventory combinations in 1 click, or add custom SKUs.
+              Select colours and {DEPARTMENTS.find((d) => d.id === currentDept)?.brand} sizes to generate full inventory combinations in 1 click, or add custom options.
             </p>
           </div>
 
@@ -939,7 +1660,7 @@ export default function ProductWizard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-clay font-semibold text-xs tracking-wider uppercase">
                 <Sparkles className="w-4 h-4" />
-                <span>Bulk Combination Generator</span>
+                <span>{DEPARTMENTS.find((d) => d.id === currentDept)?.brand} Combination Generator</span>
               </div>
               <span className="text-xs text-ink-muted">
                 {matrixSizes.length} sizes × {matrixColours.length} colours ={' '}
@@ -947,13 +1668,16 @@ export default function ProductWizard({
               </span>
             </div>
 
-            {/* Size Chips */}
+            {/* Sizing Chips */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
-                1. Select Garment Sizes
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
+                  1. Select Options / Sizes
+                </label>
+                <span className="text-[11px] text-ink-muted">Tailored for {DEPARTMENTS.find((d) => d.id === currentDept)?.label}</span>
+              </div>
               <div className="flex flex-wrap gap-2">
-                {STANDARD_KIDS_SIZES.map((sz) => {
+                {(PRESET_SIZES_BY_DEPT[currentDept] || PRESET_SIZES_BY_DEPT.kids).map((sz) => {
                   const isChecked = matrixSizes.includes(sz);
                   return (
                     <button
@@ -975,15 +1699,33 @@ export default function ProductWizard({
                   );
                 })}
               </div>
+
+              {/* Add Custom Size */}
+              <div className="flex items-center gap-2 pt-1.5">
+                <input
+                  type="text"
+                  placeholder="Add custom size/option (e.g. Size 11, Double Bed, 3-Piece)"
+                  value={customSizeInput}
+                  onChange={(e) => setCustomSizeInput(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded-xl bg-white border border-[#E8E2D9] focus:outline-none focus:border-clay w-64"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomSize}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-[#E8E2D9] hover:border-clay text-ink transition"
+                >
+                  + Add Option
+                </button>
+              </div>
             </div>
 
             {/* Colour Swatches */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
-                2. Select Colour Palette
+                2. Select Colour / Finish Palette
               </label>
               <div className="flex flex-wrap gap-2">
-                {PRESET_COLOURS.map((col) => {
+                {(PRESET_COLOURS_BY_DEPT[currentDept] || PRESET_COLOURS_BY_DEPT.kids).map((col) => {
                   const isChecked = matrixColours.some((c) => c.name === col.name);
                   return (
                     <button
@@ -1013,10 +1755,10 @@ export default function ProductWizard({
               </div>
 
               {/* Add Custom Colour */}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-1.5">
                 <input
                   type="text"
-                  placeholder="Custom colour name (e.g. Honey)"
+                  placeholder="Custom colour/finish name (e.g. Antique Copper)"
                   value={customColorName}
                   onChange={(e) => setCustomColorName(e.target.value)}
                   className="px-3 py-1.5 text-xs rounded-xl bg-white border border-[#E8E2D9] focus:outline-none focus:border-clay"
@@ -1062,7 +1804,7 @@ export default function ProductWizard({
                 <Sparkles className={`w-3.5 h-3.5 ${isGeneratingMatrix ? 'animate-spin' : ''}`} />
                 <span>
                   {productForm.id
-                    ? '✨ Generate All Combinations'
+                    ? '✨ Generate Combinations'
                     : 'Save Draft First to Generate'}
                 </span>
               </button>
@@ -1102,7 +1844,7 @@ export default function ProductWizard({
               <div className="p-8 text-center bg-[#FAF7F0] rounded-xl border border-[#E8E2D9] text-xs text-ink-muted space-y-2">
                 <Boxes className="w-8 h-8 mx-auto text-ink-muted/40" />
                 <p className="font-medium text-ink">No sizes or colours added yet.</p>
-                <p>Use the combination generator above to create variants in 1 click.</p>
+                <p>Use the combination generator above to create variants with zero or initial stock.</p>
               </div>
             ) : (
               <div className="bg-white rounded-xl border border-[#E8E2D9] overflow-hidden">
@@ -1110,8 +1852,8 @@ export default function ProductWizard({
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#FAF7F0] border-b border-[#E8E2D9] text-ink-muted uppercase tracking-wider font-semibold">
                       <tr>
-                        <th className="py-2.5 px-3">Colour</th>
-                        <th className="py-2.5 px-3">Size</th>
+                        <th className="py-2.5 px-3">Colour / Finish</th>
+                        <th className="py-2.5 px-3">Size / Option</th>
                         <th className="py-2.5 px-3">SKU</th>
                         <th className="py-2.5 px-3">Stock on Hand</th>
                         <th className="py-2.5 px-3">Active</th>
@@ -1243,7 +1985,7 @@ export default function ProductWizard({
               Step 5: Review and publish to storefront
             </h3>
             <p className="text-xs text-ink-muted mt-1">
-              Check your garment's storefront card and verify every safety and quality requirement before going live.
+              Check your product's customer card and verify every department safety and quality requirement before going live.
             </p>
           </div>
 
@@ -1277,12 +2019,14 @@ export default function ProductWizard({
 
                 <div className="p-4 space-y-2 bg-white">
                   <div className="flex items-center justify-between text-[11px] text-ink-muted uppercase tracking-wider">
-                    <span>Little Loom</span>
+                    <span className="font-semibold text-clay">
+                      {DEPARTMENTS.find((d) => d.id === currentDept)?.brand}
+                    </span>
                     <span>{categoryIds.length > 0 ? 'Verified' : 'Uncategorized'}</span>
                   </div>
 
                   <h4 className="font-serif font-bold text-base text-ink leading-tight">
-                    {productForm.name || 'Everyday Cotton Romper'}
+                    {productForm.name || 'Untitled Product'}
                   </h4>
 
                   <div className="flex items-baseline gap-2 pt-1">
@@ -1320,36 +2064,51 @@ export default function ProductWizard({
             <div className="space-y-6">
               <div className="space-y-3">
                 <span className="text-xs font-semibold text-ink uppercase tracking-wider block">
-                  Storefront Launch Checklist
+                  {DEPARTMENTS.find((d) => d.id === currentDept)?.brand} Launch Checklist
                 </span>
 
                 <div className="space-y-2">
                   {[
                     {
-                      label: 'Product name and URL handle',
+                      label: 'Product name and URL handle entered',
                       ok: Boolean(productForm.name?.trim() && productForm.slug?.trim()),
                     },
                     {
-                      label: 'Fabric material and care instructions',
-                      ok: Boolean(
-                        (productForm.material?.trim() || productForm.fabric_composition?.trim()) &&
-                          productForm.care_instructions?.trim()
-                      ),
+                      label: 'Product description provided',
+                      ok: Boolean(productForm.description?.trim()),
                     },
-                    {
-                      label: 'Garment measurements table by size',
-                      ok: Boolean(productForm.size_measurements?.trim()),
-                    },
-                    {
-                      label: 'Category and Age group assigned',
-                      ok:
-                        categoryIds.some((id) =>
-                          categories.some((c) => c.id === id && c.kind === 'product')
-                        ) &&
-                        categoryIds.some((id) =>
-                          categories.some((c) => c.id === id && c.kind === 'age')
-                        ),
-                    },
+                    ...(currentDept === 'kids'
+                      ? [
+                          {
+                            label: 'Fabric details and care instructions',
+                            ok: Boolean(
+                              (productForm.material?.trim() || productForm.fabric_composition?.trim()) &&
+                                productForm.care_instructions?.trim()
+                            ),
+                          },
+                          {
+                            label: 'Garment measurements table by size',
+                            ok: Boolean(productForm.size_measurements?.trim()),
+                          },
+                          {
+                            label: 'Category and Age group assigned',
+                            ok:
+                              categoryIds.some((id) =>
+                                categories.some((c) => c.id === id && c.kind === 'product')
+                              ) &&
+                              categoryIds.some((id) =>
+                                categories.some((c) => c.id === id && c.kind === 'age')
+                              ),
+                          },
+                        ]
+                      : [
+                          {
+                            label: 'Product category assigned',
+                            ok: categoryIds.some((id) =>
+                              categories.some((c) => c.id === id && c.kind === 'product')
+                            ),
+                          },
+                        ]),
                     {
                       label: 'Selling price entered',
                       ok: Boolean(productForm.price && Number(productForm.price) > 0),
@@ -1402,14 +2161,13 @@ export default function ProductWizard({
                       <span>Ready for Customer Orders!</span>
                     </div>
                     <p className="text-xs text-ink-muted">
-                      All quality, safety, and inventory checks have passed. Publishing will make this item immediately visible and shoppable on the storefront.
+                      All quality, safety, and inventory checks have passed for this {DEPARTMENTS.find((d) => d.id === currentDept)?.brand} item.
                     </p>
                     <button
                       type="button"
                       onClick={(e) => {
                         setProductForm({ ...productForm, status: 'published' });
                         setIsSaving(true);
-                        // Save with published status
                         setTimeout(() => {
                           onSaveProduct(e).finally(() => setIsSaving(false));
                         }, 50);
@@ -1428,7 +2186,7 @@ export default function ProductWizard({
                       <span>Missing Requirements Before Publishing</span>
                     </div>
                     <p className="text-xs text-ink-muted">
-                      Please resolve the missing checklist items above before setting this garment live. You can safely save your progress as a draft.
+                      Please resolve the missing checklist items above before setting this item live. You can safely save your progress as a draft.
                     </p>
                     <button
                       type="button"
