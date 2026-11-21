@@ -13,11 +13,14 @@ export interface ColorOption {
 export interface JewellerySpecs {
   subcategory?: 'necklace_sets' | 'earrings' | 'rings' | string;
   material?: string;
+  plating?: string;
   platingFinish?: string;
+  pieceCount?: number | string;
   piecesCount?: number | string;
   color?: string;
   setContents?: string;
   careInstructions?: string;
+  care?: string;
   earringType?: string;
   closureType?: string;
   ringSize?: string;
@@ -29,18 +32,22 @@ export interface WomenSuitsSpecs {
   color?: string;
   pattern?: string;
   suitPieces?: string;
+  piecesIncluded?: string;
   topLength?: number | string;
   topLengthUnit?: 'meters' | 'yards' | string;
   bottomLength?: number | string;
   bottomLengthUnit?: 'meters' | 'yards' | string;
+  lengthUnit?: string;
   dupattaIncluded?: boolean;
   dupattaFabric?: string;
   dupattaLength?: number | string;
   dupattaLengthUnit?: 'meters' | 'yards' | string;
+  dupattaUnit?: string;
   washCare?: string;
 }
 
 export interface HomeTextilesSpecs {
+  productType?: string;
   textileType?: 'bedsheet' | 'top_sheet' | 'pillow_cover' | string;
   bedSize?: 'Single' | 'Double' | 'Queen' | 'King' | string;
   length?: number | string;
@@ -55,7 +62,12 @@ export interface HomeTextilesSpecs {
   closureType?: string;
 }
 
-export type ProductSpecifications = JewellerySpecs & WomenSuitsSpecs & HomeTextilesSpecs & Record<string, unknown>;
+export interface ProductSpecifications {
+  jewellery?: JewellerySpecs;
+  womenSuits?: WomenSuitsSpecs;
+  homeTextiles?: HomeTextilesSpecs;
+  [key: string]: unknown;
+}
 
 export interface Product {
   id: string;

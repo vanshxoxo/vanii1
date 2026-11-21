@@ -1,13 +1,23 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, X, Check, ChevronDown, Package, Sparkles, Gem, Shirt, Home, Baby } from 'lucide-react';
+import {
+  SlidersHorizontal,
+  X,
+  Check,
+  ChevronDown,
+  Package,
+  Sparkles,
+  Gem,
+  Shirt,
+  Home,
+  Baby,
+} from 'lucide-react';
 import { useCatalog } from '../lib/catalog';
 import type { Product, AgeGroup, Department } from '../types';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
 import { useStore } from '../useStore';
-import StoreNavigationTiles from '../components/StoreNavigationTiles';
 import {
   resolveLaunchAge,
   resolveLaunchCategory,
@@ -17,74 +27,13 @@ import {
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest';
 
-function ShopPageBanner({
-  eyebrow,
-  title,
-  introduction,
-  activeDepartment,
-}: {
-  eyebrow: string;
-  title: string;
-  introduction: string;
-  activeDepartment: Department | null;
-}) {
-  return (
-    <section className="rounded-2xl bg-[#f4eee8] px-5 py-6 sm:px-8 sm:py-8 border border-ink/5 shadow-sm">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-peach flex items-center gap-1.5">
-            <Sparkles size={13} />
-            {eyebrow}
-          </p>
-          <h1 className="mt-2 font-serif text-3xl font-light leading-tight text-ink sm:text-4xl">{title}</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">{introduction}</p>
-        </div>
-      </div>
-
-      {/* Department Switcher Pills */}
-      <div className="mt-6 pt-5 border-t border-ink/8 flex flex-wrap items-center gap-2">
-        <Link
-          to="/shop"
-          className={`px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full transition-all duration-200 ${
-            !activeDepartment
-              ? 'bg-ink text-cream shadow-sm scale-105'
-              : 'bg-white/80 text-ink-soft hover:bg-white hover:text-ink border border-ink/10'
-          }`}
-        >
-          All Departments
-        </Link>
-        {departments.map((dept) => {
-          const isSelected = activeDepartment === dept.id;
-          return (
-            <Link
-              key={dept.id}
-              to={`/shop?department=${dept.id}`}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full transition-all duration-200 ${
-                isSelected
-                  ? 'bg-ink text-cream shadow-sm scale-105'
-                  : 'bg-white/80 text-ink-soft hover:bg-white hover:text-ink border border-ink/10'
-              }`}
-            >
-              {dept.id === 'jewellery' && <Gem size={12} className={isSelected ? 'text-amber-300' : 'text-amber-600'} />}
-              {dept.id === 'women_suits' && <Shirt size={12} className={isSelected ? 'text-rose-200' : 'text-rose-600'} />}
-              {dept.id === 'home_textiles' && <Home size={12} className={isSelected ? 'text-sky-200' : 'text-sky-600'} />}
-              {dept.id === 'kids' && <Baby size={12} className={isSelected ? 'text-emerald-200' : 'text-emerald-600'} />}
-              {dept.brand}
-            </Link>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addToCart } = useStore();
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<SortOption>('featured');
-  const { products, hasPublishedRecords, ages, categories, collections, loading: catalogLoading, error: catalogError } = useCatalog();
+  const { products, ages, categories, collections } = useCatalog();
 
   const departmentParam = (searchParams.get('department') as Department) || '';
   const ageParam = searchParams.get('age') || '';
@@ -114,6 +63,7 @@ export default function ShopPage() {
     return products.filter((product) => (product.department || product.productType || 'kids') === activeDepartment);
   }, [products, activeDepartment]);
 
+  // Context-aware size and color extraction
   const allSizes = useMemo(() => [...new Set(deptProducts.flatMap((product) => product.sizes))], [deptProducts]);
   const allColors = useMemo(() => [...new Map(deptProducts.flatMap((product) => product.colors.map((color) => [color.name, color] as const))).values()], [deptProducts]);
   const allAges: AgeGroup[] = ages.map((age) => age.id);
@@ -127,11 +77,19 @@ export default function ShopPage() {
     });
   }, [categories, activeDepartment]);
 
+  // Fabric types for suits department
+  const suitFabricTypes = useMemo(() => {
+    if (activeDepartment !== 'women_suits') return [];
+    const fabrics = deptProducts.map((p) => p.specifications?.womenSuits?.fabricType || p.fabric).filter(Boolean);
+    return [...new Set(fabrics)] as string[];
+  }, [deptProducts, activeDepartment]);
+
   // Read initial filters from URL
   const [selectedAges, setSelectedAges] = useState<Set<string>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set());
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const [selectedFabrics, setSelectedFabrics] = useState<Set<string>>(new Set());
   const [priceRange, setPriceRange] = useState<[number, number]>([0, Number.MAX_SAFE_INTEGER]);
   const priceLimit = Math.ceil(Math.max(...deptProducts.map((product) => product.price), 0) / 100) * 100;
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -162,6 +120,7 @@ export default function ShopPage() {
     setSelectedCategories(new Set());
     setSelectedSizes(new Set());
     setSelectedColors(new Set());
+    setSelectedFabrics(new Set());
     setPriceRange([0, Number.MAX_SAFE_INTEGER]);
     setInStockOnly(false);
     if (activeDepartment) {
@@ -180,7 +139,7 @@ export default function ShopPage() {
       (!collection || product.collections?.includes(collection)) && (!newArrivalsOnly || product.isNew)
     );
 
-    // Apply age filter only for kids department
+    // Context-aware age filter: only for kids
     if (selectedAges.size > 0 && (!activeDepartment || activeDepartment === 'kids')) {
       result = result.filter((product) => product.ages.some((productAge) => [...selectedAges].some((selectedAge) => {
         const productAgeKey = resolveLaunchAge(productAge)?.key;
@@ -203,6 +162,13 @@ export default function ShopPage() {
 
     if (selectedColors.size > 0) {
       result = result.filter((p) => p.colors.some((c) => selectedColors.has(c.name)));
+    }
+
+    if (selectedFabrics.size > 0) {
+      result = result.filter((p) => {
+        const f = p.specifications?.womenSuits?.fabricType || p.fabric;
+        return f && selectedFabrics.has(f);
+      });
     }
 
     result = result.filter((p) => p.price >= priceRange[0] && p.price <= Math.min(priceRange[1], priceLimit || Number.MAX_SAFE_INTEGER));
@@ -231,17 +197,18 @@ export default function ShopPage() {
         result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         break;
       default:
-        // Already sorted by published_at from database
+        // Preserves published order
     }
 
     return result;
-  }, [deptProducts, selectedAges, activeDepartment, selectedCategories, selectedSizes, selectedColors, priceRange, inStockOnly, sort, priceLimit, searchParams]);
+  }, [deptProducts, selectedAges, activeDepartment, selectedCategories, selectedSizes, selectedColors, selectedFabrics, priceRange, inStockOnly, sort, priceLimit, searchParams]);
 
   const activeFilterCount =
     ((!activeDepartment || activeDepartment === 'kids') ? selectedAges.size : 0) +
     selectedCategories.size +
     selectedSizes.size +
     selectedColors.size +
+    selectedFabrics.size +
     (searchParams.get('collection') ? 1 : 0) +
     (searchParams.get('filter') === 'new' ? 1 : 0) +
     (priceRange[0] > 0 || priceRange[1] < Number.MAX_SAFE_INTEGER ? 1 : 0) +
@@ -251,12 +218,11 @@ export default function ShopPage() {
   const ageLabel = actualAge?.label || selectedLaunchAge?.label;
   const categoryLabel = actualCategory?.name || selectedLaunchCategory?.label;
 
-  // Department-aware Titles & Copy
   const pageTitle = collectionParam
     ? selectedCollection?.name || 'Collection'
     : categoryLabel && ageLabel
       ? `${categoryLabel} for ${ageLabel}`
-      : categoryLabel || currentDeptInfo?.label?.replace('Shop ', '') || 'All Collections';
+      : categoryLabel || currentDeptInfo?.brand || 'All Collections';
 
   const pageEyebrow = currentDeptInfo
     ? `${currentDeptInfo.brand} · ${currentDeptInfo.label}`
@@ -264,51 +230,17 @@ export default function ShopPage() {
       ? 'Curated Collection'
       : categoryLabel && ageLabel
         ? `${ageLabel} · ${categoryLabel}`
-        : 'Little Loom · VJ Collection';
+        : 'VJ Collection Flagship';
 
   const pageIntroduction = collectionParam
-    ? selectedCollection?.description || 'Browse the published pieces in this collection.'
+    ? selectedCollection?.description || 'Browse published pieces in this curated collection.'
     : categoryLabel && ageLabel
       ? `Browse published ${categoryLabel.toLowerCase()} for ${ageLabel}.`
       : categoryLabel
         ? actualCategory?.description || selectedLaunchCategory?.introduction || `Browse published ${categoryLabel.toLowerCase()}.`
         : currentDeptInfo
           ? currentDeptInfo.description
-          : 'Browse our complete multi-category catalogue spanning fine jewellery, unstitched suits, home textiles, and handcrafted children’s clothing.';
-
-  if (catalogLoading || catalogError || products.length === 0) {
-    const unavailable = Boolean(catalogError);
-    const catalogueNeedsReview = !catalogLoading && !unavailable && hasPublishedRecords;
-    const genuinelyEmpty = !catalogLoading && !unavailable && !hasPublishedRecords;
-
-    return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        {catalogLoading || unavailable || catalogueNeedsReview ? (
-          <>
-            <ShopPageBanner
-              eyebrow="Little Loom · VJ Collection"
-              title={catalogLoading ? 'Loading the collection' : unavailable ? 'The catalogue is temporarily unavailable' : 'The published catalogue needs attention'}
-              introduction={catalogLoading ? 'Products will appear here once the catalogue has loaded.' : unavailable ? 'Products could not be retrieved. Please try again shortly.' : 'No products are currently available to order.'}
-              activeDepartment={activeDepartment}
-            />
-            <StoreNavigationTiles ages={ages} categories={categories} />
-          </>
-        ) : genuinelyEmpty ? (
-          <>
-            <ShopPageBanner
-              eyebrow={pageEyebrow}
-              title={pageTitle}
-              introduction={pageIntroduction}
-              activeDepartment={activeDepartment}
-            />
-            <p role="status" className="mt-8 rounded-xl border border-ink/10 bg-[#f8f4f0] p-6 text-sm text-ink-soft">
-              No products are currently published in this selection.
-            </p>
-          </>
-        ) : null}
-      </main>
-    );
-  }
+          : 'Discover our complete multi-category catalogue across Fine Jewellery, Women’s Unstitched Suits, Living Home Bedding, and Little Loom Childrenswear.';
 
   const handleQuickAdd = (product: Product) => {
     const availableVariant = product.variants?.find((variant) => variant.available);
@@ -327,17 +259,17 @@ export default function ShopPage() {
   };
 
   const sortLabels: Record<SortOption, string> = {
-    featured: 'Featured',
+    featured: 'Curated Order',
     'price-low': 'Price: Low to High',
     'price-high': 'Price: High to Low',
-    newest: 'Newest First',
+    newest: 'Newest Releases',
   };
 
   const FilterContent = () => (
     <div className="flex flex-col gap-6">
-      {/* Age Filter (Only for Kids clothing or full store view) */}
+      {/* Age Filter (Strictly for Kids department) */}
       {(!activeDepartment || activeDepartment === 'kids') && allAges.length > 0 && (
-        <FilterSection title="Age Group">
+        <FilterSection title="Age Milestone">
           {allAges.map((age) => (
             <FilterCheckbox
               key={age}
@@ -363,18 +295,42 @@ export default function ShopPage() {
         </FilterSection>
       )}
 
-      {/* Size / Cut / Dimension Filter */}
+      {/* Fabrics Filter (for Women's Suits) */}
+      {suitFabricTypes.length > 0 && (
+        <FilterSection title="Fabric Composition">
+          {suitFabricTypes.map((fabric) => (
+            <FilterCheckbox
+              key={fabric}
+              label={fabric}
+              checked={selectedFabrics.has(fabric)}
+              onChange={() => toggleSet(selectedFabrics, fabric, setSelectedFabrics)}
+            />
+          ))}
+        </FilterSection>
+      )}
+
+      {/* Size / Fit / Dimension Filter */}
       {allSizes.length > 0 && (
-        <FilterSection title={activeDepartment === 'jewellery' ? 'Ring Size / Option' : activeDepartment === 'home_textiles' ? 'Bed Size' : activeDepartment === 'women_suits' ? 'Length / Option' : 'Size'}>
+        <FilterSection
+          title={
+            activeDepartment === 'jewellery'
+              ? 'Ring Size / Style'
+              : activeDepartment === 'home_textiles'
+                ? 'Bed Dimensions'
+                : activeDepartment === 'women_suits'
+                  ? 'Suit Cut / Option'
+                  : 'Size'
+          }
+        >
           <div className="flex flex-wrap gap-2">
             {allSizes.map((size) => (
               <button
                 key={size}
                 onClick={() => toggleSet(selectedSizes, size, setSelectedSizes)}
-                className={`px-3 py-1.5 text-xs rounded-md border transition-all ${
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
                   selectedSizes.has(size)
-                    ? 'border-ink bg-ink text-cream'
-                    : 'border-ink/15 text-ink-soft hover:border-ink/40'
+                    ? 'border-charcoal bg-charcoal text-ivory shadow-xs'
+                    : 'border-charcoal/15 text-charcoal-soft hover:border-charcoal/40 bg-white'
                 }`}
               >
                 {size}
@@ -384,9 +340,9 @@ export default function ShopPage() {
         </FilterSection>
       )}
 
-      {/* Color Filter */}
+      {/* Color / Tone Swatches */}
       {allColors.length > 0 && (
-        <FilterSection title="Color / Tone">
+        <FilterSection title={activeDepartment === 'jewellery' ? 'Finish / Tone' : 'Colour'}>
           <div className="flex flex-wrap gap-2.5">
             {allColors.map((color) => (
               <button
@@ -395,8 +351,8 @@ export default function ShopPage() {
                 aria-label={color.name}
                 className={`relative h-7 w-7 rounded-full border-2 transition-all ${
                   selectedColors.has(color.name)
-                    ? 'border-ink ring-2 ring-ink/15'
-                    : 'border-ink/10 hover:border-ink/30'
+                    ? 'border-charcoal ring-2 ring-charcoal/20 scale-110'
+                    : 'border-charcoal/15 hover:border-charcoal/40 hover:scale-105'
                 }`}
                 style={{ backgroundColor: color.hex }}
                 title={color.name}
@@ -406,11 +362,11 @@ export default function ShopPage() {
         </FilterSection>
       )}
 
-      {/* Price */}
+      {/* Price Slider */}
       {priceLimit > 0 && (
-        <FilterSection title="Price">
+        <FilterSection title="Price Filter">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between text-xs text-ink-soft">
+            <div className="flex items-center justify-between text-xs text-charcoal-soft font-medium">
               <span>₹{priceRange[0]}</span>
               <span>₹{Math.min(priceRange[1], priceLimit)}</span>
             </div>
@@ -421,14 +377,14 @@ export default function ShopPage() {
               step={100}
               value={Math.min(priceRange[1], priceLimit)}
               onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-              className="w-full accent-ink"
+              className="w-full accent-charcoal"
               aria-label="Maximum price"
             />
           </div>
         </FilterSection>
       )}
 
-      {/* Availability */}
+      {/* In Stock Filter */}
       <FilterSection title="Availability">
         <FilterCheckbox
           label="In stock only"
@@ -440,9 +396,9 @@ export default function ShopPage() {
       {activeFilterCount > 0 && (
         <button
           onClick={clearAll}
-          className="text-sm text-peach hover:text-ink transition-colors text-left font-medium"
+          className="text-xs font-semibold uppercase tracking-wider text-clay hover:text-charcoal transition-colors text-left pt-2 border-t border-charcoal/10"
         >
-          Clear all filters ({activeFilterCount})
+          Reset All Filters ({activeFilterCount})
         </button>
       )}
     </div>
@@ -450,66 +406,126 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      {/* Top Breadcrumb & Hero Header */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs
           items={[
+            { label: 'Home', href: '/' },
             { label: 'Shop', href: '/shop' },
-            ...(currentDeptInfo ? [{ label: currentDeptInfo.brand, href: `/shop?department=${currentDeptInfo.id}` }] : []),
+            ...(currentDeptInfo ? [{ label: currentDeptInfo.brand, href: currentDeptInfo.landingPath }] : []),
             ...(categoryLabel ? [{ label: categoryLabel }] : []),
           ]}
         />
-        <div className="mt-5">
-          <ShopPageBanner
-            eyebrow={pageEyebrow}
-            title={pageTitle}
-            introduction={pageIntroduction}
-            activeDepartment={activeDepartment}
-          />
+
+        {/* Editorial Shop Header */}
+        <div
+          className="mt-6 rounded-3xl p-6 sm:p-10 border border-charcoal/10 shadow-xs"
+          style={{ backgroundColor: currentDeptInfo?.accentBg || '#F8F5EE' }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-clay">
+                <Sparkles size={13} />
+                {pageEyebrow}
+              </span>
+              <h1 className="mt-2 font-serif text-3xl sm:text-5xl font-light text-charcoal leading-tight">
+                {pageTitle}
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-charcoal-soft">
+                {pageIntroduction}
+              </p>
+            </div>
+
+            {currentDeptInfo && (
+              <div className="shrink-0">
+                <Link to={currentDeptInfo.landingPath}>
+                  <Button variant="outline" size="sm">
+                    View {currentDeptInfo.brand} Editorial
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Department Switcher Pills */}
+          <div className="mt-8 pt-6 border-t border-charcoal/10 flex flex-wrap items-center gap-2">
+            <Link
+              to="/shop"
+              className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full transition-all ${
+                !activeDepartment
+                  ? 'bg-charcoal text-ivory shadow-xs'
+                  : 'bg-white/80 text-charcoal-soft hover:bg-white hover:text-charcoal border border-charcoal/10'
+              }`}
+            >
+              All Departments
+            </Link>
+            {departments.map((dept) => {
+              const isSelected = activeDepartment === dept.id;
+              return (
+                <Link
+                  key={dept.id}
+                  to={`/shop?department=${dept.id}`}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full transition-all ${
+                    isSelected
+                      ? 'bg-charcoal text-ivory shadow-xs'
+                      : 'bg-white/80 text-charcoal-soft hover:bg-white hover:text-charcoal border border-charcoal/10'
+                  }`}
+                >
+                  {dept.id === 'jewellery' && <Gem size={13} className={isSelected ? 'text-amber-300' : 'text-[#C5A059]'} />}
+                  {dept.id === 'women_suits' && <Shirt size={13} className={isSelected ? 'text-rose-200' : 'text-[#B25E46]'} />}
+                  {dept.id === 'home_textiles' && <Home size={13} className={isSelected ? 'text-sky-200' : 'text-[#3E5C76]'} />}
+                  {dept.id === 'kids' && <Baby size={13} className={isSelected ? 'text-orange-200' : 'text-[#C9826B]'} />}
+                  {dept.brand}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
-        <div className="flex gap-8 lg:gap-12">
-          {/* Desktop sidebar */}
+      {/* Main Grid & Filters */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex gap-10 lg:gap-12">
+          {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-28">
-              <div className="flex items-center gap-2 mb-6">
-                <SlidersHorizontal size={18} className="text-ink" />
-                <h2 className="text-sm font-semibold text-ink">Filter Catalogue</h2>
+            <div className="sticky top-28 space-y-6">
+              <div className="flex items-center gap-2 pb-4 border-b border-charcoal/10">
+                <SlidersHorizontal size={17} className="text-charcoal" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-charcoal">Filter Catalog</h2>
               </div>
               <FilterContent />
             </div>
           </aside>
 
-          {/* Main Area */}
+          {/* Main Content Area */}
           <div className="flex-1 min-w-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-ink/8">
-              <p className="text-sm text-ink-soft">
+            <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-charcoal/10">
+              <p className="text-xs font-medium uppercase tracking-wider text-charcoal-soft">
                 Showing {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-                {currentDeptInfo && <span className="font-medium text-ink"> in {currentDeptInfo.brand}</span>}
+                {currentDeptInfo && <span className="font-semibold text-charcoal"> in {currentDeptInfo.brand}</span>}
               </p>
+
               <div className="flex items-center gap-3">
-                {/* Mobile filter button */}
+                {/* Mobile Filter Toggle Button */}
                 <button
                   onClick={() => setShowFilters(true)}
-                  className="lg:hidden flex items-center gap-2 px-3 py-2 text-sm border border-ink/15 rounded-lg text-ink"
+                  className="lg:hidden flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-charcoal/15 rounded-xl bg-white text-charcoal"
                 >
-                  <SlidersHorizontal size={16} />
+                  <SlidersHorizontal size={14} />
                   Filters
                   {activeFilterCount > 0 && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-cream text-[10px] font-bold">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-charcoal text-ivory text-[9px] font-bold">
                       {activeFilterCount}
                     </span>
                   )}
                 </button>
 
-                {/* Sort dropdown */}
+                {/* Sort Dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setSortOpen(!sortOpen)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm border border-ink/15 rounded-lg text-ink hover:border-ink/30 transition-colors"
+                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-charcoal/15 rounded-xl bg-white text-charcoal hover:border-charcoal transition-colors"
                   >
                     Sort: {sortLabels[sort]}
                     <ChevronDown size={14} className={`transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
@@ -517,7 +533,7 @@ export default function ShopPage() {
                   {sortOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1 z-20 bg-cream border border-ink/10 rounded-lg shadow-lg py-1 min-w-[200px] animate-scale-in">
+                      <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-charcoal/10 rounded-xl shadow-xl py-1 min-w-[210px] animate-scale-in">
                         {(Object.keys(sortLabels) as SortOption[]).map((option) => (
                           <button
                             key={option}
@@ -525,10 +541,10 @@ export default function ShopPage() {
                               setSort(option);
                               setSortOpen(false);
                             }}
-                            className="flex items-center justify-between w-full px-3 py-2 text-sm text-ink hover:bg-ink/5 transition-colors"
+                            className="flex items-center justify-between w-full px-4 py-2.5 text-xs uppercase tracking-wider text-charcoal hover:bg-ivory transition-colors text-left"
                           >
-                            {sortLabels[option]}
-                            {sort === option && <Check size={14} className="text-peach" />}
+                            <span>{sortLabels[option]}</span>
+                            {sort === option && <Check size={14} className="text-clay" />}
                           </button>
                         ))}
                       </div>
@@ -538,24 +554,21 @@ export default function ShopPage() {
               </div>
             </div>
 
-            {/* Empty or Grid */}
+            {/* Product Grid or Clean Empty State */}
             {deptProducts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl bg-[#faf6f2] border border-ink/5">
-                <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mb-4">
-                  {activeDepartment === 'jewellery' ? <Gem size={28} className="text-amber-600" /> :
-                   activeDepartment === 'women_suits' ? <Shirt size={28} className="text-rose-600" /> :
-                   activeDepartment === 'home_textiles' ? <Home size={28} className="text-sky-600" /> :
-                   <Package size={28} className="text-ink-light" />}
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center rounded-3xl bg-white border border-charcoal/10">
+                <div className="w-16 h-16 rounded-full bg-ivory flex items-center justify-center mb-4">
+                  <Package size={28} className="text-charcoal-light" />
                 </div>
-                <h3 className="font-serif text-2xl text-ink mb-2">
-                  {currentDeptInfo ? `${currentDeptInfo.brand} Edit Coming Soon` : 'No Products Available'}
+                <h3 className="font-serif text-2xl text-charcoal">
+                  {currentDeptInfo ? `${currentDeptInfo.brand} Edit Underway` : 'No Products Currently Published'}
                 </h3>
-                <p className="text-sm text-ink-soft max-w-md mb-6 leading-relaxed">
+                <p className="mt-2 text-sm text-charcoal-soft max-w-md leading-relaxed">
                   {currentDeptInfo
-                    ? `Our ${currentDeptInfo.brand} pieces are currently being curated and catalogued. You can add the first pieces in the Admin management suite.`
-                    : 'No published products match this selection.'}
+                    ? `Pieces for ${currentDeptInfo.brand} are being curated. You can publish initial pieces through the admin management suite.`
+                    : 'No products match the selected filters.'}
                 </p>
-                <div className="flex flex-wrap gap-3 justify-center">
+                <div className="mt-6 flex flex-wrap gap-3 justify-center">
                   <Link to="/shop">
                     <Button variant="outline" size="sm">Browse All Departments</Button>
                   </Link>
@@ -565,28 +578,22 @@ export default function ShopPage() {
                 </div>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mb-4">
-                  <Package size={28} className="text-ink-light" />
+              <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl bg-white border border-charcoal/10">
+                <div className="w-16 h-16 rounded-full bg-ivory flex items-center justify-center mb-4">
+                  <Package size={28} className="text-charcoal-light" />
                 </div>
-                <h3 className="font-serif text-xl text-ink mb-1">No products match your filters</h3>
-                <p className="text-sm text-ink-soft mb-5">
-                  Try clearing some filter options or selecting another category.
+                <h3 className="font-serif text-xl text-charcoal">No products match your current filters</h3>
+                <p className="mt-2 text-xs text-charcoal-soft max-w-sm mb-6">
+                  Try clearing some filter criteria or selecting another category to view available pieces.
                 </p>
                 <Button variant="outline" size="md" onClick={clearAll}>
-                  Clear All Filters
+                  Reset All Filters
                 </Button>
               </div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-                {filtered.map((product, i) => (
-                  <div
-                    key={product.id}
-                    className="animate-slide-up-fade"
-                    style={{ animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}
-                  >
-                    <ProductCard product={product} onQuickAdd={handleQuickAdd} />
-                  </div>
+                {filtered.map((product) => (
+                  <ProductCard key={product.id} product={product} onQuickAdd={handleQuickAdd} />
                 ))}
               </div>
             )}
@@ -594,13 +601,16 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* Mobile filter drawer */}
+      {/* Mobile Filters Drawer */}
       {showFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowFilters(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-cream animate-slide-in-right flex flex-col">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-ink/10 shrink-0">
-              <h2 className="text-sm font-semibold text-ink">Filters</h2>
+          <div
+            className="absolute inset-0 bg-charcoal/50 backdrop-blur-sm animate-fade-in"
+            onClick={() => setShowFilters(false)}
+          />
+          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-ivory animate-slide-in-right flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-charcoal/10 bg-white">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-charcoal">Filter Catalog</h2>
               <button onClick={() => setShowFilters(false)} aria-label="Close filters" className="p-2 -mr-2">
                 <X size={22} />
               </button>
@@ -608,19 +618,12 @@ export default function ShopPage() {
             <div className="flex-1 overflow-y-auto custom-scroll px-5 py-6">
               <FilterContent />
             </div>
-            <div className="border-t border-ink/10 px-5 py-4 shrink-0">
+            <div className="border-t border-charcoal/10 px-5 py-4 bg-white">
               <Button variant="primary" size="lg" className="w-full" onClick={() => setShowFilters(false)}>
                 Show {filtered.length} Results
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Department & Categories bottom directory */}
-      {(!activeDepartment || activeDepartment === 'kids') && (
-        <div id="shop-categories" className="mx-auto max-w-7xl scroll-mt-24 px-4 sm:px-6 lg:px-8 mt-12 mb-8">
-          <StoreNavigationTiles ages={ages} categories={categories} showAges={!activeDepartment} />
         </div>
       )}
     </div>
@@ -630,7 +633,7 @@ export default function ShopPage() {
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-light mb-3">{title}</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-charcoal-light mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -649,12 +652,12 @@ function FilterCheckbox({
     <label className="flex items-center gap-2.5 py-1.5 cursor-pointer group">
       <span
         className={`flex h-4 w-4 items-center justify-center rounded border transition-all ${
-          checked ? 'bg-ink border-ink' : 'border-ink/20 group-hover:border-ink/40'
+          checked ? 'bg-charcoal border-charcoal' : 'border-charcoal/20 group-hover:border-charcoal/40 bg-white'
         }`}
       >
-        {checked && <Check size={11} className="text-cream" />}
+        {checked && <Check size={11} className="text-ivory" />}
       </span>
-      <span className={`text-sm ${checked ? 'text-ink font-medium' : 'text-ink-soft'} group-hover:text-ink transition-colors`}>
+      <span className={`text-xs ${checked ? 'text-charcoal font-semibold' : 'text-charcoal-soft'} group-hover:text-charcoal transition-colors`}>
         {label}
       </span>
       <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
