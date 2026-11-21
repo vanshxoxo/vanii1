@@ -1,11 +1,10 @@
 # Little Loom database schema
 
-The three SQL files in `migrations/` are the source of truth. Apply them in timestamp order. This overview describes the entities, foreign-key ownership and access rules; it does not replace the migrations.
+The SQL files in `migrations/` are the source of truth (applied in timestamp order). This overview describes the entities, foreign-key ownership, multi-category architecture, and access rules; it does not replace the migrations.
 
 | Domain | Tables/views | Relationships and purpose |
 | --- | --- | --- |
-| Customers and addresses | `customers`, `customer_addresses`, `profiles` view | Customer profile key references `auth.users`; saved addresses are customer-owned; checkout writes a separate immutable `shipping_addresses` snapshot per order. |
-| Catalog | `products`, `product_variants`, `categories`, `product_categories`, `product_sizes`, `product_colors`, `product_attributes`, `collections`, `collection_products` | Variants belong to products and have unique SKU/product-size-color combinations. Categories and collections are many-to-many through join tables. Product options are materialized from existing variant values at migration time. |
+| Multi-department Catalog | `products`, `product_variants`, `categories`, `product_categories`, `product_sizes`, `product_colors`, `product_attributes`, `collections`, `collection_products` | Supports 4 distinct departments: Children's Clothing (`kids`), Jewellery (`jewellery`), Women's Unstitched Suits (`women_suits`), and Home Textiles (`home_textiles`). Products store `product_type` and structured `specifications` JSONB. Variants belong to products and have unique SKU/product-size-color combinations without children's sizing leaks into jewellery or textiles. Categories are partitioned by `department`. |
 | Product media | `media_assets`, `product_media`, `collection_media`, `product_images` view | Metadata references external provider IDs, CDN URLs, hashes, dimensions, formats and responsive variants; binaries remain in ImageKit. Galleries preserve order, featured image, view and alt text. Foreign keys and locked reference checks protect shared media from deletion. Legacy Cloudinary rows remain supported. |
 | Stock | `inventory`, `inventory_movements`, `stock_reservations` | One inventory row per variant; reservation rows are linked to order and variant; an inventory trigger records stock deltas. Checkout reserves stock atomically; payment/COD collection commits it; cancellation releases it. |
 | Customers' active state | `carts`, `cart_items`, `wishlists`, `wishlist_items` | Carts and wishlist rows belong to one customer. Checkout idempotency key is stored in Postgres on the cart/order, not browser storage. |
