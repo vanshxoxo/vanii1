@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AgeInfo, CategoryInfo, Department, Product } from '../types';
 import { isSupabaseConfigured, publicMediaUrl, responsiveMediaSrcSet, supabase } from './supabase';
-import { resolveLaunchAge, resolveLaunchCategory } from '../data/storeNavigation';
+import { resolveLaunchAge, resolveLaunchCategory, allDepartmentCategories } from '../data/storeNavigation';
 
 type RawAsset = { provider: 'cloudinary' | 'imagekit' | 'external' | 'supabase'; delivery_url: string | null; external_url: string | null; resource_type?: string };
 export type StoreHero = { heading: string; body: string; image: string; mobileImage: string; ctaLabel: string; ctaHref: string };
@@ -18,11 +18,29 @@ export function useCatalog(): CatalogResult {
     let cancelled = false;
     async function load() {
       const client = supabase!;
+      // Note: Omit direct column selection on 'department' in categories join to ensure compatibility with unmigrated DBs
       const [productResponse, categoryResponse, heroResponse, collectionResponse] = await Promise.all([
-        client.from('products').select('*,product_variants(id,sku,size,colour,colour_hex,price_override),product_media(id,asset_id,variant_id,display_order,is_primary,alt_text,view_label,media_assets(provider,delivery_url,external_url,resource_type)),product_categories(categories:categories(id,kind,name,slug,display_order,department,image_asset:media_assets(provider,delivery_url,external_url,resource_type))),collection_products(collections:collections(slug))').eq('status', 'published').order('published_at', { ascending: false }),
-        client.from('categories').select('id,kind,name,slug,description,display_order,department,image_asset:media_assets(provider,delivery_url,external_url,resource_type)').eq('is_active', true).order('display_order'),
-        client.from('homepage_sections').select('heading,body,cta_label,cta_href,desktop:media_assets!homepage_sections_desktop_asset_id_fkey(provider,delivery_url,external_url,resource_type),mobile:media_assets!homepage_sections_mobile_asset_id_fkey(provider,delivery_url,external_url,resource_type)').eq('section_key', 'hero').eq('is_published', true).maybeSingle(),
-        client.from('collections').select('id,name,slug,description,cover:media_assets!collections_cover_asset_id_fkey(provider,delivery_url,external_url,resource_type)').eq('status', 'published').order('display_order'),
+        client
+          .from('products')
+          .select('*,product_variants(id,sku,size,colour,colour_hex,price_override),product_media(id,asset_id,variant_id,display_order,is_primary,alt_text,view_label,media_assets(provider,delivery_url,external_url,resource_type)),product_categories(categories:categories(id,kind,name,slug,display_order,image_asset:media_assets(provider,delivery_url,external_url,resource_type))),collection_products(collections:collections(slug))')
+          .eq('status', 'published')
+          .order('published_at', { ascending: false }),
+        client
+          .from('categories')
+          .select('id,kind,name,slug,description,display_order,image_asset:media_assets(provider,delivery_url,external_url,resource_type)')
+          .eq('is_active', true)
+          .order('display_order'),
+        client
+          .from('homepage_sections')
+          .select('heading,body,cta_label,cta_href,desktop:media_assets!homepage_sections_desktop_asset_id_fkey(provider,delivery_url,external_url,resource_type),mobile:media_assets!homepage_sections_mobile_asset_id_fkey(provider,delivery_url,external_url,resource_type)')
+          .eq('section_key', 'hero')
+          .eq('is_published', true)
+          .maybeSingle(),
+        client
+          .from('collections')
+          .select('id,name,slug,description,cover:media_assets!collections_cover_asset_id_fkey(provider,delivery_url,external_url,resource_type)')
+          .eq('status', 'published')
+          .order('display_order'),
       ]);
       if (cancelled) return;
       const queryError = productResponse.error || categoryResponse.error;
@@ -41,8 +59,10 @@ export function useCatalog(): CatalogResult {
         const productCats = relations.map((item: any) => item.categories).filter(Boolean);
         const ageNames = productCats.filter((category: any) => category.kind === 'age').map((category: any) => category.name);
         const mainCategory = productCats.find((category: any) => category.kind === 'product')?.name || '';
-        const catDepartment = productCats.find((c: any) => c.department && c.department !== 'kids')?.department as Department | undefined;
-        const resolvedDepartment: Department = row.product_type || catDepartment || (ageNames.length > 0 ? 'kids' : 'kids');
+        const mainCatSlug = productCats.find((category: any) => category.kind === 'product')?.slug || '';
+        const matchedDeptCat = allDepartmentCategories.find((c) => c.value === mainCategory || c.label === mainCategory || c.slug === mainCatSlug);
+        const catDepartment = (row.product_type || matchedDeptCat?.department || (productCats.find((c: any) => c.department)?.department) || (ageNames.length > 0 ? 'kids' : 'kids')) as Department;
+        const resolvedDepartment: Department = catDepartment;
         const variants = row.product_variants || [];
         const gallery = (row.product_media || []).sort((a: any, b: any) => a.display_order - b.display_order);
         const imagePairsByUrl = new Map<string, { url: string; srcSet: string; alt: string }>();
@@ -96,15 +116,18 @@ export function useCatalog(): CatalogResult {
           description: category.description || launchAge?.introduction || '',
         };
       }) as AgeInfo[];
-      const categories = allCategories.filter((category: any) => category.kind === 'product').map((category: any) => ({
-        id: category.name,
-        name: resolveLaunchCategory(category.name)?.label || category.name,
-        image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : ((resolveLaunchCategory(category.name) as any)?.image || ''),
-        description: category.description || resolveLaunchCategory(category.name)?.introduction || '',
-        span: 'normal',
-        department: (category.department || 'kids') as Department,
-        kind: 'product' as const,
-      })) as CategoryInfo[];
+      const categories = allCategories.filter((category: any) => category.kind === 'product').map((category: any) => {
+        const launchCat = resolveLaunchCategory(category.slug) || resolveLaunchCategory(category.name);
+        return {
+          id: category.name,
+          name: launchCat?.label || category.name,
+          image: category.image_asset ? publicMediaUrl(category.image_asset as RawAsset, 700) : (launchCat?.image || ''),
+          description: category.description || launchCat?.introduction || '',
+          span: 'normal',
+          department: ((category as any).department || launchCat?.department || 'kids') as Department,
+          kind: 'product' as const,
+        };
+      }) as CategoryInfo[];
       const heroData = heroResponse.data;
       const desktopAsset = Array.isArray(heroData?.desktop) ? heroData.desktop[0] : heroData?.desktop;
       const mobileAsset = Array.isArray(heroData?.mobile) ? heroData.mobile[0] : heroData?.mobile;

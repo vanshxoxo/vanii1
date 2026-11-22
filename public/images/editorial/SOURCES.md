@@ -39,3 +39,24 @@ These local files were recovered from the Version B source at commit [`98396e1`]
 | `version-b/fabric-detail.webp` | [Photo 32233627](https://images.pexels.com/photos/32233627/pexels-photo-32233627.jpeg?auto=compress&cs=tinysrgb&h=900&w=600) | Fabric/detail panel |
 
 Pexels states that its images may be used commercially subject to the [Pexels License](https://www.pexels.com/license/); do not imply endorsement or associate these editorial photos with actual product listings.
+
+
+## VJ Collection Multi-Department Editorial Imagery (`/images/editorial/vj/`)
+
+All files in `/images/editorial/vj/` are locally stored, authentic editorial photographs downloaded from Pexels under the [Pexels License](https://www.pexels.com/license/). They are curated exclusively for department editorial features, category navigation, and homepage storytelling. They are **not** customer product photographs and are never attached to product inventory or used to imply manufacturer endorsement.
+
+| Local Asset | Pexels Source | Intended Editorial Use |
+|---|---|---|
+| `jewellery-hero.jpg` | [Photo 1458867](https://www.pexels.com/photo/1458867/) | VJ Jewellery department hero banner & editorial spotlight |
+| `jewellery-necklace.jpg` | [Photo 10475792](https://www.pexels.com/photo/10475792/) | Necklace sets & chokers category editorial illustration |
+| `jewellery-earrings.jpg` | [Photo 1191531](https://www.pexels.com/photo/1191531/) | Handcrafted earrings & jhumkas category illustration |
+| `jewellery-rings.jpg` | [Photo 1457801](https://www.pexels.com/photo/1457801/) | Statement artisanal rings category illustration |
+| `suits-hero.jpg` | [Photo 4620619](https://www.pexels.com/photo/4620619/) | VJ Suits & Fabrics department hero & winter wools |
+| `suits-fabrics.jpg` | [Photo 6045239](https://www.pexels.com/photo/6045239/) | Unstitched suits & sheer organza weave textures |
+| `suits-silk.jpg` | [Photo 994517](https://www.pexels.com/photo/994517/) | Festive silk & Banarasi brocade suit fabrics |
+| `suits-cotton.jpg` | [Photo 7598537](https://www.pexels.com/photo/7598537/) | Pure breathable cotton & fluid rayon suits |
+| `living-hero.jpg` | [Photo 6585759](https://www.pexels.com/photo/6585759/) | VJ Living sanctuary bedding & double bedsheet sets |
+| `living-bedsheet.jpg` | [Photo 1034584](https://www.pexels.com/photo/1034584/) | Pure cotton single/double bedsheets with pillows |
+| `living-chaddar.jpg` | [Photo 4210860](https://www.pexels.com/photo/4210860/) | 60 × 90 single-bed top sheets (odhne wali chaddars) |
+| `living-pillows.jpg` | [Photo 276583](https://www.pexels.com/photo/276583/) | Tailored decorative & envelope pillow covers |
+| `master-hero.jpg` | [Photo 3404200](https://www.pexels.com/photo/3404200/) | Grand VJ Collection master flagship editorial showcase |
