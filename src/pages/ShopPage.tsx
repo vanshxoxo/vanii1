@@ -123,69 +123,69 @@ export default function ShopPage() {
     setSelectedFabrics(new Set());
     setPriceRange([0, Number.MAX_SAFE_INTEGER]);
     setInStockOnly(false);
-    if (activeDepartment) {
-      setSearchParams({ department: activeDepartment });
-    } else {
-      setSearchParams({});
-    }
+    setSearchParams(activeDepartment ? { department: activeDepartment } : {});
   };
 
+  // Filter and sort products
   const filtered = useMemo(() => {
-    const collection = searchParams.get('collection');
-    const search = (searchParams.get('search') || '').trim().toLowerCase();
-    const newArrivalsOnly = searchParams.get('filter') === 'new';
+    let result = [...deptProducts];
 
-    let result = deptProducts.filter((product) =>
-      (!collection || product.collections?.includes(collection)) && (!newArrivalsOnly || product.isNew)
-    );
-
-    // Context-aware age filter: only for kids
+    // Filter by Age (strictly for Little Loom)
     if (selectedAges.size > 0 && (!activeDepartment || activeDepartment === 'kids')) {
-      result = result.filter((product) => product.ages.some((productAge) => [...selectedAges].some((selectedAge) => {
-        const productAgeKey = resolveLaunchAge(productAge)?.key;
-        const selectedAgeKey = resolveLaunchAge(selectedAge)?.key;
-        return (productAgeKey && selectedAgeKey) ? productAgeKey === selectedAgeKey : productAge.toLowerCase() === selectedAge.toLowerCase();
-      })));
+      result = result.filter((product) => product.ages.some((age) => selectedAges.has(age)));
     }
 
+    // Filter by Category
     if (selectedCategories.size > 0) {
-      result = result.filter((product) => [...selectedCategories].some((selectedCategory) => {
-        const productCategorySlug = resolveLaunchCategory(product.category)?.slug;
-        const selectedCategorySlug = resolveLaunchCategory(selectedCategory)?.slug;
-        return (productCategorySlug && selectedCategorySlug) ? productCategorySlug === selectedCategorySlug : product.category.toLowerCase() === selectedCategory.toLowerCase();
-      }));
+      result = result.filter((product) => selectedCategories.has(product.category));
     }
 
+    // Filter by Size
     if (selectedSizes.size > 0) {
-      result = result.filter((p) => p.sizes.some((s) => selectedSizes.has(s)));
+      result = result.filter((product) => product.sizes.some((size) => selectedSizes.has(size)));
     }
 
+    // Filter by Color
     if (selectedColors.size > 0) {
-      result = result.filter((p) => p.colors.some((c) => selectedColors.has(c.name)));
+      result = result.filter((product) => product.colors.some((color) => selectedColors.has(color.name)));
     }
 
+    // Filter by Fabric
     if (selectedFabrics.size > 0) {
-      result = result.filter((p) => {
-        const f = p.specifications?.womenSuits?.fabricType || p.fabric;
-        return f && selectedFabrics.has(f);
+      result = result.filter((product) => {
+        const fab = product.specifications?.womenSuits?.fabricType || product.fabric;
+        return fab && selectedFabrics.has(fab);
       });
     }
 
-    result = result.filter((p) => p.price >= priceRange[0] && p.price <= Math.min(priceRange[1], priceLimit || Number.MAX_SAFE_INTEGER));
-
-    if (inStockOnly) {
-      result = result.filter((product) => product.inStock === true);
+    // Filter by Price
+    if (priceRange[0] > 0 || (priceRange[1] < Number.MAX_SAFE_INTEGER && priceLimit > 0)) {
+      result = result.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1]);
     }
 
+    // Filter by In-Stock
+    if (inStockOnly) {
+      result = result.filter((product) => product.inStock);
+    }
+
+    // Filter by Collection
+    const coll = searchParams.get('collection');
+    if (coll) {
+      result = result.filter((product) => product.collections?.includes(coll));
+    }
+
+    // Filter by Free text Search
+    const search = searchParams.get('search')?.toLowerCase().trim();
     if (search) {
-      result = result.filter((product) =>
-        product.name.toLowerCase().includes(search) ||
-        product.category.toLowerCase().includes(search) ||
-        product.ages.some((age) => age.toLowerCase().includes(search)) ||
-        product.tags?.some((tag) => tag.toLowerCase().includes(search))
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(search) ||
+        p.category.toLowerCase().includes(search) ||
+        p.description.toLowerCase().includes(search) ||
+        p.fabric.toLowerCase().includes(search)
       );
     }
 
+    // Sort
     switch (sort) {
       case 'price-low':
         result.sort((a, b) => a.price - b.price);
@@ -197,7 +197,7 @@ export default function ShopPage() {
         result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         break;
       default:
-        // Preserves published order
+        break;
     }
 
     return result;
@@ -329,8 +329,8 @@ export default function ShopPage() {
                 onClick={() => toggleSet(selectedSizes, size, setSelectedSizes)}
                 className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
                   selectedSizes.has(size)
-                    ? 'border-charcoal bg-charcoal text-ivory shadow-xs'
-                    : 'border-charcoal/15 text-charcoal-soft hover:border-charcoal/40 bg-white'
+                    ? 'border-espresso bg-espresso text-ivory shadow-xs'
+                    : 'border-espresso/15 text-espresso-soft hover:border-espresso bg-white'
                 }`}
               >
                 {size}
@@ -351,10 +351,10 @@ export default function ShopPage() {
                 aria-label={color.name}
                 className={`relative h-7 w-7 rounded-full border-2 transition-all ${
                   selectedColors.has(color.name)
-                    ? 'border-charcoal ring-2 ring-charcoal/20 scale-110'
-                    : 'border-charcoal/15 hover:border-charcoal/40 hover:scale-105'
+                    ? 'border-espresso ring-2 ring-forest/30 scale-110'
+                    : 'border-espresso/15 hover:border-espresso hover:scale-105'
                 }`}
-                style={{ backgroundColor: color.hex }}
+                style={{ backgroundColor: color.hex || '#E5E5E5' }}
                 title={color.name}
               />
             ))}
@@ -366,7 +366,7 @@ export default function ShopPage() {
       {priceLimit > 0 && (
         <FilterSection title="Price Filter">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between text-xs text-charcoal-soft font-medium">
+            <div className="flex items-center justify-between text-xs text-espresso-soft font-medium">
               <span>₹{priceRange[0]}</span>
               <span>₹{Math.min(priceRange[1], priceLimit)}</span>
             </div>
@@ -377,7 +377,7 @@ export default function ShopPage() {
               step={100}
               value={Math.min(priceRange[1], priceLimit)}
               onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-              className="w-full accent-charcoal"
+              className="w-full accent-forest"
               aria-label="Maximum price"
             />
           </div>
@@ -396,7 +396,7 @@ export default function ShopPage() {
       {activeFilterCount > 0 && (
         <button
           onClick={clearAll}
-          className="text-xs font-semibold uppercase tracking-wider text-clay hover:text-charcoal transition-colors text-left pt-2 border-t border-charcoal/10"
+          className="text-xs font-semibold uppercase tracking-wider text-terracotta hover:text-espresso transition-colors text-left pt-2 border-t border-espresso/10"
         >
           Reset All Filters ({activeFilterCount})
         </button>
@@ -405,7 +405,7 @@ export default function ShopPage() {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FAF8F5]">
       {/* Top Breadcrumb & Hero Header */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs
@@ -419,19 +419,19 @@ export default function ShopPage() {
 
         {/* Editorial Shop Header */}
         <div
-          className="mt-6 rounded-3xl p-6 sm:p-10 border border-charcoal/10 shadow-xs"
-          style={{ backgroundColor: currentDeptInfo?.accentBg || '#F8F5EE' }}
+          className="mt-6 rounded-3xl p-6 sm:p-10 border border-espresso/10 shadow-xs"
+          style={{ backgroundColor: currentDeptInfo?.accentBg || '#F4EFEA' }}
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-clay">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.26em] text-terracotta">
                 <Sparkles size={13} />
                 {pageEyebrow}
               </span>
-              <h1 className="mt-2 font-serif text-3xl sm:text-5xl font-light text-charcoal leading-tight">
+              <h1 className="mt-2 font-serif text-3xl sm:text-5xl font-light text-espresso leading-tight">
                 {pageTitle}
               </h1>
-              <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-charcoal-soft">
+              <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-espresso-soft">
                 {pageIntroduction}
               </p>
             </div>
@@ -448,13 +448,13 @@ export default function ShopPage() {
           </div>
 
           {/* Department Switcher Pills */}
-          <div className="mt-8 pt-6 border-t border-charcoal/10 flex flex-wrap items-center gap-2">
+          <div className="mt-8 pt-6 border-t border-espresso/10 flex flex-wrap items-center gap-2">
             <Link
               to="/shop"
               className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full transition-all ${
                 !activeDepartment
-                  ? 'bg-charcoal text-ivory shadow-xs'
-                  : 'bg-white/80 text-charcoal-soft hover:bg-white hover:text-charcoal border border-charcoal/10'
+                  ? 'bg-espresso text-ivory shadow-xs'
+                  : 'bg-white text-espresso-soft hover:bg-ivory hover:text-espresso border border-espresso/10'
               }`}
             >
               All Departments
@@ -467,15 +467,15 @@ export default function ShopPage() {
                   to={`/shop?department=${dept.id}`}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-full transition-all ${
                     isSelected
-                      ? 'bg-charcoal text-ivory shadow-xs'
-                      : 'bg-white/80 text-charcoal-soft hover:bg-white hover:text-charcoal border border-charcoal/10'
+                      ? 'bg-espresso text-ivory shadow-xs'
+                      : 'bg-white text-espresso-soft hover:bg-ivory hover:text-espresso border border-espresso/10'
                   }`}
                 >
-                  {dept.id === 'jewellery' && <Gem size={13} className={isSelected ? 'text-amber-300' : 'text-[#C5A059]'} />}
-                  {dept.id === 'women_suits' && <Shirt size={13} className={isSelected ? 'text-rose-200' : 'text-[#B25E46]'} />}
-                  {dept.id === 'home_textiles' && <Home size={13} className={isSelected ? 'text-sky-200' : 'text-[#3E5C76]'} />}
-                  {dept.id === 'kids' && <Baby size={13} className={isSelected ? 'text-orange-200' : 'text-[#C9826B]'} />}
-                  {dept.brand}
+                  {dept.id === 'jewellery' && <Gem size={13} className={isSelected ? 'text-brass' : 'text-brass'} />}
+                  {dept.id === 'women_suits' && <Shirt size={13} className={isSelected ? 'text-terracotta' : 'text-terracotta'} />}
+                  {dept.id === 'home_textiles' && <Home size={13} className={isSelected ? 'text-forest' : 'text-forest'} />}
+                  {dept.id === 'kids' && <Baby size={13} className={isSelected ? 'text-[#C87D65]' : 'text-[#C87D65]'} />}
+                  <span>{dept.brand}</span>
                 </Link>
               );
             })}
@@ -489,9 +489,9 @@ export default function ShopPage() {
           {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-28 space-y-6">
-              <div className="flex items-center gap-2 pb-4 border-b border-charcoal/10">
-                <SlidersHorizontal size={17} className="text-charcoal" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-charcoal">Filter Catalog</h2>
+              <div className="flex items-center gap-2 pb-4 border-b border-espresso/10">
+                <SlidersHorizontal size={17} className="text-espresso" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-espresso">Filter Catalogue</h2>
               </div>
               <FilterContent />
             </div>
@@ -500,22 +500,22 @@ export default function ShopPage() {
           {/* Main Content Area */}
           <div className="flex-1 min-w-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-charcoal/10">
-              <p className="text-xs font-medium uppercase tracking-wider text-charcoal-soft">
-                Showing {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-                {currentDeptInfo && <span className="font-semibold text-charcoal"> in {currentDeptInfo.brand}</span>}
+            <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-espresso/10">
+              <p className="text-xs font-medium uppercase tracking-wider text-espresso-soft">
+                Showing {filtered.length} piece{filtered.length !== 1 ? 's' : ''}
+                {currentDeptInfo && <span className="font-semibold text-espresso"> in {currentDeptInfo.brand}</span>}
               </p>
 
               <div className="flex items-center gap-3">
                 {/* Mobile Filter Toggle Button */}
                 <button
                   onClick={() => setShowFilters(true)}
-                  className="lg:hidden flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-charcoal/15 rounded-xl bg-white text-charcoal"
+                  className="lg:hidden flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso shadow-xs"
                 >
                   <SlidersHorizontal size={14} />
-                  Filters
+                  <span>Filters</span>
                   {activeFilterCount > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-charcoal text-ivory text-[9px] font-bold">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-forest text-ivory text-[9px] font-bold">
                       {activeFilterCount}
                     </span>
                   )}
@@ -525,15 +525,15 @@ export default function ShopPage() {
                 <div className="relative">
                   <button
                     onClick={() => setSortOpen(!sortOpen)}
-                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-charcoal/15 rounded-xl bg-white text-charcoal hover:border-charcoal transition-colors"
+                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso hover:border-espresso transition-colors shadow-xs"
                   >
-                    Sort: {sortLabels[sort]}
-                    <ChevronDown size={14} className={`transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+                    <span>Sort: {sortLabels[sort]}</span>
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {sortOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-charcoal/10 rounded-xl shadow-xl py-1 min-w-[210px] animate-scale-in">
+                      <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-espresso/10 rounded-xl shadow-xl py-1 min-w-[210px] animate-scale-in">
                         {(Object.keys(sortLabels) as SortOption[]).map((option) => (
                           <button
                             key={option}
@@ -541,10 +541,10 @@ export default function ShopPage() {
                               setSort(option);
                               setSortOpen(false);
                             }}
-                            className="flex items-center justify-between w-full px-4 py-2.5 text-xs uppercase tracking-wider text-charcoal hover:bg-ivory transition-colors text-left"
+                            className="flex items-center justify-between w-full px-4 py-2.5 text-xs uppercase tracking-wider text-espresso hover:bg-linen transition-colors text-left"
                           >
                             <span>{sortLabels[option]}</span>
-                            {sort === option && <Check size={14} className="text-clay" />}
+                            {sort === option && <Check size={14} className="text-forest" />}
                           </button>
                         ))}
                       </div>
@@ -556,14 +556,14 @@ export default function ShopPage() {
 
             {/* Product Grid or Clean Empty State */}
             {deptProducts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center rounded-3xl bg-white border border-charcoal/10">
-                <div className="w-16 h-16 rounded-full bg-ivory flex items-center justify-center mb-4">
-                  <Package size={28} className="text-charcoal-light" />
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center rounded-3xl bg-white border border-espresso/10 shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
+                  <Package size={28} className="text-espresso-light" />
                 </div>
-                <h3 className="font-serif text-2xl text-charcoal">
+                <h3 className="font-serif text-2xl text-espresso">
                   {currentDeptInfo ? `${currentDeptInfo.brand} Edit Underway` : 'No Products Currently Published'}
                 </h3>
-                <p className="mt-2 text-sm text-charcoal-soft max-w-md leading-relaxed">
+                <p className="mt-2 text-sm text-espresso-soft max-w-md leading-relaxed">
                   {currentDeptInfo
                     ? `Pieces for ${currentDeptInfo.brand} are being curated. You can publish initial pieces through the admin management suite.`
                     : 'No products match the selected filters.'}
@@ -573,17 +573,17 @@ export default function ShopPage() {
                     <Button variant="outline" size="sm">Browse All Departments</Button>
                   </Link>
                   <Link to="/admin">
-                    <Button variant="primary" size="sm">Open Admin Wizard</Button>
+                    <Button variant="forest" size="sm">Open Admin Wizard</Button>
                   </Link>
                 </div>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl bg-white border border-charcoal/10">
-                <div className="w-16 h-16 rounded-full bg-ivory flex items-center justify-center mb-4">
-                  <Package size={28} className="text-charcoal-light" />
+              <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl bg-white border border-espresso/10 shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
+                  <Package size={28} className="text-espresso-light" />
                 </div>
-                <h3 className="font-serif text-xl text-charcoal">No products match your current filters</h3>
-                <p className="mt-2 text-xs text-charcoal-soft max-w-sm mb-6">
+                <h3 className="font-serif text-xl text-espresso">No products match your current filters</h3>
+                <p className="mt-2 text-xs text-espresso-soft max-w-sm mb-6">
                   Try clearing some filter criteria or selecting another category to view available pieces.
                 </p>
                 <Button variant="outline" size="md" onClick={clearAll}>
@@ -605,21 +605,21 @@ export default function ShopPage() {
       {showFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-charcoal/50 backdrop-blur-sm animate-fade-in"
+            className="absolute inset-0 bg-espresso/60 backdrop-blur-sm animate-fade-in"
             onClick={() => setShowFilters(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-ivory animate-slide-in-right flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-charcoal/10 bg-white">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-charcoal">Filter Catalog</h2>
-              <button onClick={() => setShowFilters(false)} aria-label="Close filters" className="p-2 -mr-2">
+          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-[#FAF8F5] animate-slide-in-right flex flex-col shadow-2xl border-l border-espresso/15">
+            <div className="flex items-center justify-between px-6 h-18 border-b border-espresso/10 bg-white">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-espresso">Filter Catalogue</h2>
+              <button onClick={() => setShowFilters(false)} aria-label="Close filters" className="p-2 -mr-2 text-espresso">
                 <X size={22} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scroll px-5 py-6">
+            <div className="flex-1 overflow-y-auto custom-scroll px-6 py-6">
               <FilterContent />
             </div>
-            <div className="border-t border-charcoal/10 px-5 py-4 bg-white">
-              <Button variant="primary" size="lg" className="w-full" onClick={() => setShowFilters(false)}>
+            <div className="border-t border-espresso/10 px-6 py-4 bg-white">
+              <Button variant="forest" size="lg" className="w-full" onClick={() => setShowFilters(false)}>
                 Show {filtered.length} Results
               </Button>
             </div>
@@ -633,7 +633,7 @@ export default function ShopPage() {
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-charcoal-light mb-3">{title}</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-espresso-light mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -652,12 +652,12 @@ function FilterCheckbox({
     <label className="flex items-center gap-2.5 py-1.5 cursor-pointer group">
       <span
         className={`flex h-4 w-4 items-center justify-center rounded border transition-all ${
-          checked ? 'bg-charcoal border-charcoal' : 'border-charcoal/20 group-hover:border-charcoal/40 bg-white'
+          checked ? 'bg-forest border-forest' : 'border-espresso/20 group-hover:border-espresso/40 bg-white'
         }`}
       >
         {checked && <Check size={11} className="text-ivory" />}
       </span>
-      <span className={`text-xs ${checked ? 'text-charcoal font-semibold' : 'text-charcoal-soft'} group-hover:text-charcoal transition-colors`}>
+      <span className={`text-xs ${checked ? 'text-espresso font-semibold' : 'text-espresso-soft'} group-hover:text-espresso transition-colors`}>
         {label}
       </span>
       <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
