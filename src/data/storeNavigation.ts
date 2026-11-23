@@ -61,7 +61,7 @@ export const departments: DepartmentInfo[] = [
     brand: 'VJ Suits & Fabrics',
     tagline: 'Pure cotton, silk, organza, Banarasi, rayon & wool',
     path: '/shop?department=women_suits',
-    landingPath: '/department/women-suits',
+    landingPath: '/department/women_suits',
     description: 'Ladies unstitched salwar suit materials, pure breathable cottons, festive silks, sheer organza, Banarasi brocades, rayon, and winter wools with coordinating dupattas.',
     themeColor: '#B96F55',
     image: `${vjEditorial}suits-hero.jpg`,
@@ -82,7 +82,7 @@ export const departments: DepartmentInfo[] = [
     brand: 'VJ Living',
     tagline: 'Cotton bedsheets, single top sheets & pillow covers',
     path: '/shop?department=home_textiles',
-    landingPath: '/department/living',
+    landingPath: '/department/home_textiles',
     description: 'Pure breathable cotton bedding, double bedsheet sets with pillow covers, single bedsheets with pillow, 60×90 top sheets (odhne wali chaddars), and pillow covers.',
     themeColor: '#263D32',
     image: `${vjEditorial}living-hero.jpg`,
@@ -103,7 +103,7 @@ export const departments: DepartmentInfo[] = [
     brand: 'Little Loom',
     tagline: 'Everyday handcrafted comfort for newborn to 6 years',
     path: '/shop?department=kids',
-    landingPath: '/department/little-loom',
+    landingPath: '/department/kids',
     description: 'Soft, organic cotton rompers, dresses, and lounge sets created with mindful love for babies and growing toddlers.',
     themeColor: '#A7AD97',
     image: `${editorial}hero-desktop.webp`,
@@ -146,16 +146,16 @@ export const womenSuitsCategories: DepartmentCategory[] = [
   { slug: 'womens-unstitched-suits', label: "All Unstitched Suits", value: "Women's Unstitched Suits", department: 'women_suits', image: `${vjEditorial}suits-fabrics.jpg`, introduction: 'Complete 3-piece unstitched salwar suit fabrics with coordinating dupattas.', featured: true },
   { slug: 'cotton-suits', label: 'Pure Cotton Suits', value: 'Cotton Suits', department: 'women_suits', image: `${vjEditorial}suits-cotton.jpg`, introduction: 'All-day breathable pure cotton unstitched sets with soft dupattas.', featured: true },
   { slug: 'silk-suits', label: 'Festive Silk Suits', value: 'Silk Suits', department: 'women_suits', image: `${vjEditorial}suits-silk.jpg`, introduction: 'Lustrous mulberry, tussar, and chanderi silk fabric sets.', featured: true },
-  { slug: 'organza-suits', label: 'Organza Suits', value: 'Organza Suits', department: 'women_suits', image: `${vjEditorial}suits-fabrics.jpg`, introduction: 'Ethereal sheer organza dress materials with artisanal threadwork.' },
-  { slug: 'banarasi-suits', label: 'Banarasi Brocade Suits', value: 'Banarasi Suits', department: 'women_suits', image: `${vjEditorial}suits-silk.jpg`, introduction: 'Heritage Banarasi weaves featuring rich zari floral motifs.', featured: true },
-  { slug: 'rayon-suits', label: 'Soft Rayon Suits', value: 'Rayon Suits', department: 'women_suits', image: `${vjEditorial}suits-cotton.jpg`, introduction: 'Fluid, effortless-drape rayon suit lengths.' },
-  { slug: 'wool-suits', label: 'Winter Woollen Suits', value: 'Wool Suits', department: 'women_suits', image: `${vjEditorial}suits-hero.jpg`, introduction: 'Warm, cozy woollen unstitched suits for cool seasons.' },
+  { slug: 'organza-suits', label: 'Organza Suits', value: 'Organza Suits', department: 'women_suits', image: `${vjEditorial}suits-organza.jpg`, introduction: 'Ethereal sheer organza dress materials with artisanal threadwork.' },
+  { slug: 'banarasi-suits', label: 'Banarasi Brocade Suits', value: 'Banarasi Suits', department: 'women_suits', image: `${vjEditorial}suits-banarasi.jpg`, introduction: 'Heritage Banarasi weaves featuring rich zari floral motifs.', featured: true },
+  { slug: 'rayon-suits', label: 'Soft Rayon Suits', value: 'Rayon Suits', department: 'women_suits', image: `${vjEditorial}suits-rayon.jpg`, introduction: 'Fluid, effortless-drape rayon suit lengths.' },
+  { slug: 'wool-suits', label: 'Winter Woollen Suits', value: 'Wool Suits', department: 'women_suits', image: `${vjEditorial}suits-wool.jpg`, introduction: 'Warm, cozy woollen unstitched suits for cool seasons.' },
 ];
 
 export const homeTextilesCategories: DepartmentCategory[] = [
   { slug: 'cotton-bedsheets', label: 'Pure Cotton Bedsheets', value: 'Cotton Bedsheets', department: 'home_textiles', image: `${vjEditorial}living-bedsheet.jpg`, introduction: 'Crisp, breathable natural cotton bedsheets for tranquil sleep.', featured: true },
-  { slug: 'double-bedsheets-pillow-covers', label: 'Double Bedsheets with Pillow Covers', value: 'Double Bedsheets with Pillow Covers', department: 'home_textiles', image: `${vjEditorial}living-hero.jpg`, introduction: 'Double bed sets paired with matching tailored pillow covers.', featured: true },
-  { slug: 'single-bedsheets-pillow', label: 'Single Bedsheets with Pillow', value: 'Single Bedsheets with Pillow', department: 'home_textiles', image: `${vjEditorial}living-bedsheet.jpg`, introduction: 'Comfortable single bedsheets paired with matching pillow cover.', featured: true },
+  { slug: 'double-bedsheets-pillow-covers', label: 'Double Bedsheets with Pillow Covers', value: 'Double Bedsheets with Pillow Covers', department: 'home_textiles', image: `${vjEditorial}living-double-bedsheet.jpg`, introduction: 'Double bed sets paired with matching tailored pillow covers.', featured: true },
+  { slug: 'single-bedsheets-pillow', label: 'Single Bedsheets with Pillow', value: 'Single Bedsheets with Pillow', department: 'home_textiles', image: `${vjEditorial}living-single-bedsheet.jpg`, introduction: 'Comfortable single bedsheets paired with matching pillow cover.', featured: true },
   { slug: 'single-bed-top-sheets', label: 'Single Bed Top Sheets / Chaddars (60 × 90)', value: 'Single Bed Top Sheets / Chaddars', department: 'home_textiles', image: `${vjEditorial}living-chaddar.jpg`, introduction: 'Handcrafted single-bed top sheets / odhne wali chaddars in pure cotton (handwritten specification 60 × 90; unit awaiting owner confirmation).', featured: true },
   { slug: 'pillow-covers', label: 'Separate Pillow Covers', value: 'Pillow Covers', department: 'home_textiles', image: `${vjEditorial}living-pillows.jpg`, introduction: 'Separate tailored pillow covers with durable envelope closures.', featured: true },
 ];
@@ -186,23 +186,74 @@ export function resolveLaunchCategory(value?: string | null) {
   return allDepartmentCategories.find((category) => slug === category.slug || slug === filterSlug(category.label));
 }
 
+export function getCanonicalDepartmentId(value?: string | null): Department | undefined {
+  if (!value) return undefined;
+  const lower = value.trim().toLowerCase();
+  // Exact canonical IDs
+  if (lower === 'jewellery' || lower === 'women_suits' || lower === 'home_textiles' || lower === 'kids') {
+    return lower as Department;
+  }
+  const slug = filterSlug(lower);
+  const aliases: Record<string, Department> = {
+    // VJ Jewellery
+    jewellery: 'jewellery',
+    jewelry: 'jewellery',
+    'vj-jewellery': 'jewellery',
+    'vj_jewellery': 'jewellery',
+    jewel: 'jewellery',
+    // VJ Suits & Fabrics
+    suits: 'women_suits',
+    'women-suits': 'women_suits',
+    women_suits: 'women_suits',
+    'womens-suits': 'women_suits',
+    womens_suits: 'women_suits',
+    'vj-suits-fabrics': 'women_suits',
+    'vj_suits_fabrics': 'women_suits',
+    'ladies-suits': 'women_suits',
+    'salwar-suits': 'women_suits',
+    'unstitched-suits': 'women_suits',
+    fabrics: 'women_suits',
+    fabric: 'women_suits',
+    // VJ Living
+    living: 'home_textiles',
+    'vj-living': 'home_textiles',
+    'vj_living': 'home_textiles',
+    'home-textiles': 'home_textiles',
+    home_textiles: 'home_textiles',
+    'bed-sheets': 'home_textiles',
+    bedsheets: 'home_textiles',
+    bedding: 'home_textiles',
+    textiles: 'home_textiles',
+    // Little Loom
+    'little-loom': 'kids',
+    little_loom: 'kids',
+    littleloom: 'kids',
+    kids: 'kids',
+    kid: 'kids',
+    childrenswear: 'kids',
+    'childrens-clothing': 'kids',
+    children: 'kids',
+  };
+
+  if (aliases[lower]) return aliases[lower];
+  if (aliases[slug]) return aliases[slug];
+  const underscoreSlug = lower.replace(/[^a-z0-9_]/g, '');
+  if (aliases[underscoreSlug]) return aliases[underscoreSlug];
+  return undefined;
+}
+
 export function resolveDepartment(value?: string | null): DepartmentInfo | undefined {
   if (!value) return undefined;
+  const canonicalId = getCanonicalDepartmentId(value);
+  if (canonicalId) {
+    return departments.find((d) => d.id === canonicalId);
+  }
   const slug = filterSlug(value);
-  const aliases: Record<string, Department> = {
-    jewellery: 'jewellery', 'vj-jewellery': 'jewellery',
-    suits: 'women_suits', 'women-suits': 'women_suits', 'womens-suits': 'women_suits',
-    'vj-suits-fabrics': 'women_suits', 'ladies-suits': 'women_suits',
-    living: 'home_textiles', 'vj-living': 'home_textiles', 'home-textiles': 'home_textiles',
-    'bed-sheets': 'home_textiles',
-    'little-loom': 'kids', kids: 'kids', childrenswear: 'kids', 'childrens-clothing': 'kids',
-  };
-  const aliasedId = aliases[slug];
-  return departments.find((department) =>
-    department.id === aliasedId ||
-    department.id === value ||
-    filterSlug(department.label) === slug ||
-    filterSlug(department.brand) === slug
+  return departments.find(
+    (department) =>
+      department.id === value ||
+      filterSlug(department.label) === slug ||
+      filterSlug(department.brand) === slug
   );
 }
 

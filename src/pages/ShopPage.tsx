@@ -22,6 +22,7 @@ import {
   resolveLaunchAge,
   resolveLaunchCategory,
   resolveDepartment,
+  getCanonicalDepartmentId,
   departments,
 } from '../data/storeNavigation';
 
@@ -35,7 +36,7 @@ export default function ShopPage() {
   const [sort, setSort] = useState<SortOption>('featured');
   const { products, ages, categories, collections } = useCatalog();
 
-  const departmentParam = (searchParams.get('department') as Department) || '';
+  const departmentParam = searchParams.get('department');
   const ageParam = searchParams.get('age') || '';
   const categoryParam = searchParams.get('category') || '';
   const collectionParam = searchParams.get('collection') || '';
@@ -48,9 +49,10 @@ export default function ShopPage() {
   const actualCategory = categories.find((category) => (selectedLaunchCategory && resolveLaunchCategory(category.name)?.slug === selectedLaunchCategory.slug) || category.id.toLowerCase() === categoryParam.toLowerCase());
   const selectedCollection = collections.find((collection) => collection.slug.toLowerCase() === collectionParam.toLowerCase());
 
-  // Determine active department: explicitly from query param or inferred from category
+  // Determine active department: canonical ID from query param or inferred from category
+  const canonicalDept = getCanonicalDepartmentId(departmentParam);
   const activeDepartment: Department | null =
-    (departmentParam as Department) ||
+    canonicalDept ||
     (actualCategory?.department as Department) ||
     (selectedLaunchCategory?.department as Department) ||
     null;
@@ -137,7 +139,18 @@ export default function ShopPage() {
 
     // Filter by Category
     if (selectedCategories.size > 0) {
-      result = result.filter((product) => selectedCategories.has(product.category));
+      result = result.filter((product) => {
+        if (selectedCategories.has(product.category)) return true;
+        const prodLaunch = resolveLaunchCategory(product.category);
+        for (const cat of selectedCategories) {
+          const selLaunch = resolveLaunchCategory(cat);
+          if (selLaunch && (selLaunch.slug === prodLaunch?.slug || selLaunch.label === product.category || selLaunch.value === product.category)) {
+            return true;
+          }
+          if (prodLaunch && (prodLaunch.slug === cat || prodLaunch.value === cat)) return true;
+        }
+        return false;
+      });
     }
 
     // Filter by Size
@@ -499,60 +512,62 @@ export default function ShopPage() {
 
           {/* Main Content Area */}
           <div className="flex-1 min-w-0">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-espresso/10">
-              <p className="text-xs font-medium uppercase tracking-wider text-espresso-soft">
-                Showing {filtered.length} piece{filtered.length !== 1 ? 's' : ''}
-                {currentDeptInfo && <span className="font-semibold text-espresso"> in {currentDeptInfo.brand}</span>}
-              </p>
+            {/* Toolbar (Only shown when department has products) */}
+            {deptProducts.length > 0 && (
+              <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-espresso/10">
+                <p className="text-xs font-medium uppercase tracking-wider text-espresso-soft">
+                  Showing {filtered.length} piece{filtered.length !== 1 ? 's' : ''}
+                  {currentDeptInfo && <span className="font-semibold text-espresso"> in {currentDeptInfo.brand}</span>}
+                </p>
 
-              <div className="flex items-center gap-3">
-                {/* Mobile Filter Toggle Button */}
-                <button
-                  onClick={() => setShowFilters(true)}
-                  className="lg:hidden flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso shadow-xs"
-                >
-                  <SlidersHorizontal size={14} />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-forest text-ivory text-[9px] font-bold">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Sort Dropdown */}
-                <div className="relative">
+                <div className="flex items-center gap-3">
+                  {/* Mobile Filter Toggle Button */}
                   <button
-                    onClick={() => setSortOpen(!sortOpen)}
-                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso hover:border-espresso transition-colors shadow-xs"
+                    onClick={() => setShowFilters(true)}
+                    className="lg:hidden flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso shadow-xs"
                   >
-                    <span>Sort: {sortLabels[sort]}</span>
-                    <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
+                    <SlidersHorizontal size={14} />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-forest text-ivory text-[9px] font-bold">
+                        {activeFilterCount}
+                      </span>
+                    )}
                   </button>
-                  {sortOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-espresso/10 rounded-xl shadow-xl py-1 min-w-[210px] animate-scale-in">
-                        {(Object.keys(sortLabels) as SortOption[]).map((option) => (
-                          <button
-                            key={option}
-                            onClick={() => {
-                              setSort(option);
-                              setSortOpen(false);
-                            }}
-                            className="flex items-center justify-between w-full px-4 py-2.5 text-xs uppercase tracking-wider text-espresso hover:bg-linen transition-colors text-left"
-                          >
-                            <span>{sortLabels[option]}</span>
-                            {sort === option && <Check size={14} className="text-forest" />}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
+
+                  {/* Sort Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setSortOpen(!sortOpen)}
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider border border-espresso/15 rounded-xl bg-white text-espresso hover:border-espresso transition-colors shadow-xs"
+                    >
+                      <span>Sort: {sortLabels[sort]}</span>
+                      <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {sortOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                        <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-espresso/10 rounded-xl shadow-xl py-1 min-w-[210px] animate-scale-in">
+                          {(Object.keys(sortLabels) as SortOption[]).map((option) => (
+                            <button
+                              key={option}
+                              onClick={() => {
+                                setSort(option);
+                                setSortOpen(false);
+                              }}
+                              className="flex items-center justify-between w-full px-4 py-2.5 text-xs uppercase tracking-wider text-espresso hover:bg-linen transition-colors text-left"
+                            >
+                              <span>{sortLabels[option]}</span>
+                              {sort === option && <Check size={14} className="text-forest" />}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Product Grid or Clean Empty State */}
             {deptProducts.length === 0 ? (

@@ -20,6 +20,7 @@ import TiltCard from '../components/TiltCard';
 import {
   departments,
   resolveDepartment,
+  getCanonicalDepartmentId,
   getCategoriesForDepartment,
   ageNavigation,
 } from '../data/storeNavigation';
@@ -30,8 +31,8 @@ interface DepartmentLandingPageProps {
 
 export default function DepartmentLandingPage({ departmentId: propDeptId }: DepartmentLandingPageProps) {
   const { departmentId: paramDeptId } = useParams<{ departmentId: string }>();
-  const activeId = (propDeptId || paramDeptId || 'jewellery') as Department;
-  const deptInfo = resolveDepartment(activeId) || departments[0];
+  const canonicalId = getCanonicalDepartmentId(propDeptId || paramDeptId);
+  const deptInfo = (canonicalId ? departments.find((d) => d.id === canonicalId) : resolveDepartment(propDeptId || paramDeptId)) || departments[0];
 
   const { products, loading: catalogLoading } = useCatalog();
 
@@ -280,11 +281,13 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
                   {deptInfo.brand} <span className="italic font-normal">Edits</span>
                 </h2>
               </div>
-              <Link to={deptInfo.path}>
-                <Button variant="outline" size="md">
-                  View All ({deptProducts.length} Pieces)
-                </Button>
-              </Link>
+              {deptProducts.length > 0 && (
+                <Link to={deptInfo.path}>
+                  <Button variant="outline" size="md">
+                    View All ({deptProducts.length} Pieces)
+                  </Button>
+                </Link>
+              )}
             </div>
           </Reveal>
 

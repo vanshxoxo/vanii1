@@ -253,7 +253,7 @@ export default function HomePage() {
             <Reveal delay={100} className="lg:col-span-5 flex flex-col">
               <TiltCard maxTilt={2.5} className="h-full">
                 <Link
-                  to="/department/women-suits"
+                  to="/department/women_suits"
                   className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#E6C6BC] bg-[#FAF1ED] p-8 transition-all duration-500 hover:shadow-xl hover:border-terracotta"
                 >
                   <div>
@@ -306,7 +306,7 @@ export default function HomePage() {
             <Reveal delay={150} className="lg:col-span-5 flex flex-col">
               <TiltCard maxTilt={2.5} className="h-full">
                 <Link
-                  to="/department/living"
+                  to="/department/home_textiles"
                   className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#CAD6CE] bg-[#EDF2EE] p-8 transition-all duration-500 hover:shadow-xl hover:border-forest"
                 >
                   <div>
@@ -359,7 +359,7 @@ export default function HomePage() {
             <Reveal delay={200} className="lg:col-span-7 flex flex-col">
               <TiltCard maxTilt={2.5} className="h-full">
                 <Link
-                  to="/department/little-loom"
+                  to="/department/kids"
                   className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#D8DCD1] bg-[#F3F5F0] p-8 sm:p-10 transition-all duration-500 hover:shadow-xl hover:border-[#6B735B]"
                 >
                   <div>
@@ -610,8 +610,14 @@ export default function HomePage() {
                   src={
                     selectedFabricTab === 'cotton'
                       ? `${vjEditorial}suits-cotton.jpg`
-                      : selectedFabricTab === 'banarasi'
+                      : selectedFabricTab === 'silk'
                       ? `${vjEditorial}suits-silk.jpg`
+                      : selectedFabricTab === 'banarasi'
+                      ? `${vjEditorial}suits-banarasi.jpg`
+                      : selectedFabricTab === 'organza'
+                      ? `${vjEditorial}suits-organza.jpg`
+                      : selectedFabricTab === 'wool'
+                      ? `${vjEditorial}suits-wool.jpg`
                       : `${vjEditorial}suits-fabrics.jpg`
                   }
                   alt="Pure woven unstitched salwar suits and dupattas"
@@ -672,7 +678,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3.5">
-                  <Link to="/department/women-suits">
+                  <Link to="/department/women_suits">
                     <Button variant="terracotta" size="lg" className="group w-full sm:w-auto">
                       <span>Explore Suits & Fabrics</span>
                       <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
@@ -719,7 +725,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3.5">
-                  <Link to="/department/living">
+                  <Link to="/department/home_textiles">
                     <Button variant="forest" size="lg" className="group w-full sm:w-auto">
                       <span>Explore VJ Living</span>
                       <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
@@ -796,7 +802,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3.5">
-                  <Link to="/department/little-loom">
+                  <Link to="/department/kids">
                     <Button variant="primary" size="lg" className="group w-full sm:w-auto">
                       <span>Explore Little Loom</span>
                       <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />

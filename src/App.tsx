@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { StoreProvider } from './store';
 import Header from './components/Header';
@@ -62,10 +62,16 @@ export default function App() {
                 <Route path="/" element={<HomePage />} />
                 {/* Department Landing Pages */}
                 <Route path="/department/:departmentId" element={<DepartmentLandingPage />} />
+                <Route path="/department" element={<Navigate to="/shop" replace />} />
                 <Route path="/jewellery" element={<DepartmentLandingPage departmentId="jewellery" />} />
                 <Route path="/suits" element={<DepartmentLandingPage departmentId="women_suits" />} />
+                <Route path="/women_suits" element={<DepartmentLandingPage departmentId="women_suits" />} />
+                <Route path="/women-suits" element={<DepartmentLandingPage departmentId="women_suits" />} />
                 <Route path="/living" element={<DepartmentLandingPage departmentId="home_textiles" />} />
+                <Route path="/home_textiles" element={<DepartmentLandingPage departmentId="home_textiles" />} />
+                <Route path="/home-textiles" element={<DepartmentLandingPage departmentId="home_textiles" />} />
                 <Route path="/little-loom" element={<DepartmentLandingPage departmentId="kids" />} />
+                <Route path="/kids" element={<DepartmentLandingPage departmentId="kids" />} />
 
                 {/* Catalog & Products */}
                 <Route path="/products" element={<ShopPage />} />

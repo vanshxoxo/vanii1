@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AgeInfo, CategoryInfo, Department, Product } from '../types';
 import { isSupabaseConfigured, publicMediaUrl, responsiveMediaSrcSet, supabase } from './supabase';
-import { resolveLaunchAge, resolveLaunchCategory, allDepartmentCategories } from '../data/storeNavigation';
+import { resolveLaunchAge, resolveLaunchCategory, getCanonicalDepartmentId, allDepartmentCategories } from '../data/storeNavigation';
 
 type RawAsset = { provider: 'cloudinary' | 'imagekit' | 'external' | 'supabase'; delivery_url: string | null; external_url: string | null; resource_type?: string };
 export type StoreHero = { heading: string; body: string; image: string; mobileImage: string; ctaLabel: string; ctaHref: string };
@@ -61,7 +61,8 @@ export function useCatalog(): CatalogResult {
         const mainCategory = productCats.find((category: any) => category.kind === 'product')?.name || '';
         const mainCatSlug = productCats.find((category: any) => category.kind === 'product')?.slug || '';
         const matchedDeptCat = allDepartmentCategories.find((c) => c.value === mainCategory || c.label === mainCategory || c.slug === mainCatSlug);
-        const catDepartment = (row.product_type || matchedDeptCat?.department || (productCats.find((c: any) => c.department)?.department) || (ageNames.length > 0 ? 'kids' : 'kids')) as Department;
+        const canonicalFromType = getCanonicalDepartmentId(row.product_type);
+        const catDepartment = (canonicalFromType || matchedDeptCat?.department || (productCats.find((c: any) => c.department)?.department) || (ageNames.length > 0 ? 'kids' : 'kids')) as Department;
         const resolvedDepartment: Department = catDepartment;
         const variants = row.product_variants || [];
         const gallery = (row.product_media || []).sort((a: any, b: any) => a.display_order - b.display_order);

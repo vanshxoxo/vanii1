@@ -16,7 +16,7 @@ import {
 import { useStore } from '../useStore';
 import { useEffect, useState, useRef } from 'react';
 import { useCmsSection } from '../lib/cms';
-import { departments, getCategoriesForDepartment } from '../data/storeNavigation';
+import { departments, getCategoriesForDepartment, getCanonicalDepartmentId } from '../data/storeNavigation';
 import type { Department } from '../types';
 
 export default function Header() {
@@ -60,13 +60,24 @@ export default function Header() {
   };
 
   const isDeptActive = (deptId: Department) => {
+    // 1. Check shop / products query
+    if (location.pathname === '/shop' || location.pathname === '/products') {
+      const selectedDepartment = new URLSearchParams(location.search).get('department');
+      return getCanonicalDepartmentId(selectedDepartment) === deptId;
+    }
+    // 2. Check /department/:id
+    if (location.pathname.startsWith('/department/')) {
+      const slug = location.pathname.replace('/department/', '');
+      return getCanonicalDepartmentId(slug) === deptId;
+    }
+    // 3. Check direct alias routes (/jewellery, /suits, /living, /little-loom, /kids, etc.)
+    const directSlug = location.pathname.replace(/^\//, '');
+    const directCanonical = getCanonicalDepartmentId(directSlug);
+    if (directCanonical) {
+      return directCanonical === deptId;
+    }
     const department = departments.find((item) => item.id === deptId);
-    const selectedDepartment = new URLSearchParams(location.search).get('department');
-    return (
-      location.pathname === department?.landingPath ||
-      location.pathname === `/department/${deptId}` ||
-      ((location.pathname === '/shop' || location.pathname === '/products') && selectedDepartment === deptId)
-    );
+    return location.pathname === department?.landingPath;
   };
 
   const getDeptColor = (deptId: Department) => {

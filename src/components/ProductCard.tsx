@@ -81,6 +81,17 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
               Special
             </span>
           )}
+
+          {/* Stock Status Badge */}
+          {product.inStock ? (
+            <span className="bg-emerald-700/90 text-white px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-xs">
+              In Stock
+            </span>
+          ) : (
+            <span className="bg-espresso/85 text-ivory px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-xs">
+              Out of Stock
+            </span>
+          )}
         </div>
 
         {/* Wishlist Button */}
@@ -99,18 +110,24 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
           <Heart size={14} fill={wished ? 'currentColor' : 'none'} />
         </button>
 
-        {/* Quick Add Button */}
-        {onQuickAdd && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              onQuickAdd(product);
-            }}
-            className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 bg-espresso/95 py-2.5 text-xs font-semibold uppercase tracking-wider text-ivory opacity-100 translate-y-0 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus-visible:opacity-100 hover:bg-forest"
-          >
-            <ShoppingBag size={13} />
-            <span>Quick Bag</span>
-          </button>
+        {/* Quick Add Button or Out of Stock indicator */}
+        {product.inStock ? (
+          onQuickAdd && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onQuickAdd(product);
+              }}
+              className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1.5 bg-espresso/95 py-2.5 text-xs font-semibold uppercase tracking-wider text-ivory opacity-100 translate-y-0 transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus-visible:opacity-100 hover:bg-forest"
+            >
+              <ShoppingBag size={13} />
+              <span>Quick Bag</span>
+            </button>
+          )
+        ) : (
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 bg-espresso/80 py-2 text-[10px] font-bold uppercase tracking-wider text-ivory/80 select-none">
+            <span>Out of Stock</span>
+          </div>
         )}
       </div>
 
