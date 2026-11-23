@@ -20,6 +20,7 @@ import TiltCard from '../components/TiltCard';
 import {
   departments,
   resolveDepartment,
+  getCanonicalDepartmentId,
   getCategoriesForDepartment,
   ageNavigation,
 } from '../data/storeNavigation';
@@ -30,8 +31,8 @@ interface DepartmentLandingPageProps {
 
 export default function DepartmentLandingPage({ departmentId: propDeptId }: DepartmentLandingPageProps) {
   const { departmentId: paramDeptId } = useParams<{ departmentId: string }>();
-  const activeId = (propDeptId || paramDeptId || 'jewellery') as Department;
-  const deptInfo = resolveDepartment(activeId) || departments[0];
+  const canonicalId = getCanonicalDepartmentId(propDeptId || paramDeptId);
+  const deptInfo = (canonicalId ? departments.find((d) => d.id === canonicalId) : resolveDepartment(propDeptId || paramDeptId)) || departments[0];
 
   const { products, loading: catalogLoading } = useCatalog();
 
@@ -280,11 +281,13 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
                   {deptInfo.brand} <span className="italic font-normal">Edits</span>
                 </h2>
               </div>
-              <Link to={deptInfo.path}>
-                <Button variant="outline" size="md">
-                  View All ({deptProducts.length} Pieces)
-                </Button>
-              </Link>
+              {deptProducts.length > 0 && (
+                <Link to={deptInfo.path}>
+                  <Button variant="outline" size="md">
+                    View All ({deptProducts.length} Pieces)
+                  </Button>
+                </Link>
+              )}
             </div>
           </Reveal>
 
@@ -297,22 +300,16 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-linen mb-4 text-espresso">
                 {getDeptIcon(deptInfo.id)}
               </div>
-              <h3 className="font-serif text-2xl font-light text-espresso">
-                The Inaugural {deptInfo.brand} Release
+              <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-terracotta">A new collection is on its way</span>
+              <h3 className="mt-2 font-serif text-2xl font-light text-espresso">
+                {deptInfo.brand} · Coming Soon
               </h3>
-              <p className="mt-3 text-xs text-espresso-soft leading-relaxed max-w-md mx-auto">
-                Assortment items for {deptInfo.brand} are being curated and verified for publication. Check back shortly or browse our other active departments.
+              <p className="mt-3 text-sm text-espresso-soft leading-relaxed max-w-md mx-auto">
+                We are preparing the first pieces for this department. The catalogue will appear here automatically once products are approved and published.
               </p>
-              <div className="mt-6 flex justify-center gap-3">
+              <div className="mt-6 flex justify-center">
                 <Link to="/shop">
-                  <Button variant="primary" size="md">
-                    Explore All Collections
-                  </Button>
-                </Link>
-                <Link to="/">
-                  <Button variant="outline" size="md">
-                    Return to Homepage
-                  </Button>
+                  <Button variant="outline" size="md">Explore All Departments</Button>
                 </Link>
               </div>
             </div>

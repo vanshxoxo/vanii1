@@ -154,7 +154,7 @@ export default function SearchOverlay() {
                       Found {results.length} piece{results.length > 1 ? 's' : ''}
                     </p>
                     <Link
-                      to={`/shop?search=${encodeURIComponent(query)}`}
+                      to={selectedDept !== 'all' ? `/shop?department=${selectedDept}&search=${encodeURIComponent(query)}` : `/shop?search=${encodeURIComponent(query)}`}
                       onClick={closeSearch}
                       className="text-xs font-semibold uppercase tracking-wider text-forest hover:text-espresso inline-flex items-center gap-1"
                     >

@@ -71,9 +71,10 @@ export default function ProductPage() {
   }
 
   const wished = isWishlisted(product.id);
-  const related = products
+  const deptProducts = products.filter((p) => (p.department || p.productType || 'kids') === productDept);
+  const related = deptProducts
     .filter((item) => item.id !== product.id && item.category === product.category)
-    .concat(products.filter((item) => item.id !== product.id && item.category !== product.category))
+    .concat(deptProducts.filter((item) => item.id !== product.id && item.category !== product.category))
     .slice(0, 4);
 
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
@@ -249,6 +250,21 @@ export default function ProductPage() {
                 )}
               </div>
               <p className="mt-1 text-xs text-espresso-light">Inclusive of all taxes &middot; Complimentary insured shipping above ₹1,999</p>
+
+              {/* Real Availability Indicator */}
+              <div className="mt-3 flex items-center gap-2">
+                {product.inStock && (!selectedVariant || selectedVariant.available) ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
+                    In Stock · Ready for Insured Pan-India Dispatch
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-espresso/10 text-espresso border border-espresso/20">
+                    <span className="h-2 w-2 rounded-full bg-espresso/60" />
+                    Out of Stock · Restocking Soon
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Colour / Finish Selector */}
@@ -375,10 +391,16 @@ export default function ProductPage() {
                 magnetic
                 className="flex-1 group py-4 rounded-full shadow-sm"
                 onClick={handleAddToCart}
-                disabled={Boolean(product.variants?.length) && !product.inStock}
+                disabled={!product.inStock || (Boolean(product.variants?.length) && !selectedVariant?.available)}
               >
                 <ShoppingBag size={18} className={addedFeedback ? 'animate-wiggle' : ''} />
-                <span>{addedFeedback ? 'Added to Bag!' : 'Add to Shopping Bag'}</span>
+                <span>
+                  {!product.inStock || (Boolean(product.variants?.length) && !selectedVariant?.available)
+                    ? 'Out of Stock'
+                    : addedFeedback
+                    ? 'Added to Bag!'
+                    : 'Add to Shopping Bag'}
+                </span>
               </Button>
               <button
                 onClick={() => toggleWishlist(product.id, product.name)}
