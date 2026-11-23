@@ -4,59 +4,60 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Luxury Foundation
-        ivory: '#FAF8F5',
+        // Luxury Foundation Tokens (Refined Palette)
+        ivory: '#F6F2E9',
         'soft-white': '#FFFFFF',
-        linen: '#F4EFEA',
-        'linen-light': '#FBF9F6',
-        'linen-subtle': '#EDE6DC',
+        linen: '#EDE7DE',
+        'linen-light': '#F9F6F0',
+        'linen-subtle': '#E5DDD1',
 
         // Signature Forest Green
-        forest: '#1B3B2B',
-        'forest-dark': '#12281D',
-        'forest-light': '#254E3A',
-        'forest-soft': '#EAF2EC',
+        forest: '#263D32',
+        'forest-dark': '#1A2B23',
+        'forest-light': '#365445',
+        'forest-soft': '#E8EDE9',
 
         // Rich Espresso / Charcoal Typography
-        espresso: '#211D1A',
-        'espresso-soft': '#544E48',
-        'espresso-light': '#78726A',
-        charcoal: '#211D1A',
-        'charcoal-soft': '#544E48',
-        'charcoal-light': '#78726A',
+        espresso: '#302821',
+        'espresso-soft': '#574C42',
+        'espresso-light': '#7C7167',
+        charcoal: '#302821',
+        'charcoal-soft': '#574C42',
+        'charcoal-light': '#7C7167',
 
         // Muted Terracotta Accent
-        terracotta: '#B85D43',
-        'terracotta-dark': '#964731',
+        terracotta: '#B96F55',
+        'terracotta-dark': '#97553F',
         'terracotta-soft': '#F8ECE8',
-        clay: '#B85D43', // Backward compatibility alias
+        clay: '#B96F55', // Backward compatibility alias
 
         // Antique Brass Highlights
-        brass: '#C29F58',
-        'brass-dark': '#9E7F3D',
-        'brass-light': '#D8B875',
-        'brass-soft': '#F9F5EC',
-        butter: '#E8D5A0', // Backward compatibility alias
+        brass: '#B08A52',
+        'brass-dark': '#8E6C3A',
+        'brass-light': '#C7A56E',
+        'brass-soft': '#F7F2E8',
+        butter: '#D6B87A', // Backward compatibility alias
 
         // Supporting Stone & Sage Surfaces
-        'stone-warm': '#EAE4DA',
-        'stone-light': '#F2EFEA',
-        sage: '#6B7F6E',
-        'sage-soft': '#EEF3EF',
-        'sage-border': '#CFD9D0',
-        'sage-dark': '#4D5F50',
+        'stone-warm': '#DED6C9',
+        'stone-light': '#EAE4D9',
+        'stone-dark': '#B5AB9C',
+        sage: '#A7AD97',
+        'sage-soft': '#EFF1EC',
+        'sage-border': '#D0D6C7',
+        'sage-dark': '#6B735B',
 
         // Refined Borders
-        border: '#E6DFC',
-        'border-subtle': 'rgba(33, 29, 26, 0.08)',
-        'border-medium': 'rgba(33, 29, 26, 0.16)',
+        border: 'rgba(48, 40, 33, 0.12)',
+        'border-subtle': 'rgba(48, 40, 33, 0.08)',
+        'border-medium': 'rgba(48, 40, 33, 0.18)',
 
         // Preserved compatibility aliases
-        cream: '#FAF8F5',
-        ink: '#211D1A',
-        'ink-soft': '#544E48',
-        'ink-light': '#78726A',
-        peach: '#B85D43',
+        cream: '#F6F2E9',
+        ink: '#302821',
+        'ink-soft': '#574C42',
+        'ink-light': '#7C7167',
+        peach: '#B96F55',
       },
       fontFamily: {
         serif: ['Fraunces', 'Georgia', 'serif'],

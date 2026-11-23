@@ -36,7 +36,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-20 bg-[#12281D] text-ivory border-t border-[#1B3B2B]">
+    <footer className="mt-20 bg-[#1A2B23] text-ivory border-t border-[#263D32]">
       {/* Top Newsletter & Private List Strip */}
       <div className="border-b border-ivory/10">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:px-8">

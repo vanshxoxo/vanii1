@@ -1037,12 +1037,12 @@ export default function ProductWizard({
                     />
                   </div>
 
-                  {/* Dimensions: Length, Width, and Unit (CRITICAL FOR 60 x 90 SINGLE SHEET) */}
+                  {/* Dimensions: Length, Width, and Unit (STORED SEPARATELY & FLAGGED FOR OWNER CONFIRMATION) */}
                   <div className="sm:col-span-2">
                     <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1">
-                      Product Dimensions (Width × Length & Confirmed Unit) *
+                      Product Dimensions (Width × Length & Measurement Unit) *
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-muted">W:</span>
                         <input
@@ -1064,21 +1064,53 @@ export default function ProductWizard({
                         />
                       </div>
                       <select
-                        value={specs.dimensionUnit || 'inches'}
-                        onChange={(e) => updateSpec('dimensionUnit', e.target.value)}
+                        value={specs.dimensionUnit || (specs.textileType === 'top_sheet' ? 'pending_confirmation' : 'inches')}
+                        onChange={(e) => {
+                          updateSpec('dimensionUnit', e.target.value);
+                          if (e.target.value !== 'pending_confirmation') {
+                            updateSpec('unitConfirmed', true);
+                          }
+                        }}
                         className="px-2 py-2 text-xs rounded-xl bg-white border border-[#E8E2D9] font-medium"
                       >
+                        <option value="pending_confirmation">⚠️ Unit Pending Owner Confirmation</option>
                         <option value="inches">Inches (in)</option>
                         <option value="cm">Centimeters (cm)</option>
                         <option value="meters">Meters (m)</option>
                       </select>
                     </div>
 
+                    {/* Owner Confirmation Flag & Status */}
+                    <div className="mt-2.5 flex items-center justify-between text-xs">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={specs.unitConfirmed ?? (specs.dimensionUnit && specs.dimensionUnit !== 'pending_confirmation')}
+                          onChange={(e) => updateSpec('unitConfirmed', e.target.checked)}
+                          className="w-4 h-4 rounded text-terracotta focus:ring-terracotta"
+                        />
+                        <span className="text-[11px] font-medium text-ink">Measurement unit confirmed by owner</span>
+                      </label>
+                      {specs.textileType === 'top_sheet' && !specs.unitConfirmed && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          Pending Owner Verification
+                        </span>
+                      )}
+                    </div>
+
                     {/* Verified 60x90 Note confirmation badge */}
                     {specs.textileType === 'top_sheet' && (
-                      <span className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg block mt-2">
-                        ✨ Handwritten spec verified: Single-bed top sheet stored as <strong>{specs.width || '60'} × {specs.length || '90'} {specs.dimensionUnit || 'inches'}</strong> in pure cotton.
-                      </span>
+                      <div className="text-[11px] p-2.5 rounded-lg border mt-2 bg-amber-50/60 border-amber-200 text-amber-900">
+                        {specs.unitConfirmed ? (
+                          <span>
+                            ✅ Single-bed top sheet: <strong>{specs.width || '60'} × {specs.length || '90'} {specs.dimensionUnit}</strong> (confirmed by owner).
+                          </span>
+                        ) : (
+                          <span>
+                            📝 <strong>Handwritten Specification (60 × 90):</strong> Measurement unit is unconfirmed and stored separately. Flagged for store owner verification prior to customer packaging.
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 

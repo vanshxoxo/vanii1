@@ -69,13 +69,13 @@ export default function Header() {
   const getDeptColor = (deptId: Department) => {
     switch (deptId) {
       case 'jewellery':
-        return '#C29F58';
+        return '#B08A52';
       case 'women_suits':
-        return '#B85D43';
+        return '#B96F55';
       case 'home_textiles':
-        return '#1B3B2B';
+        return '#263D32';
       case 'kids':
-        return '#C87D65';
+        return '#A7AD97';
     }
   };
 
@@ -100,7 +100,7 @@ export default function Header() {
       {/* 2. Main Luxury Header */}
       <header
         ref={headerRef}
-        className={`sticky top-0 z-50 bg-[#FAF8F5] transition-shadow duration-300 ${
+        className={`sticky top-0 z-50 bg-[#F6F2E9] transition-shadow duration-300 ${
           scrolled ? 'shadow-md border-b border-espresso/12' : 'border-b border-espresso/8'
         }`}
         onMouseLeave={handleMouseLeave}
@@ -134,20 +134,21 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Center: Grand VJ Collection Master Brand Identity */}
+            {/* Center: Grand VJ Collection Master Brand Identity with Easter Egg */}
             <div className="flex flex-col items-center text-center">
               <Link to="/" className="group flex flex-col items-center">
-                <span className="font-serif text-2xl sm:text-3xl lg:text-[30px] font-light tracking-[0.24em] text-espresso leading-none transition-colors group-hover:text-forest">
-                  VJ COLLECTION
+                <span className="font-serif text-2xl sm:text-3xl lg:text-[30px] font-light tracking-[0.24em] text-espresso leading-none transition-colors group-hover:text-forest flex items-center gap-1.5">
+                  <span>VJ COLLECTION</span>
+                  <Sparkles size={14} className="text-brass opacity-0 group-hover:opacity-100 brand-sparkle -mt-0.5" />
                 </span>
-                <span className="text-[9px] uppercase tracking-[0.32em] text-espresso-light font-medium mt-1.5 flex items-center gap-1.5">
-                  <span>Jewellery</span>
-                  <span className="text-brass">·</span>
-                  <span>Suits & Fabrics</span>
-                  <span className="text-brass">·</span>
-                  <span>Living</span>
-                  <span className="text-brass">·</span>
-                  <span>Little Loom</span>
+                <span className="text-[9px] uppercase tracking-[0.32em] text-espresso-light font-medium mt-1.5 flex items-center gap-1.5 transition-colors">
+                  <span className="group-hover:text-brass transition-colors">Jewellery</span>
+                  <span className="text-brass/60">·</span>
+                  <span className="group-hover:text-terracotta transition-colors">Suits & Fabrics</span>
+                  <span className="text-brass/60">·</span>
+                  <span className="group-hover:text-forest transition-colors">Living</span>
+                  <span className="text-brass/60">·</span>
+                  <span className="group-hover:text-[#6B735B] transition-colors">Little Loom</span>
                 </span>
               </Link>
             </div>
@@ -253,7 +254,7 @@ export default function Header() {
         {/* 3. The Mega Menu Dropdown Panel (100% Solid Opaque Luxury Panel) */}
         {activeDropdown && (
           <div
-            className="absolute left-0 right-0 top-full bg-[#FAF8F5] border-b border-espresso/15 shadow-2xl z-50 animate-slide-down"
+            className="absolute left-0 right-0 top-full bg-[#F6F2E9] border-b border-espresso/15 shadow-2xl z-50 animate-slide-down"
             onMouseEnter={() => {
               if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
             }}
@@ -278,7 +279,7 @@ export default function Header() {
                           />
                           <div className="absolute top-2.5 left-2.5">
                             <span
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] bg-[#FAF8F5]/95 text-espresso shadow-xs border border-espresso/10"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] bg-[#F6F2E9]/95 text-espresso shadow-xs border border-espresso/10"
                             >
                               <Sparkles size={11} style={{ color: deptColor }} />
                               {dept.brand}

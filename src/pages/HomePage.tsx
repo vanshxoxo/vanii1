@@ -18,6 +18,7 @@ import type { Department, Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import Button from '../components/Button';
 import Reveal from '../components/Reveal';
+import TiltCard from '../components/TiltCard';
 import { departments, ageNavigation } from '../data/storeNavigation';
 
 const vjEditorial = '/images/editorial/vj/';
@@ -28,6 +29,7 @@ export default function HomePage() {
   const { products, hero, loading: catalogLoading } = useCatalog();
   const [mounted, setMounted] = useState(false);
   const [activeArrivalsDept, setActiveArrivalsDept] = useState<Department | 'all'>('all');
+  const [selectedFabricTab, setSelectedFabricTab] = useState<'cotton' | 'silk' | 'banarasi' | 'organza' | 'wool'>('silk');
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
@@ -69,9 +71,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-0 bg-[#FAF8F5]">
+    <div className="space-y-0 bg-[#F6F2E9]">
       {/* 1. Grand Editorial Hero Campaign (Asymmetric Luxury Composition) */}
-      <section className="relative overflow-hidden bg-[#FAF8F5] border-b border-espresso/10">
+      <section className="relative overflow-hidden bg-[#F6F2E9] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
             {/* Left Narrative Column */}
@@ -85,21 +87,21 @@ export default function HomePage() {
             >
               <div className="flex items-center gap-2">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-forest text-ivory">
-                  <Sparkles size={12} />
+                  <Sparkles size={12} className="brand-sparkle" />
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-terracotta">
-                  The Indian Luxury Retail House
+                  Four Indian Craft Traditions · One Retail House
                 </span>
               </div>
 
-              <h1 className="mt-6 font-serif text-4xl sm:text-6xl lg:text-[68px] font-light leading-[1.04] text-espresso tracking-tight text-balance">
-                Artisanal Living, <br />
-                <span className="italic font-normal">Heirloom Adornment</span> & Textile Grace.
+              <h1 className="mt-6 font-serif text-4xl sm:text-6xl lg:text-[66px] font-light leading-[1.04] text-espresso tracking-tight text-balance">
+                Heirloom Adornment, <br />
+                <span className="italic font-normal">Unstitched Silks</span> & Sanctuary Living.
               </h1>
 
               <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-espresso-soft">
                 {hero?.body ||
-                  'VJ Collection unites four distinct worlds of curated Indian craft: Heirloom Jewellery in kundan and polki, pure unstitched Salwar Weaves, Sanctuary Home Bedding with 60×90 chaddars, and mindful childrenswear by Little Loom.'}
+                  'VJ Collection unites four distinct worlds of Indian craft: Bridal Jewellery in handcrafted kundan and polki, ladies unstitched Salwar Suits in silk and handloom cotton, Sanctuary Bedding with handwritten 60×90 top sheets, and gentle childrenswear by Little Loom.'}
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -116,24 +118,24 @@ export default function HomePage() {
                 </a>
               </div>
 
-              {/* Verified Brand Trust Signature */}
+              {/* Verified Brand Integrity Signature */}
               <div className="mt-12 pt-8 border-t border-espresso/10 grid grid-cols-3 gap-6 text-xs text-espresso-soft">
                 <div className="flex flex-col gap-1">
                   <span className="font-serif text-base text-espresso font-medium">4 Departments</span>
-                  <span className="text-[11px]">One Master Retail House</span>
+                  <span className="text-[11px]">Jewellery · Suits · Living · Kids</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="font-serif text-base text-espresso font-medium">100% Verified</span>
-                  <span className="text-[11px]">Artisanal Textile Purity</span>
+                  <span className="font-serif text-base text-espresso font-medium">Handloom Purity</span>
+                  <span className="text-[11px]">Pure Silks & Combed Cottons</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="font-serif text-base text-espresso font-medium">Pan-India</span>
-                  <span className="text-[11px]">Insured Free Above ₹1,999</span>
+                  <span className="font-serif text-base text-espresso font-medium">Insured Dispatch</span>
+                  <span className="text-[11px]">Complimentary Above ₹1,999</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Visual Composition (Authentic Editorial Photography) */}
+            {/* Right Visual Composition (TiltCard with Authentic Editorial Photography) */}
             <div
               className="lg:col-span-5"
               style={{
@@ -142,233 +144,275 @@ export default function HomePage() {
                 transition: 'opacity 0.9s ease-out 0.15s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s',
               }}
             >
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Decorative border frame with subtle tilt */}
-                <div className="absolute -inset-3 rounded-3xl border border-espresso/12 -rotate-1 pointer-events-none" />
+              <TiltCard maxTilt={3.5} className="mx-auto max-w-md lg:max-w-none">
+                <div className="relative">
+                  {/* Decorative fine border frame */}
+                  <div className="absolute -inset-3 rounded-3xl border border-espresso/12 -rotate-1 pointer-events-none" />
 
-                <div className="relative overflow-hidden rounded-2xl bg-linen shadow-xl border border-espresso/10 aspect-[4/5]">
-                  <img
-                    src={`${vjEditorial}master-hero.jpg`}
-                    alt="VJ Collection Indian luxury editorial showcase"
-                    className="h-full w-full object-cover transition-transform duration-1000 hover:scale-105"
-                    fetchPriority="high"
-                  />
+                  <div className="relative overflow-hidden rounded-2xl bg-linen shadow-xl border border-espresso/10 aspect-[4/5] textile-glide">
+                    <img
+                      src={`${vjEditorial}master-hero.jpg`}
+                      alt="VJ Collection Indian luxury editorial showcase"
+                      className="h-full w-full object-cover transition-transform duration-1000 hover:scale-105"
+                      fetchPriority="high"
+                    />
 
-                  {/* Floating Editorial Card */}
-                  <div className="absolute bottom-5 left-5 right-5 rounded-xl bg-white/95 p-4 backdrop-blur-md border border-espresso/10 shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase font-bold tracking-[0.24em] text-terracotta">
-                        Editorial Edition
+                    {/* Editorial Card Note */}
+                    <div className="absolute bottom-5 left-5 right-5 rounded-xl bg-white/95 p-4 backdrop-blur-md border border-espresso/10 shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase font-bold tracking-[0.24em] text-terracotta">
+                          VJ Collection Atelier
+                        </p>
+                        <span className="text-[10px] uppercase tracking-wider text-espresso-light">Autumn & Festive</span>
+                      </div>
+                      <p className="font-serif text-base text-espresso mt-1 font-medium">
+                        The Handloom Silks & Heirloom Adornment
                       </p>
-                      <span className="text-[10px] uppercase tracking-wider text-espresso-light">Autumn / Festive</span>
                     </div>
-                    <p className="font-serif text-base text-espresso mt-1 font-medium">
-                      The Handloom Weaves & Heirloom Adornment
-                    </p>
                   </div>
                 </div>
-              </div>
+              </TiltCard>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. The Four Distinct Departments (Asymmetric Editorial Entrance) */}
-      <section id="departments" className="py-20 lg:py-28 bg-[#F4EFEA] border-b border-espresso/10">
+      {/* 2. The Four Distinct Departments (Asymmetric Editorial Magazine Layout) */}
+      <section id="departments" className="py-20 lg:py-28 bg-[#EDE7DE] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-terracotta">
-                <Sparkles size={13} /> Four Distinct Worlds
+                <Sparkles size={13} className="brand-sparkle" /> The Four Departments
               </span>
               <h2 className="mt-3 font-serif text-3xl sm:text-5xl font-light text-espresso">
-                The VJ Collection <span className="italic font-normal">Departments</span>
+                Step into Our <span className="italic font-normal">Dedicated Worlds</span>
               </h2>
               <p className="mt-4 text-sm sm:text-base text-espresso-soft leading-relaxed">
-                Step into each dedicated world, united by master craftsmanship, material integrity, and a singular aesthetic vision for modern Indian living.
+                Each department is anchored by genuine artisanal materials, specialized tailoring options, and dedicated customer service.
               </p>
             </div>
           </Reveal>
 
-          {/* Asymmetric 4-Department Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-            {/* Dept 1: VJ Jewellery (Large Feature - 6 cols) */}
-            <Reveal className="lg:col-span-6 flex flex-col">
-              <Link
-                to="/department/jewellery"
-                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-2xl border border-espresso/10 bg-[#FAF6EE] p-8 sm:p-10 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:border-brass"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs text-brass">
-                      <Gem size={22} />
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-brass">
-                      Department 01
-                    </span>
+          {/* Asymmetric 4-Department Layout (7/5 and 5/7 columns for high editorial visual interest) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Dept 1: VJ Jewellery (Editorial Lead - 7 cols) */}
+            <Reveal className="lg:col-span-7 flex flex-col">
+              <TiltCard maxTilt={2.5} className="h-full">
+                <Link
+                  to="/department/jewellery"
+                  className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#E5D6BD] bg-[#F8F4EC] p-8 sm:p-10 transition-all duration-500 hover:shadow-xl hover:border-brass"
+                >
+                  <div>
+                    <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xs text-brass">
+                          <Gem size={20} />
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-brass block">
+                            Department 01
+                          </span>
+                          <span className="text-xs text-espresso-soft">Heirloom Adornment</span>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-serif italic text-brass font-medium">
+                        Kundan, Polki & Semi-Precious
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 font-serif text-3xl sm:text-4xl font-light text-espresso group-hover:text-brass transition-colors">
+                      VJ Jewellery
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-brass">
+                      Necklace Sets · Chandelier Earrings · Artisanal Rings
+                    </p>
+                    <p className="mt-3.5 text-sm text-espresso-soft leading-relaxed max-w-xl">
+                      Bridal choker necklaces, chandelier jhumkas, and handcrafted rings in premium gold and silver micron plating, designed for celebration and generational keep.
+                    </p>
+
+                    <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen jewellery-glint">
+                      <img
+                        src={`${vjEditorial}jewellery-hero.jpg`}
+                        alt="VJ Jewellery handcrafted bridal set"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
 
-                  <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-forest transition-colors">
-                    VJ Jewellery
-                  </h3>
-                  <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-brass">
-                    Heirloom Kundan, Polki & Fine Artisanal Sets
-                  </p>
-                  <p className="mt-4 text-sm text-espresso-soft leading-relaxed">
-                    Bridal choker necklaces, chandelier jhumkas, and handcrafted rings in premium gold and silver micron plating, designed for celebration and generational keep.
-                  </p>
-
-                  <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen">
-                    <img
-                      src={`${vjEditorial}jewellery-hero.jpg`}
-                      alt="VJ Jewellery showcase"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-brass transition-colors">
+                    <span>Explore VJ Jewellery Collection</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                   </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-forest transition-colors">
-                  <span>Enter VJ Jewellery</span>
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+                </Link>
+              </TiltCard>
             </Reveal>
 
-            {/* Dept 2: VJ Suits & Fabrics (Large Feature - 6 cols) */}
-            <Reveal delay={100} className="lg:col-span-6 flex flex-col">
-              <Link
-                to="/department/women-suits"
-                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-2xl border border-espresso/10 bg-[#FAF3EF] p-8 sm:p-10 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:border-terracotta"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs text-terracotta">
-                      <Shirt size={22} />
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-terracotta">
-                      Department 02
-                    </span>
+            {/* Dept 2: VJ Suits & Fabrics (Textile Lead - 5 cols) */}
+            <Reveal delay={100} className="lg:col-span-5 flex flex-col">
+              <TiltCard maxTilt={2.5} className="h-full">
+                <Link
+                  to="/department/women-suits"
+                  className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#E6C6BC] bg-[#FAF1ED] p-8 transition-all duration-500 hover:shadow-xl hover:border-terracotta"
+                >
+                  <div>
+                    <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xs text-terracotta">
+                          <Shirt size={20} />
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-terracotta block">
+                            Department 02
+                          </span>
+                          <span className="text-xs text-espresso-soft">Ladies' Salwar Fabrics</span>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-serif italic text-terracotta font-medium">
+                        6 Signature Weaves
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-terracotta transition-colors">
+                      VJ Suits & Fabrics
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-terracotta">
+                      Pure Cotton · Silk · Organza · Banarasi · Rayon · Wool
+                    </p>
+                    <p className="mt-3.5 text-sm text-espresso-soft leading-relaxed">
+                      Complete unstitched 3-piece salwar suit fabrics accompanied by coordinating dupattas, providing full tailoring freedom for your personal silhouette.
+                    </p>
+
+                    <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/10] border border-espresso/8 bg-linen textile-glide">
+                      <img
+                        src={`${vjEditorial}suits-hero.jpg`}
+                        alt="VJ Suits & Fabrics unstitched handloom yardage"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
 
-                  <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-terracotta transition-colors">
-                    VJ Suits & Fabrics
-                  </h3>
-                  <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-terracotta">
-                    Pure Cotton, Handloom Silk, Organza & Banarasi
-                  </p>
-                  <p className="mt-4 text-sm text-espresso-soft leading-relaxed">
-                    Unstitched 3-piece salwar suit fabrics accompanied by coordinating artisanal dupattas, providing tailoring freedom for your personalized silhouette.
-                  </p>
-
-                  <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen">
-                    <img
-                      src={`${vjEditorial}suits-hero.jpg`}
-                      alt="VJ Suits & Fabrics pure weave"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-terracotta transition-colors">
+                    <span>Enter Suits & Fabrics</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                   </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-terracotta transition-colors">
-                  <span>Enter Suits & Fabrics</span>
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+                </Link>
+              </TiltCard>
             </Reveal>
 
-            {/* Dept 3: VJ Living (6 cols) */}
-            <Reveal delay={150} className="lg:col-span-6 flex flex-col">
-              <Link
-                to="/department/living"
-                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-2xl border border-espresso/10 bg-[#F3F6F4] p-8 sm:p-10 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:border-forest"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs text-forest">
-                      <Home size={22} />
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-forest">
-                      Department 03
-                    </span>
+            {/* Dept 3: VJ Living (Interior Sanctuary - 5 cols) */}
+            <Reveal delay={150} className="lg:col-span-5 flex flex-col">
+              <TiltCard maxTilt={2.5} className="h-full">
+                <Link
+                  to="/department/living"
+                  className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#CAD6CE] bg-[#EDF2EE] p-8 transition-all duration-500 hover:shadow-xl hover:border-forest"
+                >
+                  <div>
+                    <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xs text-forest">
+                          <Home size={20} />
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-forest block">
+                            Department 03
+                          </span>
+                          <span className="text-xs text-espresso-soft">Home Sanctuary</span>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-serif italic text-forest font-medium">
+                        Pure Cotton Bedding
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-forest transition-colors">
+                      VJ Living
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-forest">
+                      Double Bedsheets · Single Bedsheets · 60 × 90 Chaddars · Pillow Covers
+                    </p>
+                    <p className="mt-3.5 text-sm text-espresso-soft leading-relaxed">
+                      Cool, breathable double bedsheet sets with matching pillow covers, and traditional 60 × 90 single-bed top sheets (*odhne wali chaddars*) in pure cotton.
+                    </p>
+
+                    <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/10] border border-espresso/8 bg-linen">
+                      <img
+                        src={`${vjEditorial}living-hero.jpg`}
+                        alt="VJ Living pure cotton bedding sanctuary"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
 
-                  <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-forest transition-colors">
-                    VJ Living
-                  </h3>
-                  <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-forest">
-                    Pure Cotton Bedsheets & 60 × 90 Chaddars
-                  </p>
-                  <p className="mt-4 text-sm text-espresso-soft leading-relaxed">
-                    Cool, breathable cotton double bedsheets with matching pillow covers, and confirmed 60 × 90 single-bed top sheets (*odhne wali chaddars*) for peaceful sleep.
-                  </p>
-
-                  <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen">
-                    <img
-                      src={`${vjEditorial}living-hero.jpg`}
-                      alt="VJ Living cotton sanctuary bedding"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-forest transition-colors">
+                    <span>Enter VJ Living</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                   </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-forest transition-colors">
-                  <span>Enter VJ Living</span>
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+                </Link>
+              </TiltCard>
             </Reveal>
 
-            {/* Dept 4: Little Loom (6 cols) */}
-            <Reveal delay={200} className="lg:col-span-6 flex flex-col">
-              <Link
-                to="/department/little-loom"
-                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-2xl border border-espresso/10 bg-[#FAF4EF] p-8 sm:p-10 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:border-[#C87D65]"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs text-[#C87D65]">
-                      <Baby size={22} />
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#C87D65]">
-                      Department 04
-                    </span>
+            {/* Dept 4: Little Loom (Gentle Nursery - 7 cols) */}
+            <Reveal delay={200} className="lg:col-span-7 flex flex-col">
+              <TiltCard maxTilt={2.5} className="h-full">
+                <Link
+                  to="/department/little-loom"
+                  className="group relative flex flex-col justify-between h-full overflow-hidden rounded-2xl border border-[#D8DCD1] bg-[#F3F5F0] p-8 sm:p-10 transition-all duration-500 hover:shadow-xl hover:border-[#6B735B]"
+                >
+                  <div>
+                    <div className="flex items-center justify-between pb-6 border-b border-espresso/10">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xs text-[#6B735B] playful-sway">
+                          <Baby size={20} />
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6B735B] block">
+                            Department 04
+                          </span>
+                          <span className="text-xs text-espresso-soft">Children's Clothing</span>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-serif italic text-[#6B735B] font-medium">
+                        Newborn to 6 Years
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 font-serif text-3xl sm:text-4xl font-light text-espresso group-hover:text-[#6B735B] transition-colors">
+                      Little Loom
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B735B]">
+                      Organic Cotton Rompers · Co-ords · Dresses · Sleepwear
+                    </p>
+                    <p className="mt-3.5 text-sm text-espresso-soft leading-relaxed max-w-xl">
+                      Preserving its dedicated, tender soul within VJ Collection, Little Loom crafts cloud-soft organic playwear and milestone pieces with tagless flatlock seams.
+                    </p>
+
+                    <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen">
+                      <img
+                        src={`${kidsEditorial}hero-desktop.webp`}
+                        alt="Little Loom organic childrenswear"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
 
-                  <h3 className="mt-6 font-serif text-3xl font-light text-espresso group-hover:text-forest transition-colors">
-                    Little Loom
-                  </h3>
-                  <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#C87D65]">
-                    Mindful Childrenswear for Newborn to 6 Years
-                  </p>
-                  <p className="mt-4 text-sm text-espresso-soft leading-relaxed">
-                    Retaining its dedicated, lovingly curated character within VJ Collection, Little Loom crafts cloud-soft organic playwear, rompers, and occasion outfits.
-                  </p>
-
-                  <div className="mt-6 relative overflow-hidden rounded-xl aspect-[16/9] border border-espresso/8 bg-linen">
-                    <img
-                      src={`${kidsEditorial}hero-desktop.webp`}
-                      alt="Little Loom organic childrenswear"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-[#6B735B] transition-colors">
+                    <span>Enter Little Loom Store</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                   </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-espresso/10 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso group-hover:text-[#C87D65] transition-colors">
-                  <span>Enter Little Loom</span>
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
+                </Link>
+              </TiltCard>
             </Reveal>
           </div>
         </div>
       </section>
 
       {/* 3. Cross-Department Curated Arrivals (Real Catalogue Data) */}
-      <section className="py-20 lg:py-28 bg-[#FAF8F5] border-b border-espresso/10">
+      <section className="py-20 lg:py-28 bg-[#F6F2E9] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-6 border-b border-espresso/10">
@@ -453,7 +497,7 @@ export default function HomePage() {
               <div className="mt-12 text-center">
                 <Link to="/shop">
                   <Button variant="outline" size="lg">
-                    View Complete Catalogue ({products.length} Verified Pieces)
+                    View Complete Catalogue ({products.length} Pieces)
                   </Button>
                 </Link>
               </div>
@@ -462,43 +506,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Art-Directed Editorial Feature 1: VJ Jewellery */}
-      <section className="py-20 lg:py-28 bg-[#FAF6EE] border-b border-espresso/10">
+      {/* 4. Editorial Feature 1: VJ Jewellery (Salon Gallery Composition) */}
+      <section className="py-20 lg:py-28 bg-[#F8F4EC] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
             <Reveal y={30} className="lg:col-span-6 order-2 lg:order-1">
-              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#E6D7B4] shadow-sm">
+              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#E5D6BD] shadow-sm">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-brass">
-                  <Gem size={14} /> VJ Jewellery Spotlight
+                  <Gem size={14} /> VJ Jewellery · Heirloom Atelier
                 </span>
 
                 <h2 className="mt-4 font-serif text-3xl sm:text-5xl font-light text-espresso leading-[1.08] text-balance">
-                  Heirloom Radiance for Contemporary Celebrations.
+                  Kundan Splendour & Polki Radiance.
                 </h2>
 
                 <p className="mt-5 text-sm sm:text-base leading-relaxed text-espresso-soft">
-                  Handcrafted necklace sets, chandelier jhumkas, and tailored rings. Finished in high-micron gold and silver plating with artisanal kundan and polki stones, each piece is designed for weddings, festive galas, and treasured heirloom collections.
+                  Handcrafted necklace sets, chandelier jhumkas, and tailored rings. Finished in high-micron gold and silver plating with artisanal stones, each piece is designed for weddings, festive galas, and treasured heirloom collections.
                 </p>
 
-                {/* Vignette Categories */}
+                {/* Subcategory Links */}
                 <div className="mt-6 pt-5 border-t border-espresso/8 grid grid-cols-3 gap-3 text-center">
                   <Link
                     to="/shop?department=jewellery&category=necklace-sets"
-                    className="p-3 rounded-xl bg-linen hover:bg-[#FAF6EE] transition-colors border border-espresso/6"
+                    className="p-3 rounded-xl bg-[#F8F4EC] hover:bg-linen transition-colors border border-espresso/6"
                   >
                     <span className="font-serif text-sm font-medium text-espresso block">Necklaces</span>
                     <span className="text-[10px] text-espresso-light">Chokers & Sets</span>
                   </Link>
                   <Link
                     to="/shop?department=jewellery&category=earrings"
-                    className="p-3 rounded-xl bg-linen hover:bg-[#FAF6EE] transition-colors border border-espresso/6"
+                    className="p-3 rounded-xl bg-[#F8F4EC] hover:bg-linen transition-colors border border-espresso/6"
                   >
                     <span className="font-serif text-sm font-medium text-espresso block">Earrings</span>
                     <span className="text-[10px] text-espresso-light">Jhumkas & Studs</span>
                   </Link>
                   <Link
                     to="/shop?department=jewellery&category=rings"
-                    className="p-3 rounded-xl bg-linen hover:bg-[#FAF6EE] transition-colors border border-espresso/6"
+                    className="p-3 rounded-xl bg-[#F8F4EC] hover:bg-linen transition-colors border border-espresso/6"
                   >
                     <span className="font-serif text-sm font-medium text-espresso block">Rings</span>
                     <span className="text-[10px] text-espresso-light">Tailored & Fixed</span>
@@ -521,59 +565,110 @@ export default function HomePage() {
               </div>
             </Reveal>
 
+            {/* Asymmetrical Salon Imagery */}
             <Reveal y={30} delay={120} className="lg:col-span-6 order-1 lg:order-2">
-              <div className="overflow-hidden rounded-3xl border border-espresso/12 shadow-xl aspect-[4/3] sm:aspect-[16/11] bg-linen">
-                <img
-                  src={`${vjEditorial}jewellery-necklace.jpg`}
-                  alt="Fine handcrafted kundan necklace set"
-                  className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-                  loading="lazy"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="overflow-hidden rounded-2xl border border-espresso/12 shadow-lg aspect-[4/5] bg-linen jewellery-glint col-span-2 sm:col-span-1">
+                  <img
+                    src={`${vjEditorial}jewellery-necklace.jpg`}
+                    alt="Handcrafted kundan necklace set"
+                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div className="overflow-hidden rounded-2xl border border-espresso/12 shadow-md aspect-[4/3] bg-linen jewellery-glint">
+                    <img
+                      src={`${vjEditorial}jewellery-earrings.jpg`}
+                      alt="Intricate gold chandelier jhumkas"
+                      className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="overflow-hidden rounded-2xl border border-espresso/12 shadow-md aspect-[4/3] bg-linen jewellery-glint">
+                    <img
+                      src={`${vjEditorial}jewellery-rings.jpg`}
+                      alt="Statement polki and gemstone ring"
+                      className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
               </div>
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* 5. Art-Directed Editorial Feature 2: VJ Suits & Fabrics */}
-      <section className="py-20 lg:py-28 bg-[#FAF3EF] border-b border-espresso/10">
+      {/* 5. Editorial Feature 2: VJ Suits & Fabrics (Textile Atelier Composition) */}
+      <section className="py-20 lg:py-28 bg-[#FAF1ED] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
             <Reveal y={30} className="lg:col-span-6">
-              <div className="overflow-hidden rounded-3xl border border-espresso/12 shadow-xl aspect-[4/3] sm:aspect-[16/11] bg-linen">
+              <div className="overflow-hidden rounded-3xl border border-espresso/12 shadow-xl aspect-[4/3] sm:aspect-[16/11] bg-linen textile-glide">
                 <img
-                  src={`${vjEditorial}suits-fabrics.jpg`}
-                  alt="Pure woven unstitched suits and dupattas"
-                  className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                  src={
+                    selectedFabricTab === 'cotton'
+                      ? `${vjEditorial}suits-cotton.jpg`
+                      : selectedFabricTab === 'banarasi'
+                      ? `${vjEditorial}suits-silk.jpg`
+                      : `${vjEditorial}suits-fabrics.jpg`
+                  }
+                  alt="Pure woven unstitched salwar suits and dupattas"
+                  className="h-full w-full object-cover transition-all duration-700 hover:scale-105"
                   loading="lazy"
                 />
               </div>
             </Reveal>
 
             <Reveal y={30} delay={120} className="lg:col-span-6">
-              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#ECCDC4] shadow-sm">
+              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#E6C6BC] shadow-sm">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-terracotta">
-                  <Shirt size={14} /> VJ Suits & Fabrics Spotlight
+                  <Shirt size={14} /> VJ Suits & Fabrics · The Pure Weave
                 </span>
 
                 <h2 className="mt-4 font-serif text-3xl sm:text-5xl font-light text-espresso leading-[1.08] text-balance">
-                  The Purity of Unstitched Weaves.
+                  Ladies' Unstitched Salwar Suits.
                 </h2>
 
                 <p className="mt-5 text-sm sm:text-base leading-relaxed text-espresso-soft">
-                  Experience pure breathable cotton, festive handloom silk, sheer organza, rich Banarasi brocades with zari motifs, fluid rayon, and cozy winter wools. Every set features generous top, bottom, and artisan-crafted dupatta lengths ready to be tailored to your distinct grace.
+                  Pure breathable cotton, festive handloom silk, sheer organza, rich Banarasi brocades with zari motifs, fluid rayon, and cozy winter wools. Every set features generous top, bottom, and artisan-crafted dupatta lengths ready to be tailored to your distinct grace.
                 </p>
 
-                {/* Fabric Type Badges */}
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {['Pure Cotton', 'Mulberry Silk', 'Banarasi Zari', 'Organza Sheer', 'Rayon', 'Winter Wool'].map((fabric) => (
-                    <span
-                      key={fabric}
-                      className="px-3 py-1 rounded-full text-xs bg-linen border border-espresso/8 text-espresso font-medium"
-                    >
-                      {fabric}
-                    </span>
-                  ))}
+                {/* Fabric Type Selector Tabs */}
+                <div className="mt-6 pt-4 border-t border-espresso/8">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-espresso-light mb-2.5">
+                    Select Fabric Composition to Preview
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { key: 'cotton', label: 'Pure Cotton' },
+                      { key: 'silk', label: 'Chanderi Silk' },
+                      { key: 'banarasi', label: 'Banarasi Zari' },
+                      { key: 'organza', label: 'Organza Sheer' },
+                      { key: 'wool', label: 'Winter Wool' },
+                    ] as const).map((fab) => (
+                      <button
+                        key={fab.key}
+                        onClick={() => setSelectedFabricTab(fab.key)}
+                        className={`px-3 py-1 rounded-full text-xs transition-all ${
+                          selectedFabricTab === fab.key
+                            ? 'bg-terracotta text-white font-medium shadow-xs'
+                            : 'bg-[#FAF1ED] text-espresso hover:bg-[#EDE7DE] border border-espresso/8'
+                        }`}
+                      >
+                        {fab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tailoring Specs Callout */}
+                <div className="mt-6 p-3.5 rounded-xl bg-[#FAF1ED] border border-espresso/8 text-xs text-espresso-soft">
+                  <div className="flex items-center gap-2 text-espresso font-semibold uppercase tracking-wider mb-1">
+                    <CheckCircle2 size={14} className="text-terracotta" /> Standard 3-Piece Fabric Measurements
+                  </div>
+                  <p>Top: 2.50 Meters &middot; Bottom: 2.50 Meters &middot; Coordinated Dupatta: 2.25 Meters</p>
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3.5">
@@ -585,7 +680,7 @@ export default function HomePage() {
                   </Link>
                   <Link to="/shop?department=women_suits">
                     <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                      Browse Unstitched Sets
+                      Browse All Unstitched Sets
                     </Button>
                   </Link>
                 </div>
@@ -595,12 +690,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. Art-Directed Editorial Feature 3: VJ Living */}
-      <section className="py-20 lg:py-28 bg-[#F3F6F4] border-b border-espresso/10">
+      {/* 6. Editorial Feature 3: VJ Living (Sanctuary Bedding with 60x90 Chaddar Note) */}
+      <section className="py-20 lg:py-28 bg-[#EDF2EE] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
             <Reveal y={30} className="lg:col-span-6 order-2 lg:order-1">
-              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#D0DDD4] shadow-sm">
+              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#CAD6CE] shadow-sm">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-forest">
                   <Home size={14} /> VJ Living · Home Sanctuary
                 </span>
@@ -610,16 +705,16 @@ export default function HomePage() {
                 </h2>
 
                 <p className="mt-5 text-sm sm:text-base leading-relaxed text-espresso-soft">
-                  Natural, skin-friendly cotton bedding designed for peaceful rest. Discover double bedsheet sets with matching tailored pillow covers, alongside our signature 60 × 90 single-bed top sheets (*odhne wali chaddars*) measured to standard Indian dimensions.
+                  Natural, skin-friendly cotton bedding designed for peaceful rest. Discover double bedsheet sets with matching tailored pillow covers, single bedsheets with pillow, separate pillow covers, and traditional 60 × 90 single-bed top sheets (*odhne wali chaddars*).
                 </p>
 
-                {/* Confirmed Specifications Card */}
-                <div className="mt-6 p-4 rounded-xl bg-linen border border-espresso/8">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-forest mb-1">
-                    <CheckCircle2 size={15} /> Confirmed 60 × 90 Single Top Sheet Standard
+                {/* Handwritten 60x90 Specification Callout (Store Owner Verification Note) */}
+                <div className="mt-6 p-4 rounded-xl bg-[#EDF2EE] border border-forest/15">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-forest mb-1.5">
+                    <CheckCircle2 size={15} /> Single-Bed Top Sheet (*Odhne Wali Chaddar*)
                   </div>
                   <p className="text-xs text-espresso-soft leading-relaxed">
-                    100% pure cotton, measured in inches (60 in &times; 90 in), breathable summer and trans-seasonal weave that softens with every wash.
+                    100% pure combed cotton. Recorded from client handwritten specifications as <strong>60 &times; 90</strong> (measurement unit stored separately and flagged for owner confirmation before final packaging).
                   </p>
                 </div>
 
@@ -643,7 +738,7 @@ export default function HomePage() {
               <div className="overflow-hidden rounded-3xl border border-espresso/12 shadow-xl aspect-[4/3] sm:aspect-[16/11] bg-linen">
                 <img
                   src={`${vjEditorial}living-chaddar.jpg`}
-                  alt="Pure cotton home bedding and single top sheet"
+                  alt="Pure cotton home bedding and single top sheet chaddar"
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                   loading="lazy"
                 />
@@ -653,8 +748,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Art-Directed Editorial Feature 4: Little Loom */}
-      <section className="py-20 lg:py-28 bg-[#FAF4EF] border-b border-espresso/10">
+      {/* 7. Editorial Feature 4: Little Loom (Gentle Beginnings) */}
+      <section className="py-20 lg:py-28 bg-[#F3F5F0] border-b border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
             <Reveal y={30} className="lg:col-span-6">
@@ -669,9 +764,9 @@ export default function HomePage() {
             </Reveal>
 
             <Reveal y={30} delay={120} className="lg:col-span-6">
-              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#EBD7CD] shadow-sm">
-                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#C87D65]">
-                  <Baby size={14} /> Little Loom · Children's Clothing
+              <div className="rounded-3xl p-8 sm:p-12 lg:p-14 bg-white border border-[#D8DCD1] shadow-sm">
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#6B735B]">
+                  <Baby size={14} className="playful-sway" /> Little Loom · Children's Clothing
                 </span>
 
                 <h2 className="mt-4 font-serif text-3xl sm:text-5xl font-light text-espresso leading-[1.08] text-balance">
@@ -692,7 +787,7 @@ export default function HomePage() {
                       <Link
                         key={age.key}
                         to={`/shop?department=kids&age=${encodeURIComponent(age.key)}`}
-                        className="px-3.5 py-1.5 rounded-full text-xs bg-linen border border-espresso/10 text-espresso hover:border-espresso hover:bg-white transition-all"
+                        className="px-3.5 py-1.5 rounded-full text-xs bg-[#F3F5F0] border border-espresso/10 text-espresso hover:border-espresso hover:bg-white transition-all"
                       >
                         {age.label} ({age.range})
                       </Link>
@@ -720,7 +815,7 @@ export default function HomePage() {
       </section>
 
       {/* 8. The VJ Collection Heritage & Four Worlds Story */}
-      <section id="brand-story" className="py-24 lg:py-32 bg-[#FAF8F5] border-b border-espresso/10">
+      <section id="brand-story" className="py-24 lg:py-32 bg-[#F6F2E9] border-b border-espresso/10">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <Reveal>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-terracotta">
@@ -735,7 +830,7 @@ export default function HomePage() {
                 VJ Collection was established with a singular devotion: bringing together the authentic craftsmanship of Indian textiles, jewellery, and home living under one elevated roof.
               </p>
               <p>
-                From the intricate kundan settings of royal jewellery to the rhythmic clack of wooden looms weaving unstitched salwar suits and cool 60&times;90 cotton bedding, our pieces honour generational craft while embracing modern aesthetics.
+                From the intricate kundan settings of royal jewellery to the rhythmic clack of wooden looms weaving ladies unstitched salwar suits and cool 60&times;90 cotton bedding, our pieces honour generational craft while embracing modern aesthetics.
               </p>
               <p>
                 And within this house, Little Loom preserves its special soul—creating gentle, pure cotton clothing for the smallest members of our families.
@@ -781,7 +876,7 @@ export default function HomePage() {
               <div>
                 <h4 className="font-serif text-base font-medium text-espresso">100% Genuine Quality</h4>
                 <p className="mt-1 text-xs text-espresso-soft leading-relaxed">
-                  Every fabric length, jewellery finish, and bedsheet weave is quality-verified before dispatch.
+                  Every fabric length, jewellery finish, and bedsheet weave is quality-inspected before dispatch.
                 </p>
               </div>
             </div>
@@ -803,7 +898,7 @@ export default function HomePage() {
                 <RotateCcw size={20} />
               </span>
               <div>
-                <h4 className="font-serif text-base font-medium text-espresso">Dedicated Assistance</h4>
+                <h4 className="font-serif text-base font-medium text-espresso">Dedicated Concierge</h4>
                 <p className="mt-1 text-xs text-espresso-soft leading-relaxed">
                   Direct WhatsApp concierge support for sizing questions, fabric lengths, and bridal orders.
                 </p>
@@ -814,7 +909,7 @@ export default function HomePage() {
       </section>
 
       {/* 10. Refined Newsletter Subscription Strip */}
-      <section className="py-16 bg-[#FAF4EF] border-b border-espresso/10">
+      <section className="py-16 bg-[#EDE7DE] border-b border-espresso/10">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs font-semibold uppercase tracking-[0.28em] text-terracotta">
             The VJ Collection Journal
@@ -827,7 +922,7 @@ export default function HomePage() {
           </p>
 
           {newsletterSubscribed ? (
-            <div className="mt-6 p-4 rounded-xl bg-white border border-[#ECCDC4] text-xs font-medium text-espresso shadow-xs">
+            <div className="mt-6 p-4 rounded-xl bg-white border border-[#E6C6BC] text-xs font-medium text-espresso shadow-xs">
               Thank you for subscribing to the VJ Collection Journal. We look forward to sharing our finest edits with you.
             </div>
           ) : (

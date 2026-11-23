@@ -36,7 +36,7 @@ export default function MobileNav() {
       case 'home_textiles':
         return <Home size={17} className="text-forest" />;
       case 'kids':
-        return <Baby size={17} className="text-[#C87D65]" />;
+        return <Baby size={17} className="text-[#6B735B]" />;
     }
   };
 
@@ -50,7 +50,7 @@ export default function MobileNav() {
       />
 
       {/* Drawer */}
-      <div className="absolute left-0 top-0 bottom-0 w-[88%] max-w-sm bg-[#FAF8F5] animate-slide-in-right flex flex-col shadow-2xl border-r border-espresso/15">
+      <div className="absolute left-0 top-0 bottom-0 w-[88%] max-w-sm bg-[#F6F2E9] animate-slide-in-right flex flex-col shadow-2xl border-r border-espresso/15">
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-6 h-18 border-b border-espresso/10 bg-white">
           <div className="flex flex-col">
