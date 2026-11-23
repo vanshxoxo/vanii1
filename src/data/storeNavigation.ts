@@ -188,8 +188,22 @@ export function resolveLaunchCategory(value?: string | null) {
 
 export function resolveDepartment(value?: string | null): DepartmentInfo | undefined {
   if (!value) return undefined;
-  const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-  return departments.find((d) => d.id === clean || filterSlug(d.label) === filterSlug(value) || filterSlug(d.brand) === filterSlug(value));
+  const slug = filterSlug(value);
+  const aliases: Record<string, Department> = {
+    jewellery: 'jewellery', 'vj-jewellery': 'jewellery',
+    suits: 'women_suits', 'women-suits': 'women_suits', 'womens-suits': 'women_suits',
+    'vj-suits-fabrics': 'women_suits', 'ladies-suits': 'women_suits',
+    living: 'home_textiles', 'vj-living': 'home_textiles', 'home-textiles': 'home_textiles',
+    'bed-sheets': 'home_textiles',
+    'little-loom': 'kids', kids: 'kids', childrenswear: 'kids', 'childrens-clothing': 'kids',
+  };
+  const aliasedId = aliases[slug];
+  return departments.find((department) =>
+    department.id === aliasedId ||
+    department.id === value ||
+    filterSlug(department.label) === slug ||
+    filterSlug(department.brand) === slug
+  );
 }
 
 export function getCategoriesForDepartment(deptId: Department): DepartmentCategory[] {
