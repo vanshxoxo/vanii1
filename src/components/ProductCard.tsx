@@ -22,8 +22,10 @@ export default function ProductCard({ product, onQuickAdd }: ProductCardProps) {
 
   return (
     <div className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-espresso/10 hover:border-espresso/30 transition-all duration-300 hover:shadow-lg">
-      {/* Media Container */}
-      <div className="relative overflow-hidden bg-linen aspect-[4/5]">
+      {/* Media Container with Department Micro-Interactions */}
+      <div className={`relative overflow-hidden bg-linen aspect-[4/5] ${
+        dept === 'jewellery' ? 'jewellery-glint' : dept === 'women_suits' ? 'textile-glide' : ''
+      }`}>
         <Link to={`/product/${product.slug}`} className="block h-full w-full">
           {product.images?.[0] && !imageError ? (
             <img

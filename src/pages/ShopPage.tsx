@@ -405,7 +405,7 @@ export default function ShopPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="min-h-screen bg-[#F6F2E9]">
       {/* Top Breadcrumb & Hero Header */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs
@@ -420,7 +420,7 @@ export default function ShopPage() {
         {/* Editorial Shop Header */}
         <div
           className="mt-6 rounded-3xl p-6 sm:p-10 border border-espresso/10 shadow-xs"
-          style={{ backgroundColor: currentDeptInfo?.accentBg || '#F4EFEA' }}
+          style={{ backgroundColor: currentDeptInfo?.accentBg || '#EDE7DE' }}
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
@@ -608,7 +608,7 @@ export default function ShopPage() {
             className="absolute inset-0 bg-espresso/60 backdrop-blur-sm animate-fade-in"
             onClick={() => setShowFilters(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-[#FAF8F5] animate-slide-in-right flex flex-col shadow-2xl border-l border-espresso/15">
+          <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-[#F6F2E9] animate-slide-in-right flex flex-col shadow-2xl border-l border-espresso/15">
             <div className="flex items-center justify-between px-6 h-18 border-b border-espresso/10 bg-white">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-espresso">Filter Catalogue</h2>
               <button onClick={() => setShowFilters(false)} aria-label="Close filters" className="p-2 -mr-2 text-espresso">

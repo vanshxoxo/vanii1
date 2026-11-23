@@ -47,7 +47,7 @@ export default function CartDrawer() {
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-md bg-[#FAF8F5] animate-drawer-in flex flex-col shadow-2xl border-l border-espresso/15">
+      <div className="relative w-full max-w-md bg-[#F6F2E9] animate-drawer-in flex flex-col shadow-2xl border-l border-espresso/15">
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-6 h-18 border-b border-espresso/10 bg-white">
           <div className="flex items-center gap-2.5">
@@ -67,7 +67,7 @@ export default function CartDrawer() {
 
         {/* Free Shipping Progress Bar */}
         {cart.length > 0 && (
-          <div className="px-6 py-3.5 bg-[#FAF6EE] border-b border-[#E6D7B4]/80 text-xs text-espresso">
+          <div className="px-6 py-3.5 bg-[#F8F4EC] border-b border-[#E5D6BD]/80 text-xs text-espresso">
             <div className="flex items-center justify-between font-medium">
               <span className="flex items-center gap-1.5">
                 <Truck size={14} className="text-forest" />

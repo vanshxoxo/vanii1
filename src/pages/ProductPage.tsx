@@ -143,7 +143,7 @@ export default function ProductPage() {
   });
 
   return (
-    <div className="min-h-screen pb-24 lg:pb-16 bg-[#FAF8F5]">
+    <div className="min-h-screen pb-24 lg:pb-16 bg-[#F6F2E9]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Breadcrumb Hierarchy */}
         <Breadcrumbs
@@ -564,11 +564,23 @@ export default function ProductPage() {
                         <dd className="font-medium text-espresso mt-0.5">{specs.homeTextiles.bedSize}</dd>
                       </div>
                     )}
-                    {specs?.homeTextiles?.length && specs?.homeTextiles?.width && (
-                      <div>
-                        <dt className="font-semibold uppercase tracking-wider text-espresso-light">Dimensions (Confirmed Unit)</dt>
-                        <dd className="font-medium text-espresso mt-0.5">
-                          {specs.homeTextiles.length} &times; {specs.homeTextiles.width} {specs.homeTextiles.dimensionUnit || 'inches'}
+                    {(specs?.homeTextiles?.length || specs?.homeTextiles?.width) && (
+                      <div className="sm:col-span-2">
+                        <dt className="font-semibold uppercase tracking-wider text-espresso-light">
+                          Dimensions {specs.homeTextiles.unitConfirmed ? '(Confirmed Unit)' : '(Handwritten Specification)'}
+                        </dt>
+                        <dd className="font-medium text-espresso mt-0.5 flex flex-wrap items-center gap-2">
+                          <span>
+                            {specs.homeTextiles.length || '90'} &times; {specs.homeTextiles.width || '60'}
+                            {specs.homeTextiles.unitConfirmed && specs.homeTextiles.dimensionUnit && specs.homeTextiles.dimensionUnit !== 'pending_confirmation'
+                              ? ` ${specs.homeTextiles.dimensionUnit}`
+                              : ' (Unit pending owner confirmation)'}
+                          </span>
+                          {!specs.homeTextiles.unitConfirmed && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                              Unit Awaiting Verification
+                            </span>
+                          )}
                         </dd>
                       </div>
                     )}
@@ -685,7 +697,7 @@ export default function ProductPage() {
       </div>
 
       {/* Mobile Sticky Add to Bag Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#FAF8F5]/98 backdrop-blur-md border-t border-espresso/12 p-3.5 flex items-center justify-between gap-4 shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#F6F2E9]/98 backdrop-blur-md border-t border-espresso/12 p-3.5 flex items-center justify-between gap-4 shadow-xl">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] uppercase font-bold text-terracotta truncate">{product.name}</p>
           <p className="text-base font-semibold text-espresso">{formatINR(displayPrice)}</p>

@@ -52,7 +52,9 @@ export interface HomeTextilesSpecs {
   bedSize?: 'Single' | 'Double' | 'Queen' | 'King' | string;
   length?: number | string;
   width?: number | string;
-  dimensionUnit?: 'inches' | 'cm' | 'meters' | string;
+  dimensionUnit?: 'inches' | 'cm' | 'meters' | 'pending_confirmation' | string;
+  unitConfirmed?: boolean;
+  dimensionUnitNote?: string;
   fabric?: string;
   color?: string;
   design?: string;

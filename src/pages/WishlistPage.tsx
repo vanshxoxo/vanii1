@@ -30,7 +30,7 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-14 min-h-[70vh] bg-[#FAF8F5]">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-14 min-h-[70vh] bg-[#F6F2E9]">
       <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'My Saved Wishlist' }]} />
 
       <div className="mt-6 flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-espresso/10">

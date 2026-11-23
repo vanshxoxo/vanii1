@@ -16,6 +16,7 @@ import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/ui';
 import Button from '../components/Button';
 import Reveal from '../components/Reveal';
+import TiltCard from '../components/TiltCard';
 import {
   departments,
   resolveDepartment,
@@ -67,7 +68,7 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="min-h-screen bg-[#F6F2E9]">
       {/* 1. Editorial Hero Banner */}
       <section
         className="relative overflow-hidden border-b border-espresso/10"
@@ -164,7 +165,7 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
       </section>
 
       {/* 2. Curated Category Showcase (With Authentic Editorial Images) */}
-      <section id="categories" className="py-20 lg:py-24 bg-[#FAF8F5]">
+      <section id="categories" className="py-20 lg:py-24 bg-[#F6F2E9]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12 pb-4 border-b border-espresso/10">
@@ -189,36 +190,38 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {deptCategories.map((cat, idx) => (
               <Reveal key={cat.slug} delay={idx * 60}>
-                <Link
-                  to={`/shop?department=${deptInfo.id}&category=${encodeURIComponent(cat.slug)}`}
-                  className="group block rounded-2xl border border-espresso/10 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-espresso/30 hover:shadow-lg"
-                >
-                  {cat.image && (
-                    <div className="aspect-[16/10] rounded-xl overflow-hidden bg-linen mb-4 border border-espresso/8">
-                      <img
-                        src={cat.image}
-                        alt={cat.label}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
+                <TiltCard maxTilt={2.5} className="h-full">
+                  <Link
+                    to={`/shop?department=${deptInfo.id}&category=${encodeURIComponent(cat.slug)}`}
+                    className="group block h-full rounded-2xl border border-espresso/10 bg-white p-5 transition-all duration-300 hover:border-espresso/30 hover:shadow-lg"
+                  >
+                    {cat.image && (
+                      <div className="aspect-[16/10] rounded-xl overflow-hidden bg-linen mb-4 border border-espresso/8">
+                        <img
+                          src={cat.image}
+                          alt={cat.label}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-espresso-light">
+                      {deptInfo.brand} &middot; 0{idx + 1}
+                    </span>
+                    <h3 className="mt-1 font-serif text-xl font-medium text-espresso group-hover:text-forest transition-colors">
+                      {cat.label}
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-espresso-soft line-clamp-2">
+                      {cat.introduction}
+                    </p>
+
+                    <div className="mt-4 pt-3 border-t border-espresso/8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso/70 group-hover:text-espresso transition-colors">
+                      <span>Explore Edit</span>
+                      <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
                     </div>
-                  )}
-
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-espresso-light">
-                    {deptInfo.brand} &middot; 0{idx + 1}
-                  </span>
-                  <h3 className="mt-1 font-serif text-xl font-medium text-espresso group-hover:text-forest transition-colors">
-                    {cat.label}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-espresso-soft line-clamp-2">
-                    {cat.introduction}
-                  </p>
-
-                  <div className="mt-4 pt-3 border-t border-espresso/8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-espresso/70 group-hover:text-espresso transition-colors">
-                    <span>Explore Edit</span>
-                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-                  </div>
-                </Link>
+                  </Link>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -265,7 +268,7 @@ export default function DepartmentLandingPage({ departmentId: propDeptId }: Depa
       </section>
 
       {/* 3. Featured Department Products Showcase */}
-      <section className="py-20 lg:py-28 bg-[#F4EFEA] border-t border-espresso/10">
+      <section className="py-20 lg:py-28 bg-[#EDE7DE] border-t border-espresso/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12 pb-4 border-b border-espresso/10">
