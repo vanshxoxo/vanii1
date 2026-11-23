@@ -560,20 +560,20 @@ export default function ShopPage() {
                 <div className="w-16 h-16 rounded-full bg-linen flex items-center justify-center mb-4">
                   <Package size={28} className="text-espresso-light" />
                 </div>
+                <span className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-terracotta">
+                  A new collection is on its way
+                </span>
                 <h3 className="font-serif text-2xl text-espresso">
-                  {currentDeptInfo ? `${currentDeptInfo.brand} Edit Underway` : 'No Products Currently Published'}
+                  {currentDeptInfo ? `${currentDeptInfo.brand} · Coming Soon` : 'No Products Found'}
                 </h3>
                 <p className="mt-2 text-sm text-espresso-soft max-w-md leading-relaxed">
                   {currentDeptInfo
-                    ? `Pieces for ${currentDeptInfo.brand} are being curated. You can publish initial pieces through the admin management suite.`
-                    : 'No products match the selected filters.'}
+                    ? `We are carefully preparing the first ${currentDeptInfo.brand} pieces. This collection will appear here as soon as products are approved and published.`
+                    : 'No products match the selected filters. Try another department or clear your filters.'}
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3 justify-center">
                   <Link to="/shop">
-                    <Button variant="outline" size="sm">Browse All Departments</Button>
-                  </Link>
-                  <Link to="/admin">
-                    <Button variant="forest" size="sm">Open Admin Wizard</Button>
+                    <Button variant="outline" size="sm">Explore Departments</Button>
                   </Link>
                 </div>
               </div>
