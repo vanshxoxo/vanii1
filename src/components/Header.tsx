@@ -60,9 +60,12 @@ export default function Header() {
   };
 
   const isDeptActive = (deptId: Department) => {
+    const department = departments.find((item) => item.id === deptId);
+    const selectedDepartment = new URLSearchParams(location.search).get('department');
     return (
+      location.pathname === department?.landingPath ||
       location.pathname === `/department/${deptId}` ||
-      (location.pathname === '/shop' && location.search.includes(`department=${deptId}`))
+      ((location.pathname === '/shop' || location.pathname === '/products') && selectedDepartment === deptId)
     );
   };
 
