@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Lock, ShoppingBag, ShieldCheck, Truck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Lock, ShoppingBag, ShieldCheck, Truck, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useStore } from '../useStore';
 import { formatINR } from '../data';
 import { supabase } from '../lib/supabase';
@@ -35,6 +35,7 @@ const blankAddress = {
   state: '',
   postal_code: '',
   country_code: 'IN',
+  delivery_instructions: '',
 };
 type SavedAddress = typeof blankAddress & { id: string; label: string; is_default: boolean };
 
@@ -66,6 +67,41 @@ export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [serviceability, setServiceability] = useState<any>(null);
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+
+  // Live Carrier Serviceability Check
+  useEffect(() => {
+    if (!supabase || !/^\d{6}$/.test(address.postal_code.trim())) {
+      setServiceability(null);
+      return;
+    }
+    let alive = true;
+    setCheckingServiceability(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error: sErr } = await supabase!.functions.invoke('shiprocket', {
+          body: {
+            action: 'serviceability',
+            pincode: address.postal_code.trim(),
+            cod: method === 'cod',
+          },
+        });
+        if (alive && !sErr && data) {
+          setServiceability(data);
+        }
+      } catch {
+        // silent fallback
+      } finally {
+        if (alive) setCheckingServiceability(false);
+      }
+    }, 500);
+
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [address.postal_code, method]);
 
   useEffect(() => {
     if (!supabase || cart.length === 0) return;
@@ -412,6 +448,12 @@ export default function CheckoutPage() {
                       placeholder="e.g. 110001"
                       className="w-full rounded-xl border border-charcoal/20 p-3 text-sm bg-ivory/50 text-charcoal focus:outline-charcoal"
                     />
+                    {checkingServiceability && (
+                      <span className="text-[10px] text-charcoal-light flex items-center gap-1 mt-1">
+                        <RefreshCw size={10} className="animate-spin text-clay" />
+                        <span>Checking carrier serviceability...</span>
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -422,6 +464,46 @@ export default function CheckoutPage() {
                       disabled
                       value="India (IN)"
                       className="w-full rounded-xl border border-charcoal/10 p-3 text-sm bg-charcoal/5 text-charcoal-light"
+                    />
+                  </div>
+
+                  {serviceability && (
+                    <div className="sm:col-span-2">
+                      <div
+                        className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                          serviceability.serviceable
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : 'bg-rose-50 border-rose-200 text-rose-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {serviceability.serviceable ? (
+                            <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
+                          ) : (
+                            <AlertTriangle size={15} className="text-rose-700 shrink-0" />
+                          )}
+                          <span>
+                            {serviceability.serviceable
+                              ? `PIN ${address.postal_code} is serviceable via ${serviceability.recommended_courier?.name || 'Carrier Partner'}. Delivery timeline: ${serviceability.recommended_courier?.estimated_delivery_days || '3-5 business days'}.`
+                              : `PIN ${address.postal_code} is currently outside our direct delivery zone. Please verify your PIN.`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1">
+                      Delivery Instructions (Optional)
+                    </label>
+                    <input
+                      autoComplete="off"
+                      value={address.delivery_instructions}
+                      onChange={(event) => {
+                        setAddress({ ...address, delivery_instructions: event.target.value });
+                      }}
+                      placeholder="e.g. Ring the bell, leave at reception, or call on arrival"
+                      className="w-full rounded-xl border border-charcoal/20 p-3 text-sm bg-ivory/50 text-charcoal focus:outline-charcoal"
                     />
                   </div>
                 </div>
@@ -571,6 +653,12 @@ export default function CheckoutPage() {
                   <span>Pan-India Insured Shipping</span>
                   <span>{shippingFee === 0 ? <strong className="text-emerald-800">FREE</strong> : formatINR(shippingFee)}</span>
                 </div>
+                {serviceability?.recommended_courier?.estimated_delivery_days && (
+                  <div className="flex justify-between text-clay font-medium text-[11px]">
+                    <span>Estimated Delivery</span>
+                    <span>{serviceability.recommended_courier.estimated_delivery_days}</span>
+                  </div>
+                )}
                 {method === 'cod' && codFee > 0 && (
                   <div className="flex justify-between">
                     <span>COD Convenience Surcharge</span>

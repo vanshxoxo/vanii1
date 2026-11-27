@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   LayoutDashboard,
+  CheckCircle2,
   Package,
   PlusCircle,
   Tags,
@@ -10,32 +11,67 @@ import {
   ShoppingBag,
   Users,
   Percent,
+  Clock,
+  Truck,
+  Navigation,
+  Compass,
+  RotateCcw,
+  CreditCard,
+  RefreshCw,
+  FileSpreadsheet,
+  BarChart3,
   Home,
+  Store,
   FileText,
   HelpCircle,
   TrendingUp,
   Headphones,
+  Bell,
   Settings,
+  Wallet,
+  PackageCheck,
   ShieldCheck,
 } from 'lucide-react';
 
 export type AdminSectionId =
+  // WORKSPACE
   | 'overview'
+  | 'getting-started'
+  // PRODUCTS
   | 'products'
   | 'add-product'
   | 'categories'
   | 'collections'
   | 'media'
   | 'stock'
+  // SALES
   | 'orders'
   | 'customers'
   | 'discounts'
+  | 'abandoned-checkouts'
+  // DELIVERY
+  | 'shipping-dashboard'
+  | 'shipments'
+  | 'tracking'
+  | 'returns'
+  // FINANCE
+  | 'payments'
+  | 'refunds'
+  | 'transactions'
+  | 'sales-reports'
+  // WEBSITE
   | 'homepage'
+  | 'departments'
   | 'content'
   | 'policies-faqs'
+  // BUSINESS
   | 'analytics'
   | 'support'
+  | 'notifications'
+  // SETTINGS
   | 'settings'
+  | 'payment-settings'
+  | 'shipping-settings'
   | 'roles';
 
 export interface AdminNavItem {
@@ -60,6 +96,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: 'Overview',
         icon: LayoutDashboard,
       },
+      {
+        id: 'getting-started',
+        label: 'Getting Started',
+        icon: CheckCircle2,
+      },
     ],
   },
   {
@@ -67,13 +108,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       {
         id: 'products',
-        label: 'All products',
+        label: 'All Products',
         icon: Package,
         badge: (data) => (data?.total_products ? data.total_products : null),
       },
       {
         id: 'add-product',
-        label: 'Add new product',
+        label: 'Add Product',
         icon: PlusCircle,
       },
       {
@@ -88,12 +129,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       },
       {
         id: 'media',
-        label: 'Photos & uploads',
+        label: 'Photos & Uploads',
         icon: Images,
       },
       {
         id: 'stock',
-        label: 'Stock & sizes',
+        label: 'Stock & Sizes',
         icon: Boxes,
         badge: (data) => (data?.out_of_stock_variants ? `! ${data.out_of_stock_variants}` : null),
       },
@@ -118,6 +159,61 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: 'Discounts',
         icon: Percent,
       },
+      {
+        id: 'abandoned-checkouts',
+        label: 'Abandoned Checkouts',
+        icon: Clock,
+      },
+    ],
+  },
+  {
+    title: 'DELIVERY',
+    items: [
+      {
+        id: 'shipping-dashboard',
+        label: 'Shipping Dashboard',
+        icon: Truck,
+      },
+      {
+        id: 'shipments',
+        label: 'Shipments',
+        icon: Navigation,
+      },
+      {
+        id: 'tracking',
+        label: 'Live Tracking',
+        icon: Compass,
+      },
+      {
+        id: 'returns',
+        label: 'Returns & RTO',
+        icon: RotateCcw,
+      },
+    ],
+  },
+  {
+    title: 'FINANCE',
+    items: [
+      {
+        id: 'payments',
+        label: 'Payments',
+        icon: CreditCard,
+      },
+      {
+        id: 'refunds',
+        label: 'Refunds',
+        icon: RefreshCw,
+      },
+      {
+        id: 'transactions',
+        label: 'Transactions',
+        icon: FileSpreadsheet,
+      },
+      {
+        id: 'sales-reports',
+        label: 'Sales Reports',
+        icon: BarChart3,
+      },
     ],
   },
   {
@@ -125,12 +221,17 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       {
         id: 'homepage',
-        label: 'Homepage editor',
+        label: 'Homepage Editor',
         icon: Home,
       },
       {
+        id: 'departments',
+        label: 'Department Management',
+        icon: Store,
+      },
+      {
         id: 'content',
-        label: 'Banners & promotional',
+        label: 'Banners & Promotional',
         icon: FileText,
       },
       {
@@ -150,8 +251,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       },
       {
         id: 'support',
-        label: 'Customer support',
+        label: 'Customer Support',
         icon: Headphones,
+      },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: Bell,
       },
     ],
   },
@@ -160,14 +266,24 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       {
         id: 'settings',
-        label: 'Store settings',
+        label: 'Store Settings',
         icon: Settings,
       },
       {
+        id: 'payment-settings',
+        label: 'Payment Settings',
+        icon: Wallet,
+      },
+      {
+        id: 'shipping-settings',
+        label: 'Shipping Settings',
+        icon: PackageCheck,
+      },
+      {
         id: 'roles',
-        label: 'Team and access',
+        label: 'Team & Access',
         icon: ShieldCheck,
-        requiredRoles: ['owner'],
+        requiredRoles: ['owner', 'admin'],
       },
     ],
   },

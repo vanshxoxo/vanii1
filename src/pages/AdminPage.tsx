@@ -14,6 +14,14 @@ import DiscountsView from '../components/admin/DiscountsView';
 import SupportView from '../components/admin/SupportView';
 import PoliciesFaqsView from '../components/admin/PoliciesFaqsView';
 import AnalyticsView from '../components/admin/AnalyticsView';
+import GettingStartedView from '../components/admin/GettingStartedView';
+import DeliveryManagementView from '../components/admin/DeliveryManagementView';
+import FinanceStudioView from '../components/admin/FinanceStudioView';
+import AbandonedCheckoutsView from '../components/admin/AbandonedCheckoutsView';
+import ReturnsManagerView from '../components/admin/ReturnsManagerView';
+import DepartmentsManagerView from '../components/admin/DepartmentsManagerView';
+import NotificationsCenterView from '../components/admin/NotificationsCenterView';
+import PaymentShippingSettingsView from '../components/admin/PaymentShippingSettingsView';
 import type { Department, ProductSpecifications } from '../types';
 
 type Status = 'loading' | 'signed-out' | 'denied' | 'ready' | 'unconfigured';
@@ -1326,6 +1334,16 @@ export default function AdminPage() {
         />
       )}
 
+      {/* 1.1 GETTING STARTED ONBOARDING */}
+      {tab === 'getting-started' && (
+        <GettingStartedView
+          products={products}
+          orders={orders}
+          settings={settings}
+          onNavigate={(sec) => setTab(sec)}
+        />
+      )}
+
       {/* 2. ALL PRODUCTS */}
       {tab === 'products' && (
         <ProductList
@@ -1582,6 +1600,22 @@ export default function AdminPage() {
 
       {/* 8. DISCOUNTS */}
       {tab === 'discounts' && <DiscountsView settings={settings} onRefresh={loadAdminData} />}
+
+      {/* 8.1 ABANDONED CHECKOUTS */}
+      {tab === 'abandoned-checkouts' && <AbandonedCheckoutsView orders={orders} />}
+
+      {/* DELIVERY STUDIO: DASHBOARD, SHIPMENTS & TRACKING */}
+      {(tab === 'shipping-dashboard' || tab === 'shipments' || tab === 'tracking') && (
+        <DeliveryManagementView orders={orders} onRefresh={loadAdminData} />
+      )}
+
+      {/* RETURNS & RTO */}
+      {tab === 'returns' && <ReturnsManagerView orders={orders} onRefresh={loadAdminData} />}
+
+      {/* FINANCE STUDIO: PAYMENTS, REFUNDS, TRANSACTIONS & SALES REPORTS */}
+      {(tab === 'payments' || tab === 'refunds' || tab === 'transactions' || tab === 'sales-reports') && (
+        <FinanceStudioView orders={orders} onRefresh={loadAdminData} />
+      )}
 
       {/* 9. CATEGORIES */}
       {tab === 'categories' && (
@@ -2000,6 +2034,26 @@ export default function AdminPage() {
         </section>
       )}
 
+      {/* 11.1 DEPARTMENT MANAGEMENT */}
+      {tab === 'departments' && (
+        <DepartmentsManagerView
+          products={products}
+          categories={categories}
+          onNavigateToNewProduct={(dept) => {
+            setSelectedProduct('');
+            setProductForm({ ...emptyProduct, product_type: dept });
+            setVariants([]);
+            setGallery([]);
+            setCategoryIds([]);
+            setCollectionIds([]);
+            setTab('add-product');
+          }}
+          onFilterProductsByDept={() => {
+            setTab('products');
+          }}
+        />
+      )}
+
       {/* 12. STORE CONTENT */}
       {tab === 'content' && <AdminContentPage />}
 
@@ -2015,6 +2069,9 @@ export default function AdminPage() {
 
       {/* 15. CUSTOMER SUPPORT */}
       {tab === 'support' && <SupportView settings={settings} onRefresh={loadAdminData} />}
+
+      {/* 15.1 CUSTOMER NOTIFICATIONS */}
+      {tab === 'notifications' && <NotificationsCenterView />}
 
       {/* 16. STORE SETTINGS */}
       {tab === 'settings' && (
@@ -2090,6 +2147,16 @@ export default function AdminPage() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* 16.1 PAYMENT SETTINGS */}
+      {tab === 'payment-settings' && (
+        <PaymentShippingSettingsView settings={settings} onRefresh={loadAdminData} initialTab="payment" />
+      )}
+
+      {/* 16.2 SHIPPING SETTINGS */}
+      {tab === 'shipping-settings' && (
+        <PaymentShippingSettingsView settings={settings} onRefresh={loadAdminData} initialTab="shipping" />
       )}
 
       {/* 17. TEAM ROLES (OWNER ONLY) */}
@@ -2191,7 +2258,7 @@ function AdminMessage({
           to="/account"
           className="mt-5 inline-block px-4 py-2 rounded-xl bg-clay text-white text-xs font-semibold hover:bg-[#b56e57] transition shadow-xs"
         >
-          Sign in to Little Loom
+          Sign in to VJ Collection
         </Link>
       )}
     </main>

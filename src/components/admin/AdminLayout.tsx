@@ -8,7 +8,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Search,
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
@@ -47,7 +46,6 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [headerSearch, setHeaderSearch] = useState('');
 
   const roleDisplay = adminRoles[0]
     ? adminRoles[0].replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -71,7 +69,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-ink antialiased flex flex-col">
+    <div className="min-h-screen bg-[#FAF7F0] text-ink antialiased flex flex-col font-sans">
       {/* MOBILE DRAWER BACKDROP */}
       {isMobileOpen && (
         <div
@@ -84,18 +82,18 @@ export default function AdminLayout({
 
       {/* MOBILE DRAWER */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#FFFFFF] shadow-2xl border-r border-[#E8E2D9] flex flex-col transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl border-r border-[#E8E2D9] flex flex-col transform transition-transform duration-300 ease-in-out lg:hidden ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="h-16 px-5 border-b border-[#E8E2D9] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-clay text-white flex items-center justify-center font-serif text-lg font-bold shadow-sm">
-              L
+            <div className="w-8 h-8 rounded-lg bg-clay text-white flex items-center justify-center font-serif text-lg font-bold shadow-xs">
+              VJ
             </div>
             <div>
-              <span className="font-serif font-bold text-base tracking-wider text-ink block leading-none">
-                LITTLE LOOM
+              <span className="font-serif font-bold text-sm tracking-wider text-ink block leading-none">
+                VJ COLLECTION
               </span>
               <span className="text-[10px] uppercase tracking-widest text-ink-muted">
                 Studio Admin
@@ -124,7 +122,7 @@ export default function AdminLayout({
 
             return (
               <div key={group.title} className="space-y-1">
-                <p className="px-3 text-[11px] font-semibold tracking-wider text-ink-muted uppercase">
+                <p className="px-3 text-[10px] font-bold tracking-wider text-ink-muted uppercase">
                   {group.title}
                 </p>
                 {visibleItems.map((item) => {
@@ -136,22 +134,20 @@ export default function AdminLayout({
                     <button
                       key={item.id}
                       onClick={() => handleNavClick(item.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                         isActive
-                          ? 'bg-clay text-white shadow-sm font-semibold'
+                          ? 'bg-clay text-white shadow-xs font-semibold'
                           : 'text-ink-soft hover:bg-[#F3EFE6] hover:text-ink'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2.5">
                         <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-clay'}`} />
                         <span>{item.label}</span>
                       </div>
                       {badgeValue != null && (
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            isActive
-                              ? 'bg-white/20 text-white'
-                              : 'bg-[#EAE4D9] text-ink'
+                          className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                            isActive ? 'bg-white/20 text-white' : 'bg-clay/10 text-clay'
                           }`}
                         >
                           {badgeValue}
@@ -165,59 +161,63 @@ export default function AdminLayout({
           })}
         </div>
 
-        {/* Mobile User Footer */}
-        <div className="p-4 border-t border-[#E8E2D9] bg-[#FAF7F0] flex items-center justify-between">
-          <div className="truncate pr-2">
-            <p className="text-xs font-semibold text-ink truncate">{userEmail || 'Admin User'}</p>
-            <p className="text-[11px] text-clay font-medium">{roleDisplay}</p>
+        {/* Mobile User Profile Footer */}
+        <div className="p-4 border-t border-[#E8E2D9] bg-[#FAF7F0] space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-ink-muted truncate max-w-[140px]">{userEmail}</span>
+            <span className="px-2 py-0.5 bg-clay/10 text-clay text-[10px] font-bold rounded-full uppercase">
+              {roleDisplay}
+            </span>
           </div>
           <button
             onClick={onSignOut}
-            className="p-2 text-ink-muted hover:text-red-600 rounded-lg transition"
-            title="Sign out"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-[#E8E2D9] bg-white text-xs font-semibold text-ink-muted hover:text-ink hover:border-ink transition"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* DESKTOP FIXED/STICKY LEFT SIDEBAR */}
+        {/* DESKTOP SIDEBAR */}
         <aside
-          className={`hidden lg:flex flex-col bg-white border-r border-[#E8E2D9] transition-all duration-300 select-none z-30 shrink-0 ${
+          className={`hidden lg:flex flex-col bg-white border-r border-[#E8E2D9] transition-all duration-300 shrink-0 select-none ${
             isCollapsed ? 'w-20' : 'w-64'
           }`}
         >
-          {/* Brand Header */}
-          <div className="h-16 px-4 border-b border-[#E8E2D9] flex items-center justify-between">
-            <div className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center w-full' : ''}`}>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-clay to-[#a65b46] text-white flex items-center justify-center font-serif text-lg font-bold shadow-sm shrink-0">
-                L
-              </div>
-              {!isCollapsed && (
-                <div className="overflow-hidden">
-                  <span className="font-serif font-bold text-base tracking-wider text-ink block leading-none truncate">
-                    LITTLE LOOM
+          {/* Logo Header */}
+          <div className="h-16 px-5 border-b border-[#E8E2D9] flex items-center justify-between">
+            {!isCollapsed ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-clay text-white flex items-center justify-center font-serif text-base font-bold shadow-xs">
+                  VJ
+                </div>
+                <div>
+                  <span className="font-serif font-bold text-sm tracking-wider text-ink block leading-none">
+                    VJ COLLECTION
                   </span>
-                  <span className="text-[10px] uppercase tracking-widest text-clay font-semibold">
+                  <span className="text-[10px] uppercase tracking-widest text-ink-muted">
                     Studio Admin
                   </span>
                 </div>
-              )}
-            </div>
-            {!isCollapsed && (
-              <button
-                onClick={() => setIsCollapsed(true)}
-                className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-[#F3EFE6] transition"
-                title="Collapse sidebar"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+              </div>
+            ) : (
+              <div className="w-8 h-8 mx-auto rounded-lg bg-clay text-white flex items-center justify-center font-serif text-base font-bold shadow-xs">
+                VJ
+              </div>
             )}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-[#F3EFE6] transition"
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
           </div>
 
-          {/* Navigation Groups */}
-          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {/* Navigation Items */}
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
             {ADMIN_NAV_GROUPS.map((group) => {
               const visibleItems = group.items.filter((item) => {
                 if (item.requiredRoles && !item.requiredRoles.some((r) => adminRoles.includes(r))) {
@@ -229,12 +229,10 @@ export default function AdminLayout({
 
               return (
                 <div key={group.title} className="space-y-1">
-                  {!isCollapsed ? (
-                    <p className="px-3 text-[10px] font-bold tracking-wider text-ink-muted/80 uppercase">
+                  {!isCollapsed && (
+                    <p className="px-3 text-[10px] font-bold tracking-wider text-ink-muted uppercase">
                       {group.title}
                     </p>
-                  ) : (
-                    <div className="border-t border-[#E8E2D9] my-2" />
                   )}
                   {visibleItems.map((item) => {
                     const Icon = item.icon;
@@ -246,28 +244,20 @@ export default function AdminLayout({
                         key={item.id}
                         onClick={() => handleNavClick(item.id)}
                         title={isCollapsed ? item.label : undefined}
-                        className={`w-full flex items-center ${
-                          isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
-                        } py-2.5 rounded-xl text-sm font-medium transition-all group ${
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                           isActive
-                            ? 'bg-clay text-white shadow-sm font-semibold'
+                            ? 'bg-clay text-white shadow-xs font-semibold'
                             : 'text-ink-soft hover:bg-[#F3EFE6] hover:text-ink'
-                        }`}
+                        } ${isCollapsed ? 'justify-center' : ''}`}
                       >
-                        <div className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-3'}`}>
-                          <Icon
-                            className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-                              isActive ? 'text-white' : 'text-clay'
-                            }`}
-                          />
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-clay'}`} />
                           {!isCollapsed && <span className="truncate">{item.label}</span>}
                         </div>
                         {!isCollapsed && badgeValue != null && (
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              isActive
-                                ? 'bg-white/20 text-white'
-                                : 'bg-[#EAE4D9] text-ink'
+                            className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold shrink-0 ${
+                              isActive ? 'bg-white/20 text-white' : 'bg-clay/10 text-clay'
                             }`}
                           >
                             {badgeValue}
@@ -281,138 +271,131 @@ export default function AdminLayout({
             })}
           </div>
 
-          {/* Sidebar Collapse Toggle (When collapsed) & User Profile */}
-          <div className="p-3 border-t border-[#E8E2D9] bg-[#FAF7F0] space-y-2">
-            {isCollapsed && (
-              <button
-                onClick={() => setIsCollapsed(false)}
-                className="w-full flex justify-center py-2 rounded-lg text-ink-muted hover:text-ink hover:bg-white transition"
-                title="Expand sidebar"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-            <div
-              className={`flex items-center ${
-                isCollapsed ? 'justify-center' : 'justify-between'
-              } p-1.5 rounded-xl bg-white border border-[#E8E2D9] shadow-2xs`}
-            >
-              {!isCollapsed && (
-                <div className="truncate pr-2 pl-1">
-                  <p className="text-xs font-semibold text-ink truncate">{userEmail || 'Admin User'}</p>
-                  <p className="text-[11px] text-clay font-medium">{roleDisplay}</p>
+          {/* Desktop User Footer */}
+          <div className="p-3 border-t border-[#E8E2D9] bg-[#FAF7F0]">
+            {!isCollapsed ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-ink-muted truncate max-w-[130px] font-medium">{userEmail}</span>
+                  <span className="px-1.5 py-0.5 bg-clay/10 text-clay text-[9px] font-bold rounded-full uppercase">
+                    {roleDisplay}
+                  </span>
                 </div>
-              )}
-              <button
-                onClick={onSignOut}
-                className="p-1.5 text-ink-muted hover:text-red-600 rounded-lg hover:bg-red-50 transition shrink-0"
-                title="Sign out of Admin Studio"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/"
+                    target="_blank"
+                    className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg border border-[#E8E2D9] bg-white text-[11px] font-medium text-ink-muted hover:text-ink hover:border-ink transition"
+                  >
+                    <span>Store</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                  <button
+                    onClick={onSignOut}
+                    className="p-1.5 rounded-lg border border-[#E8E2D9] bg-white text-ink-muted hover:text-ink hover:border-ink transition"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Link
+                  to="/"
+                  target="_blank"
+                  className="p-2 rounded-lg border border-[#E8E2D9] bg-white text-ink-muted hover:text-ink hover:border-ink transition"
+                  title="View Store"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={onSignOut}
+                  className="p-2 rounded-lg border border-[#E8E2D9] bg-white text-ink-muted hover:text-ink hover:border-ink transition"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {/* COMPACT TOP HEADER */}
-          <header className="h-16 bg-white border-b border-[#E8E2D9] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-2xs">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* TOP APP BAR */}
+          <header className="h-16 bg-white border-b border-[#E8E2D9] px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-2xs">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsMobileOpen(true)}
                 className="p-2 rounded-lg text-ink-muted hover:text-ink hover:bg-[#F3EFE6] lg:hidden transition"
-                aria-label="Open navigation menu"
+                aria-label="Open menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div>
-                <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                  <span className="hidden sm:inline">Little Loom Studio</span>
-                  <span className="hidden sm:inline text-ink-muted/50">/</span>
-                  <span className="font-medium text-ink-soft">{activeGroupTitle}</span>
-                </div>
-                <h1 className="font-serif text-lg sm:text-xl font-bold text-ink leading-tight">
-                  {activeItemLabel}
-                </h1>
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className="font-semibold text-ink-muted uppercase tracking-wider">{activeGroupTitle}</span>
+                <span className="text-[#D8D2C7]">/</span>
+                <span className="font-bold text-ink">{activeItemLabel}</span>
               </div>
             </div>
 
-            {/* Quick Actions & Search */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="relative hidden md:block w-48 xl:w-64">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-                <input
-                  type="text"
-                  placeholder="Quick find..."
-                  value={headerSearch}
-                  onChange={(e) => setHeaderSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-[#FAF7F0] border border-[#E8E2D9] focus:outline-none focus:border-clay focus:ring-1 focus:ring-clay/30"
-                />
-              </div>
-
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={() => void onRefresh()}
                 disabled={isRefreshing}
-                className="p-2 rounded-xl text-ink-soft hover:text-ink hover:bg-[#FAF7F0] border border-[#E8E2D9] transition flex items-center gap-1.5 text-xs font-medium"
-                title="Refresh studio data"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E8E2D9] bg-[#FAF7F0] text-xs font-semibold text-ink hover:bg-white hover:border-clay transition disabled:opacity-50"
+                title="Refresh studio telemetry"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-clay' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 text-clay ${isRefreshing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Refresh</span>
               </button>
 
               <Link
                 to="/"
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#FAF7F0] hover:bg-[#F3EFE6] border border-[#E8E2D9] text-ink transition shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-clay text-white text-xs font-semibold hover:bg-[#b56e57] transition shadow-xs"
               >
-                <span>Storefront</span>
-                <ExternalLink className="w-3 h-3 text-clay" />
+                <span>Live Store</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </Link>
             </div>
           </header>
 
-          {/* NOTICES AND ALERTS */}
-          <div className="px-4 sm:px-6 pt-4 space-y-2">
-            {notice && (
-              <div className="flex items-start justify-between gap-3 p-3.5 bg-emerald-50/90 border border-emerald-200/80 rounded-xl text-emerald-900 text-xs sm:text-sm animate-fade-in shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-medium">{notice}</span>
-                </div>
-                {onClearNotice && (
-                  <button
-                    onClick={onClearNotice}
-                    className="text-emerald-700 hover:text-emerald-900 p-0.5 rounded transition"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+          {/* NOTICES / ALERTS */}
+          {notice && (
+            <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between gap-2 animate-fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>{notice}</span>
               </div>
-            )}
+              {onClearNotice && (
+                <button onClick={onClearNotice} className="text-emerald-700 hover:text-emerald-950 p-1">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
 
-            {error && (
-              <div className="flex items-start justify-between gap-3 p-3.5 bg-rose-50/90 border border-rose-200/80 rounded-xl text-rose-900 text-xs sm:text-sm animate-fade-in shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span className="font-medium">{error}</span>
-                </div>
-                {onClearError && (
-                  <button
-                    onClick={onClearError}
-                    className="text-rose-700 hover:text-rose-900 p-0.5 rounded transition"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+          {error && (
+            <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-center justify-between gap-2 animate-fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0" />
+                <span>{error}</span>
               </div>
-            )}
-          </div>
+              {onClearError && (
+                <button onClick={onClearError} className="text-rose-700 hover:text-rose-950 p-1">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
 
-          {/* MAIN PAGE BODY */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-            {children}
+          {/* PAGE BODY */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </main>
         </div>
       </div>

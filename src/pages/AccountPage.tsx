@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Heart, LogOut, Sparkles, User as UserIcon } from 'lucide-react';
+import { Package, Heart, LogOut, Sparkles, User as UserIcon, Bell } from 'lucide-react';
 import Button from '../components/Button';
 import Breadcrumbs from '../components/ui';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+interface CustomerNotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  channel: string;
+  delivery_status: string;
+  created_at: string;
+}
 
 type Mode = 'login' | 'register' | 'reset';
 
@@ -13,6 +22,7 @@ export default function AccountPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<CustomerNotificationItem[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -20,7 +30,20 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!supabase) return;
-    void supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email || null));
+    void supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email || null);
+      if (data.user) {
+        void supabase!
+          .from('customer_notifications')
+          .select('*')
+          .eq('customer_id', data.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+          .then(({ data: notes }) => {
+            if (notes) setNotifications(notes);
+          });
+      }
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) =>
       setUserEmail(session?.user?.email || null)
     );
@@ -138,6 +161,32 @@ export default function AccountPage() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-charcoal">Saved Wishlist</span>
               </Link>
             </div>
+
+            {/* Notifications & Updates */}
+            {notifications.length > 0 && (
+              <div className="pt-3 border-t border-charcoal/8 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal-light flex items-center gap-1.5">
+                    <Bell size={12} className="text-clay" />
+                    <span>Recent Updates</span>
+                  </span>
+                  <span className="text-[10px] text-charcoal-light">{notifications.length} alerts</span>
+                </div>
+                <div className="space-y-1.5 divide-y divide-charcoal/5">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="pt-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-charcoal text-[11px]">{n.title}</span>
+                        <span className="text-[10px] text-charcoal-light">
+                          {new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-charcoal-soft text-[11px] mt-0.5 line-clamp-2">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="pt-4 border-t border-charcoal/8 flex justify-between items-center">
               <Link to="/shop" className="text-xs font-semibold uppercase tracking-wider text-clay hover:underline">
