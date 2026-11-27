@@ -1,4 +1,4 @@
-project_id = "little-loom"
+project_id = "ctcphbbfycvqdipcqhbi"
 
 [api]
 enabled = true
@@ -11,8 +11,15 @@ major_version = 15
 
 [auth]
 enabled = true
-site_url = "https://vanii1.vercel.app"
-additional_redirect_urls = ["http://localhost:5173/**", "https://vanii1.vercel.app/**", "https://*.vercel.app/**"]
+site_url = "https://www.vjcollection.com"
+additional_redirect_urls = [
+  "http://localhost:5173/**",
+  "http://localhost:4173/**",
+  "https://www.vjcollection.com/**",
+  "https://vjcollection.com/**",
+  "https://vanii1.vercel.app/**",
+  "https://*.vercel.app/**"
+]
 enable_signup = true
 
 [storage]
@@ -20,4 +27,16 @@ enabled = true
 file_size_limit = "25MiB"
 
 [functions.razorpay-webhook]
+verify_jwt = false
+
+[functions.checkout]
+verify_jwt = false
+
+[functions.shiprocket]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.refund-payment]
 verify_jwt = false

@@ -7,6 +7,7 @@ import CartDrawer from './components/CartDrawer';
 import SearchOverlay from './components/SearchOverlay';
 import MobileNav from './components/MobileNav';
 import ToastContainer from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
@@ -29,10 +30,15 @@ function ScrollToTop() {
 function HandleHashScroll() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (hash) {
-      const el = document.querySelector(hash);
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+    if (hash && hash.length > 1) {
+      try {
+        const id = decodeURIComponent(hash.slice(1));
+        const el = document.getElementById(id) || document.querySelector(hash);
+        if (el) {
+          setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+      } catch {
+        // Silently ignore invalid selectors (e.g. #, OAuth tokens, query fragments)
       }
     }
   }, [pathname, hash]);
@@ -57,8 +63,9 @@ export default function App() {
         <div className="flex min-h-screen flex-col overflow-x-clip bg-ivory text-charcoal">
           <Header />
           <main className="flex-1">
-            <PageTransition>
-              <Routes>
+            <ErrorBoundary>
+              <PageTransition>
+                <Routes>
                 <Route path="/" element={<HomePage />} />
                 {/* Department Landing Pages */}
                 <Route path="/department/:departmentId" element={<DepartmentLandingPage />} />
@@ -96,7 +103,8 @@ export default function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </PageTransition>
-          </main>
+          </ErrorBoundary>
+        </main>
           <Footer />
         </div>
         <CartDrawer />
